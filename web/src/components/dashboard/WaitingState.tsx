@@ -26,9 +26,6 @@ export function WaitingState({ code }: WaitingStateProps) {
       .catch(() => {});
   }, [code]);
 
-  const apiUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const cmd = `python -m scrape --session ${code} --api-url ${apiUrl}`;
-
   return (
     <div className="mt-16 flex flex-col items-center justify-center text-center animate-fade-in">
       {/* Radar animation */}
@@ -51,7 +48,7 @@ export function WaitingState({ code }: WaitingStateProps) {
         Waiting for scraper results...
       </h2>
       <p className="mt-3 max-w-md text-sm text-slate-500">
-        Run the command below on your machine and jobs will appear here automatically.
+        Jobs will appear here automatically once the scraper starts sending data.
         The dashboard refreshes every 10 seconds.
       </p>
 
@@ -81,16 +78,6 @@ export function WaitingState({ code }: WaitingStateProps) {
         <div className="mt-2 flex items-center justify-center gap-3">
           <span className="font-mono text-2xl font-bold tracking-widest text-primary-950">{code}</span>
           <CopyButton text={code} />
-        </div>
-      </div>
-
-      <div className="mt-8 max-w-md rounded-xl bg-slate-900 p-4 text-left">
-        <p className="mb-2 text-xs font-medium text-slate-400">Run this command:</p>
-        <div className="flex items-start justify-between gap-2">
-          <pre className="text-sm text-slate-300 font-mono overflow-x-auto whitespace-pre-wrap">
-            <code>{cmd}</code>
-          </pre>
-          <CopyButton text={cmd} />
         </div>
       </div>
 

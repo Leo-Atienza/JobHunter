@@ -138,21 +138,26 @@ function SessionReady({ code, expiresAt }: { code: string; expiresAt: string | n
 
         <div className="flex gap-3 items-start">
           <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700">1</span>
-          <div className="text-sm text-slate-600">
-            <p className="font-medium text-slate-800">Install the scraper</p>
-            <div className="mt-1.5 rounded-lg bg-slate-900 p-3">
+          <div className="text-sm text-slate-600 w-full">
+            <p className="font-medium text-slate-800">Install the scraper &amp; browser engine</p>
+            <div className="mt-1.5 rounded-lg bg-slate-900 p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <code className="text-sm text-slate-300 font-mono">pip install jobhunter-scraper</code>
                 <CopyButton text="pip install jobhunter-scraper" />
               </div>
+              <div className="flex items-center justify-between border-t border-slate-700 pt-2">
+                <code className="text-sm text-slate-300 font-mono">python -m playwright install chromium</code>
+                <CopyButton text="python -m playwright install chromium" />
+              </div>
             </div>
+            <p className="mt-1 text-xs text-slate-400">Only needed once. Requires Python 3.9+.</p>
           </div>
         </div>
 
         <div className="flex gap-3 items-start">
           <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700">2</span>
-          <div className="text-sm text-slate-600">
-            <p className="font-medium text-slate-800">Run the scraper with your settings</p>
+          <div className="text-sm text-slate-600 w-full">
+            <p className="font-medium text-slate-800">Run the scraper</p>
             <ScraperCommand code={code} apiUrl={apiUrl} />
           </div>
         </div>

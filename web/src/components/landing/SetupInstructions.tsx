@@ -23,9 +23,9 @@ const pythonSteps = [
     note: 'This downloads a small browser used to scrape LinkedIn, Indeed, and Glassdoor.',
   },
   {
-    label: 'Run the scraper with your session code',
-    code: 'python -m scrape --session YOUR_CODE --keywords "software engineer" --location "New York"',
-    note: 'Replace YOUR_CODE with the session code you generated above. Results appear on your dashboard automatically.',
+    label: 'Configure your search above, then run the generated command',
+    code: 'python -m scrape --session YOUR_CODE --api-url https://your-site.vercel.app',
+    note: 'Click "Get Started" above to set your keywords, location, and sources. The exact command will be generated for you.',
   },
 ];
 
