@@ -40,19 +40,19 @@ You need Python 3.9 or newer.
 pip install jobhunter-scraper
 ```
 
-That's it — no cloning, no downloading. This installs the `jobhunter-scrape` command.
+That's it — no cloning, no downloading.
 
 ### Step 3: Install the browser engine
 
 This downloads a small browser needed to scrape LinkedIn, Indeed, and Glassdoor:
 ```bash
-playwright install chromium
+python -m playwright install chromium
 ```
 
 ### Step 4: Run the scraper
 
 ```bash
-jobhunter-scrape --session JH-XXXX --keywords "Software Engineer" --location "Toronto, ON"
+python -m scrape --session JH-XXXX --keywords "Software Engineer" --location "Toronto, ON"
 ```
 
 Replace `JH-XXXX` with the session code you got from the website. Results will appear on your dashboard automatically.
@@ -98,7 +98,7 @@ That's it! Docker handles all the dependencies automatically.
 ## CLI Options
 
 ```
-jobhunter-scrape [OPTIONS]
+python -m scrape [OPTIONS]
 
 Options:
   --session TEXT    Session code (JH-XXXX). Overrides config.
@@ -111,25 +111,25 @@ Options:
   --help           Show this message and exit.
 ```
 
-> **Note:** If you're running from the cloned repo instead of pip install, use `python scrape.py` instead of `jobhunter-scrape`.
+> **Note:** If you're running from the cloned repo instead of pip install, use `python scrape.py` instead of `python -m scrape`.
 
 ### Examples
 
 ```bash
 # Quick start — just pass your session code and what you're looking for
-jobhunter-scrape --session JH-A1B2 --keywords "Software Engineer" --location "Toronto, ON"
+python -m scrape --session JH-A1B2 --keywords "Software Engineer" --location "Toronto, ON"
 
 # Search for multiple roles
-jobhunter-scrape --session JH-A1B2 --keywords "Python Developer,Backend Engineer" --location "Vancouver, BC"
+python -m scrape --session JH-A1B2 --keywords "Python Developer,Backend Engineer" --location "Vancouver, BC"
 
 # Only run specific sources (faster)
-jobhunter-scrape --session JH-A1B2 --sources "remotive,jobbank" --keywords "Developer"
+python -m scrape --session JH-A1B2 --sources "remotive,jobbank" --keywords "Developer"
 
 # Test without uploading (see what the scraper finds)
-jobhunter-scrape --session JH-A1B2 --keywords "Data Scientist" --dry-run
+python -m scrape --session JH-A1B2 --keywords "Data Scientist" --dry-run
 
 # Use a config file instead of CLI flags
-jobhunter-scrape --config config.yaml
+python -m scrape --config config.yaml
 ```
 
 ## Config File Reference

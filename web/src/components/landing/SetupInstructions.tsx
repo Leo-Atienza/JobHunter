@@ -19,12 +19,12 @@ const pythonSteps = [
   },
   {
     label: 'Install the browser engine',
-    code: 'playwright install chromium',
+    code: 'python -m playwright install chromium',
     note: 'This downloads a small browser used to scrape LinkedIn, Indeed, and Glassdoor.',
   },
   {
     label: 'Run the scraper with your session code',
-    code: 'jobhunter-scrape --session YOUR_CODE --keywords "software engineer" --location "New York"',
+    code: 'python -m scrape --session YOUR_CODE --keywords "software engineer" --location "New York"',
     note: 'Replace YOUR_CODE with the session code you generated above. Results appear on your dashboard automatically.',
   },
 ];
