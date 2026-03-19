@@ -2,31 +2,19 @@
 
 import { useState } from 'react';
 import { CopyButton } from '@/components/ui/CopyButton';
-import type { CreateSessionResponse } from '@/lib/types';
+import { SearchConfig } from './SearchConfig';
+
+type FlowStep = 'initial' | 'configure' | 'ready';
 
 export function Hero() {
+  const [step, setStep] = useState<FlowStep>('initial');
   const [sessionCode, setSessionCode] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  async function handleGenerate() {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/session', { method: 'POST' });
-      if (!res.ok) {
-        const data = await res.json() as { error?: string };
-        throw new Error(data.error ?? 'Failed to create session');
-      }
-      const data = (await res.json()) as CreateSessionResponse;
-      setSessionCode(data.code);
-      setExpiresAt(data.expires_at);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
-    } finally {
-      setLoading(false);
-    }
+  function handleSessionCreated(code: string, expires: string) {
+    setSessionCode(code);
+    setExpiresAt(expires);
+    setStep('ready');
   }
 
   return (
@@ -69,60 +57,30 @@ export function Hero() {
           View, filter, and track everything in one beautiful command center.
         </p>
 
-        {!sessionCode ? (
+        {step === 'initial' && (
           <div className="mt-10">
             <button
-              onClick={handleGenerate}
-              disabled={loading}
-              className="group relative inline-flex items-center gap-3 rounded-xl bg-primary-950 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-primary-950/20 transition-all hover:bg-primary-900 hover:shadow-xl hover:shadow-primary-950/30 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
+              onClick={() => setStep('configure')}
+              className="group relative inline-flex items-center gap-3 rounded-xl bg-primary-950 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-primary-950/20 transition-all hover:bg-primary-900 hover:shadow-xl hover:shadow-primary-950/30 hover:-translate-y-0.5"
             >
-              {loading ? (
-                <>
-                  <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
-                  </svg>
-                  Generate Session Code
-                  <span className="absolute inset-0 rounded-xl bg-white/10 opacity-0 transition-opacity group-hover:opacity-100" />
-                </>
-              )}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+              </svg>
+              Get Started
+              <span className="absolute inset-0 rounded-xl bg-white/10 opacity-0 transition-opacity group-hover:opacity-100" />
             </button>
-            {error && (
-              <p className="mt-4 text-sm font-medium text-error-600 animate-fade-in">{error}</p>
-            )}
           </div>
-        ) : (
+        )}
+
+        {step === 'configure' && (
           <div className="mt-10 animate-slide-up">
-            <div className="mx-auto max-w-md rounded-2xl border border-primary-200 bg-white p-8 shadow-xl shadow-primary-950/5">
-              <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Your Session Code</p>
-              <div className="mt-3 flex items-center justify-center gap-3">
-                <span className="font-mono text-4xl font-bold tracking-widest text-primary-950">
-                  {sessionCode}
-                </span>
-                <CopyButton text={sessionCode} />
-              </div>
-              {expiresAt && (
-                <p className="mt-3 text-xs text-slate-400">
-                  Expires {new Date(expiresAt).toLocaleString()}
-                </p>
-              )}
-              <a
-                href={`/dashboard/${sessionCode}`}
-                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent-500 px-6 py-3 text-base font-semibold text-primary-950 shadow-md shadow-accent-500/20 transition-all hover:bg-accent-400 hover:-translate-y-0.5"
-              >
-                Open Dashboard
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </a>
-            </div>
+            <SearchConfig onSessionCreated={handleSessionCreated} />
+          </div>
+        )}
+
+        {step === 'ready' && sessionCode && (
+          <div className="mt-10 animate-slide-up">
+            <SessionReady code={sessionCode} expiresAt={expiresAt} />
           </div>
         )}
 
@@ -150,5 +108,90 @@ export function Hero() {
         </div>
       </div>
     </section>
+  );
+}
+
+function SessionReady({ code, expiresAt }: { code: string; expiresAt: string | null }) {
+  const apiUrl = typeof window !== 'undefined' ? window.location.origin : 'https://jobhunter.vercel.app';
+
+  return (
+    <div className="mx-auto max-w-lg space-y-6">
+      {/* Session code card */}
+      <div className="rounded-2xl border border-primary-200 bg-white p-8 shadow-xl shadow-primary-950/5">
+        <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Your Session Code</p>
+        <div className="mt-3 flex items-center justify-center gap-3">
+          <span className="font-mono text-4xl font-bold tracking-widest text-primary-950">
+            {code}
+          </span>
+          <CopyButton text={code} />
+        </div>
+        {expiresAt && (
+          <p className="mt-3 text-xs text-slate-400">
+            Expires {new Date(expiresAt).toLocaleString()}
+          </p>
+        )}
+      </div>
+
+      {/* Steps */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+        <h3 className="font-display text-base font-bold text-primary-950">Next Steps</h3>
+
+        <div className="flex gap-3 items-start">
+          <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700">1</span>
+          <div className="text-sm text-slate-600">
+            <p className="font-medium text-slate-800">Install the scraper</p>
+            <div className="mt-1.5 rounded-lg bg-slate-900 p-3">
+              <div className="flex items-center justify-between">
+                <code className="text-sm text-slate-300 font-mono">pip install jobhunter-scraper</code>
+                <CopyButton text="pip install jobhunter-scraper" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3 items-start">
+          <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700">2</span>
+          <div className="text-sm text-slate-600">
+            <p className="font-medium text-slate-800">Run the scraper with your settings</p>
+            <ScraperCommand code={code} apiUrl={apiUrl} />
+          </div>
+        </div>
+
+        <div className="flex gap-3 items-start">
+          <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700">3</span>
+          <div className="text-sm text-slate-600">
+            <p className="font-medium text-slate-800">View results on your dashboard</p>
+          </div>
+        </div>
+      </div>
+
+      <a
+        href={`/dashboard/${code}`}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent-500 px-6 py-3.5 text-base font-semibold text-primary-950 shadow-md shadow-accent-500/20 transition-all hover:bg-accent-400 hover:-translate-y-0.5"
+      >
+        Open Dashboard
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M5 12h14M12 5l7 7-7 7" />
+        </svg>
+      </a>
+    </div>
+  );
+}
+
+function ScraperCommand({ code, apiUrl }: { code: string; apiUrl: string }) {
+  const cmd = `python -m scrape --session ${code} --api-url ${apiUrl}`;
+
+  return (
+    <div className="mt-1.5 rounded-lg bg-slate-900 p-3">
+      <div className="flex items-start justify-between gap-2">
+        <pre className="text-sm text-slate-300 font-mono overflow-x-auto whitespace-pre-wrap">
+          <code>{cmd}</code>
+        </pre>
+        <CopyButton text={cmd} />
+      </div>
+      <p className="mt-2 text-xs text-slate-500">
+        Your keywords and location are saved to the session. The scraper will fetch them automatically.
+      </p>
+    </div>
   );
 }

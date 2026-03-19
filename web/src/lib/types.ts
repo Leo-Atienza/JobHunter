@@ -24,6 +24,8 @@ export interface Session {
   expires_at: string;
   keywords: string[] | null;
   location: string | null;
+  sources: string[] | null;
+  remote: boolean;
 }
 
 export interface JobStats {
@@ -42,6 +44,13 @@ export interface JobInput {
   salary?: string;
   description?: string;
   posted_date?: string;
+}
+
+export interface CreateSessionRequest {
+  keywords?: string[];
+  location?: string;
+  sources?: string[];
+  remote?: boolean;
 }
 
 export interface CreateSessionResponse {

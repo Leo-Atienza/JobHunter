@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { generateCode } from '@/lib/session';
+import { sanitize } from '@/lib/utils';
+import type { CreateSessionRequest } from '@/lib/types';
+import { JOB_SOURCES } from '@/lib/types';
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
@@ -33,19 +36,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Parse optional preferences from request body
+    let body: CreateSessionRequest = {};
+    try {
+      body = (await request.json()) as CreateSessionRequest;
+    } catch {
+      // Empty body is fine — preferences are optional
+    }
+
+    // Sanitize preferences
+    const keywords = body.keywords?.length
+      ? body.keywords.slice(0, 10).map((k) => sanitize(k, 100))
+      : null;
+    const location = body.location ? sanitize(body.location, 255) : null;
+    const sources = body.sources?.length
+      ? body.sources.filter((s) => (JOB_SOURCES as readonly string[]).includes(s))
+      : null;
+    const remote = body.remote === true;
+
     const sql = getDb();
-    let code: string = '';
     let inserted = false;
     let attempts = 0;
     const maxAttempts = 10;
 
     while (!inserted && attempts < maxAttempts) {
-      code = generateCode();
+      const code = generateCode();
       attempts++;
       try {
         const result = await sql(
-          'INSERT INTO sessions (code) VALUES ($1) RETURNING code, expires_at',
-          [code]
+          `INSERT INTO sessions (code, keywords, location, sources, remote)
+           VALUES ($1, $2, $3, $4, $5)
+           RETURNING code, expires_at`,
+          [code, keywords, location, sources, remote]
         );
         if (result.length > 0) {
           inserted = true;
@@ -57,21 +79,16 @@ export async function POST(request: NextRequest) {
       } catch (err: unknown) {
         const pgErr = err as { code?: string };
         if (pgErr.code === '23505') {
-          // Unique violation — collision, retry
           continue;
         }
         throw err;
       }
     }
 
-    if (!inserted) {
-      return NextResponse.json(
-        { error: 'Failed to generate unique session code. Please try again.' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ code }, { status: 201 });
+    return NextResponse.json(
+      { error: 'Failed to generate unique session code. Please try again.' },
+      { status: 500 }
+    );
   } catch (error) {
     console.error('Session creation error:', error);
     return NextResponse.json(
