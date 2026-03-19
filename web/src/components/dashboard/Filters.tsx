@@ -1,0 +1,109 @@
+'use client';
+
+import type { JobStats, JobStatus } from '@/lib/types';
+import { JOB_SOURCES, JOB_STATUSES } from '@/lib/types';
+import { getSourceColor, cn } from '@/lib/utils';
+
+interface FiltersProps {
+  sourceFilter: string | null;
+  statusFilter: string | null;
+  onSourceChange: (source: string | null) => void;
+  onStatusChange: (status: string | null) => void;
+  stats: JobStats | null;
+}
+
+const statusLabels: Record<JobStatus, string> = {
+  new: 'New',
+  saved: 'Saved',
+  applied: 'Applied',
+  interview: 'Interview',
+  rejected: 'Rejected',
+  dismissed: 'Dismissed',
+};
+
+export function Filters({
+  sourceFilter,
+  statusFilter,
+  onSourceChange,
+  onStatusChange,
+  stats,
+}: FiltersProps) {
+  const activeSources = stats ? Object.keys(stats.by_source) : [];
+
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      {/* Source filters */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="mr-1 text-xs font-medium uppercase tracking-wider text-slate-400">Source:</span>
+        <button
+          onClick={() => onSourceChange(null)}
+          className={cn(
+            'rounded-full px-3 py-1 text-xs font-semibold transition-all',
+            !sourceFilter
+              ? 'bg-primary-950 text-white shadow-sm'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          )}
+        >
+          All
+        </button>
+        {JOB_SOURCES.map((source) => {
+          const isActive = activeSources.includes(source);
+          const colors = getSourceColor(source);
+          const count = stats?.by_source[source] ?? 0;
+          return (
+            <button
+              key={source}
+              onClick={() => onSourceChange(sourceFilter === source ? null : source)}
+              disabled={!isActive}
+              className={cn(
+                'rounded-full px-3 py-1 text-xs font-semibold transition-all',
+                sourceFilter === source
+                  ? `${colors.bg} ${colors.text} ring-2 ring-primary-300`
+                  : isActive
+                    ? `${colors.bg} ${colors.text} hover:ring-1 hover:ring-primary-200`
+                    : 'bg-slate-50 text-slate-300 cursor-not-allowed'
+              )}
+            >
+              {source}
+              {count > 0 && <span className="ml-1 opacity-60">{count}</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Status filter */}
+      <div className="flex items-center gap-1.5">
+        <span className="mr-1 text-xs font-medium uppercase tracking-wider text-slate-400">Status:</span>
+        <select
+          value={statusFilter ?? ''}
+          onChange={(e) => onStatusChange(e.target.value || null)}
+          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 outline-none transition-colors focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+        >
+          <option value="">All statuses</option>
+          {JOB_STATUSES.map((status) => (
+            <option key={status} value={status}>
+              {statusLabels[status]} ({stats?.by_status[status] ?? 0})
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Active filter tags */}
+      {(sourceFilter || statusFilter) && (
+        <button
+          onClick={() => {
+            onSourceChange(null);
+            onStatusChange(null);
+          }}
+          className="inline-flex items-center gap-1 rounded-full bg-error-100 px-3 py-1 text-xs font-medium text-error-600 transition-colors hover:bg-error-200"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+          Clear filters
+        </button>
+      )}
+    </div>
+  );
+}

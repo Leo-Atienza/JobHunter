@@ -1,0 +1,23 @@
+# JobHunter Scraper Configuration
+session_code: "JH-XXXX"  # Get this from https://jobhunter.vercel.app
+api_url: "https://jobhunter.vercel.app"
+
+search:
+  keywords:
+    - "Software Engineer"
+    - "Full Stack Developer"
+  location: "Toronto, ON"
+  remote: true
+
+sources:
+  linkedin: true
+  indeed: true
+  glassdoor: true
+  jobbank: true
+  remotive: true
+  adzuna: true
+
+# Optional API keys for higher rate limits
+api_keys:
+  adzuna_app_id: ""
+  adzuna_api_key: ""

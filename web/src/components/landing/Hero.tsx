@@ -1,0 +1,154 @@
+'use client';
+
+import { useState } from 'react';
+import { CopyButton } from '@/components/ui/CopyButton';
+import type { CreateSessionResponse } from '@/lib/types';
+
+export function Hero() {
+  const [sessionCode, setSessionCode] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleGenerate() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/session', { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json() as { error?: string };
+        throw new Error(data.error ?? 'Failed to create session');
+      }
+      const data = (await res.json()) as CreateSessionResponse;
+      setSessionCode(data.code);
+      setExpiresAt(data.expires_at);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <section className="relative overflow-hidden pt-32 pb-24">
+      {/* Decorative background elements */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-primary-100/60 blur-3xl" />
+        <div className="absolute top-48 -left-32 h-72 w-72 rounded-full bg-accent-100/50 blur-3xl" />
+        <div className="absolute right-1/4 top-1/3 h-4 w-4 rotate-45 bg-accent-400 opacity-20 animate-float" />
+        <div className="absolute left-1/5 top-1/2 h-3 w-3 rounded-full bg-primary-400 opacity-20 animate-float" style={{ animationDelay: '2s' }} />
+        <div className="absolute right-1/3 top-2/3 h-5 w-5 rotate-12 rounded bg-primary-300 opacity-15 animate-float" style={{ animationDelay: '4s' }} />
+        {/* Grid pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: 'radial-gradient(circle, #1e1b4b 1px, transparent 1px)',
+            backgroundSize: '32px 32px',
+          }}
+        />
+      </div>
+
+      <div className="relative mx-auto max-w-4xl px-6 text-center">
+        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary-200 bg-primary-50 px-4 py-1.5 text-sm font-medium text-primary-800">
+          <span className="h-2 w-2 rounded-full bg-accent-500" />
+          Open Source Job Aggregator
+        </div>
+
+        <h1 className="font-display text-5xl font-extrabold leading-tight tracking-tight text-primary-950 sm:text-6xl lg:text-7xl">
+          Your Job Search,{' '}
+          <span className="relative">
+            <span className="relative z-10 bg-gradient-to-r from-primary-700 to-accent-500 bg-clip-text text-transparent">
+              Supercharged
+            </span>
+            <span className="absolute -bottom-2 left-0 right-0 h-3 bg-accent-200/50 rounded" />
+          </span>
+        </h1>
+
+        <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-slate-600 sm:text-xl">
+          Scrape jobs from LinkedIn, Indeed, Glassdoor, and more — all from your machine.
+          View, filter, and track everything in one beautiful command center.
+        </p>
+
+        {!sessionCode ? (
+          <div className="mt-10">
+            <button
+              onClick={handleGenerate}
+              disabled={loading}
+              className="group relative inline-flex items-center gap-3 rounded-xl bg-primary-950 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-primary-950/20 transition-all hover:bg-primary-900 hover:shadow-xl hover:shadow-primary-950/30 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
+            >
+              {loading ? (
+                <>
+                  <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                  </svg>
+                  Generate Session Code
+                  <span className="absolute inset-0 rounded-xl bg-white/10 opacity-0 transition-opacity group-hover:opacity-100" />
+                </>
+              )}
+            </button>
+            {error && (
+              <p className="mt-4 text-sm font-medium text-error-600 animate-fade-in">{error}</p>
+            )}
+          </div>
+        ) : (
+          <div className="mt-10 animate-slide-up">
+            <div className="mx-auto max-w-md rounded-2xl border border-primary-200 bg-white p-8 shadow-xl shadow-primary-950/5">
+              <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Your Session Code</p>
+              <div className="mt-3 flex items-center justify-center gap-3">
+                <span className="font-mono text-4xl font-bold tracking-widest text-primary-950">
+                  {sessionCode}
+                </span>
+                <CopyButton text={sessionCode} />
+              </div>
+              {expiresAt && (
+                <p className="mt-3 text-xs text-slate-400">
+                  Expires {new Date(expiresAt).toLocaleString()}
+                </p>
+              )}
+              <a
+                href={`/dashboard/${sessionCode}`}
+                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent-500 px-6 py-3 text-base font-semibold text-primary-950 shadow-md shadow-accent-500/20 transition-all hover:bg-accent-400 hover:-translate-y-0.5"
+              >
+                Open Dashboard
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-16 flex items-center justify-center gap-8 text-sm text-slate-400">
+          <div className="flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            No account needed
+          </div>
+          <div className="flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            48h sessions
+          </div>
+          <div className="flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="16 18 22 12 16 6" />
+              <polyline points="8 6 2 12 8 18" />
+            </svg>
+            Open source
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
