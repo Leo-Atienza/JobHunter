@@ -32,12 +32,24 @@ export async function getSession(code: string): Promise<{
   code: string;
   created_at: string;
   expires_at: string;
+  keywords: string[] | null;
+  location: string | null;
+  sources: string[] | null;
+  remote: boolean;
 } | null> {
   const sql = getDb();
   const rows = await sql(
-    'SELECT code, created_at, expires_at FROM sessions WHERE code = $1 AND expires_at > NOW()',
+    'SELECT code, created_at, expires_at, keywords, location, sources, remote FROM sessions WHERE code = $1 AND expires_at > NOW()',
     [code]
   );
   if (rows.length === 0) return null;
-  return rows[0] as { code: string; created_at: string; expires_at: string };
+  return rows[0] as {
+    code: string;
+    created_at: string;
+    expires_at: string;
+    keywords: string[] | null;
+    location: string | null;
+    sources: string[] | null;
+    remote: boolean;
+  };
 }

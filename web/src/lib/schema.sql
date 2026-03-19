@@ -3,7 +3,9 @@ CREATE TABLE sessions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   expires_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '48 hours'),
   keywords TEXT[],
-  location VARCHAR(255)
+  location VARCHAR(255),
+  sources TEXT[],
+  remote BOOLEAN DEFAULT false
 );
 
 CREATE TABLE jobs (

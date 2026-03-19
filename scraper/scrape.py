@@ -71,6 +71,19 @@ def validate_session(code: str) -> bool:
     return bool(SESSION_PATTERN.match(code))
 
 
+def fetch_session_config(api_base: str, session_code: str) -> dict | None:
+    """Fetch search preferences from the JobHunter API for this session."""
+    import requests as _req
+
+    try:
+        resp = _req.get(f"{api_base}/api/session/{session_code}", timeout=10)
+        if resp.ok:
+            return resp.json()
+    except Exception as exc:
+        console.print(f"  [yellow]Could not fetch session config:[/] {exc}")
+    return None
+
+
 def show_banner() -> None:
     """Display the startup banner."""
     console.print(
@@ -175,11 +188,7 @@ def main(
     search_remote: bool = cfg.get("search", {}).get("remote", False)
     source_flags: dict[str, bool] = cfg.get("sources", {})
 
-    # ---- Validate -----------------------------------------------------------
-    if not search_keywords:
-        console.print("[red]No search keywords specified.[/] Use --keywords or config.yaml.")
-        sys.exit(1)
-
+    # ---- Validate session first (needed for config fetch) -------------------
     if not dry_run:
         if not session_code:
             console.print(
@@ -192,6 +201,36 @@ def main(
                 "Must match pattern JH-XXXX (uppercase alphanumeric)."
             )
             sys.exit(1)
+
+    # ---- Fetch session config from API (fills in missing fields) ------------
+    if session_code and not dry_run:
+        remote_cfg = fetch_session_config(api_base, session_code)
+        if remote_cfg:
+            if not search_keywords and remote_cfg.get("keywords"):
+                search_keywords = remote_cfg["keywords"]
+                console.print(
+                    f"  [dim]Loaded keywords from session:[/] {', '.join(search_keywords)}"
+                )
+            if not search_location and remote_cfg.get("location"):
+                search_location = remote_cfg["location"]
+                console.print(
+                    f"  [dim]Loaded location from session:[/] {search_location}"
+                )
+            if not source_flags and remote_cfg.get("sources"):
+                for name in SCRAPERS:
+                    source_flags[name] = name in remote_cfg["sources"]
+                console.print(
+                    f"  [dim]Loaded sources from session:[/] {', '.join(remote_cfg['sources'])}"
+                )
+            if not search_remote and remote_cfg.get("remote"):
+                search_remote = True
+                console.print("  [dim]Loaded remote preference from session[/]")
+            console.print()
+
+    # ---- Validate keywords --------------------------------------------------
+    if not search_keywords:
+        console.print("[red]No search keywords specified.[/] Use --keywords or config.yaml.")
+        sys.exit(1)
 
     # ---- Info banner --------------------------------------------------------
     mode_label = "[yellow]DRY RUN[/]" if dry_run else "[green]LIVE[/]"
