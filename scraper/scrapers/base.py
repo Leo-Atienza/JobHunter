@@ -134,7 +134,7 @@ class BaseScraper(ABC):
     def score_relevance(
         jobs: list["JobResult"],
         keywords: list[str],
-        min_score: int = 30,
+        min_score: int = 20,
     ) -> list["JobResult"]:
         """Score each job's relevance 0-100 and filter out below min_score."""
         if not keywords:
@@ -152,31 +152,47 @@ class BaseScraper(ABC):
                 if not kw_lower:
                     continue
                 score = 0
+                tokens = kw_lower.split()
 
-                # Exact phrase match in title: +50
+                # Exact phrase match in title: +40
                 if kw_lower in title_lower:
-                    score += 50
-                    # Exact title match: +25 bonus
+                    score += 40
+                    # Exact title match: +20 bonus
                     if title_lower.strip() == kw_lower:
-                        score += 25
+                        score += 20
                     # Keyword at start of title: +10 bonus
                     elif title_lower.startswith(kw_lower):
                         score += 10
 
-                # Token overlap ratio: up to +30
-                tokens = kw_lower.split()
+                # Token overlap ratio: up to +40 (main signal for partial matches)
                 if tokens:
                     matched = sum(1 for t in tokens if t in title_lower)
                     overlap = matched / len(tokens)
-                    score += int(overlap * 30)
+                    score += int(overlap * 40)
+
+                # Individual important token matches in title: +5 each (max +15)
+                # Rewards titles containing key domain words even without full overlap
+                if tokens:
+                    important_bonus = 0
+                    for t in tokens:
+                        if len(t) > 2 and t in title_lower:
+                            important_bonus += 5
+                    score += min(important_bonus, 15)
 
                 # Company match: +10
                 if job.company and kw_lower in job.company.lower():
                     score += 10
 
-                # Description contains keyword: +10
+                # Description contains full keyword phrase: +10
                 if job.description and kw_lower in job.description.lower():
                     score += 10
+
+                # Description contains individual tokens: +5
+                if job.description and tokens:
+                    desc_lower = job.description.lower()
+                    desc_matched = sum(1 for t in tokens if len(t) > 2 and t in desc_lower)
+                    if desc_matched >= len([t for t in tokens if len(t) > 2]) * 0.5:
+                        score += 5
 
                 best_score = max(best_score, score)
 

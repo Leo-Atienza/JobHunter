@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import type { Job } from '@/lib/types';
 import { StatusSelect } from './StatusSelect';
 import { getSourceColor, formatDate } from '@/lib/utils';
@@ -44,6 +44,21 @@ export function JobRow({ job, onUpdate }: JobRowProps) {
     setNotes(value);
     saveNotes(value);
   }
+
+  // Format raw description text into readable paragraphs
+  const formattedDescription = useMemo(() => {
+    if (!job.description) return null;
+    let text = job.description;
+    // Add line breaks before common section headers
+    text = text.replace(/\s*(Requirements|Qualifications|Responsibilities|What you['']ll do|What we offer|About|Skills|Benefits|Duties|Experience|Education|Preferred|Must have|Nice to have|Key|Overview|Summary|Description|Role|Position|Job Type|Who you are|What you bring|Why join|Perks|Compensation|Salary|Location|How to apply)(\s*[:—\-])/gi, '\n\n$1$2');
+    // Add line breaks before bullet-like patterns
+    text = text.replace(/\s*([•·▪▸►●○◆\-–—]\s)/g, '\n$1');
+    // Add line breaks before numbered lists
+    text = text.replace(/\s+(\d+[.)]\s)/g, '\n$1');
+    // Collapse 3+ newlines into 2
+    text = text.replace(/\n{3,}/g, '\n\n');
+    return text.trim();
+  }, [job.description]);
 
   const sourceColors = getSourceColor(job.source);
 
@@ -186,10 +201,10 @@ export function JobRow({ job, onUpdate }: JobRowProps) {
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
                   Description
                 </h4>
-                {job.description ? (
-                  <p className="text-sm leading-relaxed text-slate-600 max-h-48 overflow-y-auto whitespace-pre-wrap">
-                    {job.description}
-                  </p>
+                {formattedDescription ? (
+                  <div className="text-sm leading-relaxed text-slate-600 max-h-72 overflow-y-auto whitespace-pre-wrap pr-2">
+                    {formattedDescription}
+                  </div>
                 ) : (
                   <p className="text-sm italic text-slate-400">No description available</p>
                 )}
