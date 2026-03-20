@@ -84,6 +84,46 @@ class BaseScraper(ABC):
         """Sleep for a random interval to avoid rate limiting."""
         time.sleep(random.uniform(min_seconds, max_seconds))
 
+    @staticmethod
+    def filter_by_relevance(
+        jobs: list[JobResult],
+        keywords: list[str],
+        min_match: float = 0.5,
+    ) -> list[JobResult]:
+        """Filter jobs by title relevance to keywords.
+
+        Keeps a job if:
+        - The full keyword phrase appears as a substring in the title, OR
+        - At least `min_match` fraction of keyword tokens appear in the title.
+        """
+        if not keywords:
+            return jobs
+
+        filtered: list[JobResult] = []
+        for job in jobs:
+            title_lower = job.title.lower()
+            keep = False
+
+            for kw in keywords:
+                kw_lower = kw.lower().strip()
+                # Exact phrase match — always keep
+                if kw_lower in title_lower:
+                    keep = True
+                    break
+
+                # Token overlap check
+                tokens = kw_lower.split()
+                if tokens:
+                    matched = sum(1 for t in tokens if t in title_lower)
+                    if matched / len(tokens) >= min_match:
+                        keep = True
+                        break
+
+            if keep:
+                filtered.append(job)
+
+        return filtered
+
     def upload_results(
         self,
         api_url: str,

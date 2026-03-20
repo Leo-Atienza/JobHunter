@@ -1,6 +1,6 @@
 import { Hero } from '@/components/landing/Hero';
 import { HowItWorks } from '@/components/landing/HowItWorks';
-import { SetupInstructions } from '@/components/landing/SetupInstructions';
+
 import { FAQ } from '@/components/landing/FAQ';
 
 export default function HomePage() {
@@ -32,7 +32,6 @@ export default function HomePage() {
 
       <Hero />
       <HowItWorks />
-      <SetupInstructions />
       <FAQ />
 
       <footer className="border-t border-slate-200 bg-slate-50 py-12">

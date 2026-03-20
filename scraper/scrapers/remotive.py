@@ -61,26 +61,41 @@ class RemotiveScraper(BaseScraper):
 
         results: list[JobResult] = []
 
-        api_url = f"https://remotive.com/api/remote-jobs?search={quote_plus(query)}"
+        base_url = f"https://remotive.com/api/remote-jobs?search={quote_plus(query)}"
 
         category = self._guess_category(keywords)
-        if category:
-            api_url += f"&category={category}"
-            self.console.log(f"[cyan]Remotive[/] Filtering by category: {category}")
-
         headers = {"User-Agent": USER_AGENT, "Accept": "application/json"}
 
-        try:
-            resp = self.http.get(api_url, headers=headers, timeout=20)
-            resp.raise_for_status()
-            data = resp.json()
-        except Exception as exc:
-            self.console.log(f"[red]Remotive[/] API request failed: {exc}")
-            self.jobs = results
-            return results
+        jobs_list: list = []
 
-        jobs_list = data.get("jobs", [])
-        self.console.log(f"[cyan]Remotive[/] API returned {len(jobs_list)} results.")
+        # Try with category filter first, fall back to without
+        urls_to_try = []
+        if category:
+            urls_to_try.append((f"{base_url}&category={category}", category))
+        urls_to_try.append((base_url, None))
+
+        for api_url, cat in urls_to_try:
+            if cat:
+                self.console.log(f"[cyan]Remotive[/] Trying with category: {cat}")
+            else:
+                self.console.log("[cyan]Remotive[/] Searching without category filter")
+
+            try:
+                resp = self.http.get(api_url, headers=headers, timeout=20)
+                self.console.log(f"[cyan]Remotive[/] Response status: {resp.status_code}")
+                resp.raise_for_status()
+                data = resp.json()
+            except Exception as exc:
+                self.console.log(f"[red]Remotive[/] API request failed: {exc}")
+                continue
+
+            jobs_list = data.get("jobs", [])
+            self.console.log(f"[cyan]Remotive[/] API returned {len(jobs_list)} results.")
+
+            if jobs_list:
+                break
+            elif cat:
+                self.console.log("[cyan]Remotive[/] No results with category — retrying without filter")
 
         for item in jobs_list:
             try:

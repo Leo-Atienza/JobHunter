@@ -55,6 +55,8 @@ def merge_config(cfg: dict, **cli_overrides: Optional[str]) -> dict:
         search["keywords"] = [k.strip() for k in cli_overrides["keywords"].split(",")]
     if cli_overrides.get("location"):
         search["location"] = cli_overrides["location"]
+    if cli_overrides.get("companies"):
+        search["companies"] = [c.strip() for c in cli_overrides["companies"].split(",")]
 
     if cli_overrides.get("sources"):
         enabled = {s.strip().lower() for s in cli_overrides["sources"].split(",")}
@@ -155,7 +157,9 @@ def show_summary(results: list[dict]) -> None:
 @click.option("--location", default=None, help="Job location. Overrides config.")
 @click.option("--config", "config_path", default="config.yaml", help="Path to config file.")
 @click.option("--sources", default=None, help="Comma-separated list of sources to run.")
+@click.option("--companies", default=None, help="Comma-separated list of target companies.")
 @click.option("--dry-run", is_flag=True, help="Scrape but don't upload results.")
+@click.option("--no-filter", is_flag=True, help="Disable post-scrape relevance filtering.")
 @click.option("--api-url", default=None, help="Override API URL.")
 def main(
     session: Optional[str],
@@ -163,7 +167,9 @@ def main(
     location: Optional[str],
     config_path: str,
     sources: Optional[str],
+    companies: Optional[str],
     dry_run: bool,
+    no_filter: bool,
     api_url: Optional[str],
 ) -> None:
     """JobHunter Scraper — find jobs across multiple boards."""
@@ -178,6 +184,7 @@ def main(
         keywords=keywords,
         location=location,
         sources=sources,
+        companies=companies,
         api_url=api_url,
     )
 
@@ -186,6 +193,7 @@ def main(
     search_keywords: list[str] = cfg.get("search", {}).get("keywords", [])
     search_location: str = cfg.get("search", {}).get("location", "")
     search_remote: bool = cfg.get("search", {}).get("remote", False)
+    search_companies: list[str] = cfg.get("search", {}).get("companies", [])
     source_flags: dict[str, bool] = cfg.get("sources", {})
 
     # ---- Validate session first (needed for config fetch) -------------------
@@ -225,6 +233,18 @@ def main(
             if not search_remote and remote_cfg.get("remote"):
                 search_remote = True
                 console.print("  [dim]Loaded remote preference from session[/]")
+            if not search_companies and remote_cfg.get("companies"):
+                search_companies = remote_cfg["companies"]
+                console.print(
+                    f"  [dim]Loaded companies from session:[/] {', '.join(search_companies)}"
+                )
+            # Load API keys from session config (server provides them)
+            if remote_cfg.get("api_keys"):
+                existing_keys = cfg.setdefault("api_keys", {})
+                for key, value in remote_cfg["api_keys"].items():
+                    if not existing_keys.get(key):
+                        existing_keys[key] = value
+                console.print("  [dim]Loaded API keys from session[/]")
             console.print()
 
     # ---- Validate keywords --------------------------------------------------
@@ -241,6 +261,8 @@ def main(
     console.print(f"  Keywords: {', '.join(search_keywords)}")
     console.print(f"  Location: {search_location or '(any)'}")
     console.print(f"  Remote:   {'Yes' if search_remote else 'No'}")
+    if search_companies:
+        console.print(f"  Companies: {', '.join(search_companies)}")
     console.print()
 
     # ---- Determine which sources to run ------------------------------------
@@ -257,6 +279,23 @@ def main(
         f"  Sources:  {', '.join(enabled_sources)}\n",
         style="dim",
     )
+
+    # Pre-flight checks for sources that need configuration
+    import os as _os
+
+    if "adzuna" in enabled_sources:
+        api_keys = cfg.get("api_keys", {})
+        has_adzuna_keys = (
+            (api_keys.get("adzuna_app_id") and api_keys.get("adzuna_api_key"))
+            or (_os.environ.get("ADZUNA_APP_ID") and _os.environ.get("ADZUNA_API_KEY"))
+        )
+        if not has_adzuna_keys:
+            console.print(
+                "[yellow]Warning:[/] Adzuna requires API keys. "
+                "Get free keys at https://developer.adzuna.com\n"
+                "  Set ADZUNA_APP_ID and ADZUNA_API_KEY env vars, "
+                "or add them to config.yaml under api_keys.\n"
+            )
 
     # ---- Run scrapers -------------------------------------------------------
     run_results: list[dict] = []
@@ -281,11 +320,48 @@ def main(
         scraper: BaseScraper = scraper_cls(console=console, config=cfg)
 
         try:
-            jobs: list[JobResult] = scraper.scrape(
-                keywords=search_keywords,
-                location=search_location,
-                remote=search_remote,
-            )
+            # Search each role separately and combine results
+            # If companies are specified, search "{role} {company}" for each combo
+            all_jobs: list[JobResult] = []
+            seen_urls: set[str] = set()
+
+            search_combos: list[str] = []
+            if search_companies:
+                for role in search_keywords:
+                    for company in search_companies:
+                        search_combos.append(f"{role} {company}")
+            else:
+                search_combos = list(search_keywords)
+
+            for search_term in search_combos:
+                console.print(f"  [dim]Searching:[/] {search_term}")
+                term_jobs: list[JobResult] = scraper.scrape(
+                    keywords=[search_term],
+                    location=search_location,
+                    remote=search_remote,
+                )
+                for job in term_jobs:
+                    if job.url not in seen_urls:
+                        seen_urls.add(job.url)
+                        all_jobs.append(job)
+
+                # Brief pause between searches to avoid rate limiting
+                if len(search_combos) > 1:
+                    scraper.rate_limit(1.0, 2.0)
+
+            jobs = all_jobs
+
+            # Apply relevance filtering
+            if not no_filter and jobs:
+                before_count = len(jobs)
+                jobs = BaseScraper.filter_by_relevance(jobs, search_keywords)
+                filtered_out = before_count - len(jobs)
+                if filtered_out > 0:
+                    console.print(
+                        f"  [dim]Relevance filter: {before_count} → {len(jobs)} jobs "
+                        f"({filtered_out} removed)[/]"
+                    )
+
             entry["found"] = len(jobs)
 
             if jobs and not dry_run:

@@ -53,6 +53,9 @@ export async function POST(request: NextRequest) {
       ? body.sources.filter((s) => (JOB_SOURCES as readonly string[]).includes(s))
       : null;
     const remote = body.remote === true;
+    const companies = body.companies?.length
+      ? body.companies.slice(0, 20).map((c) => sanitize(c, 100))
+      : null;
 
     const sql = getDb();
     let inserted = false;
@@ -64,10 +67,10 @@ export async function POST(request: NextRequest) {
       attempts++;
       try {
         const result = await sql(
-          `INSERT INTO sessions (code, keywords, location, sources, remote)
-           VALUES ($1, $2, $3, $4, $5)
+          `INSERT INTO sessions (code, keywords, location, sources, remote, companies)
+           VALUES ($1, $2, $3, $4, $5, $6)
            RETURNING code, expires_at`,
-          [code, keywords, location, sources, remote]
+          [code, keywords, location, sources, remote, companies]
         );
         if (result.length > 0) {
           inserted = true;

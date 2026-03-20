@@ -23,6 +23,11 @@ export async function GET(
       );
     }
 
+    // Include API keys from server env vars so the scraper can use them
+    const apiKeys: Record<string, string> = {};
+    if (process.env.ADZUNA_APP_ID) apiKeys.adzuna_app_id = process.env.ADZUNA_APP_ID;
+    if (process.env.ADZUNA_API_KEY) apiKeys.adzuna_api_key = process.env.ADZUNA_API_KEY;
+
     return NextResponse.json({
       code: session.code,
       expires_at: session.expires_at,
@@ -30,6 +35,8 @@ export async function GET(
       location: session.location,
       sources: session.sources,
       remote: session.remote,
+      companies: session.companies,
+      ...(Object.keys(apiKeys).length > 0 && { api_keys: apiKeys }),
     });
   } catch (error) {
     console.error('Session GET error:', error);

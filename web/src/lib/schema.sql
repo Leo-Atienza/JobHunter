@@ -5,7 +5,8 @@ CREATE TABLE sessions (
   keywords TEXT[],
   location VARCHAR(255),
   sources TEXT[],
-  remote BOOLEAN DEFAULT false
+  remote BOOLEAN DEFAULT false,
+  companies TEXT[]
 );
 
 CREATE TABLE jobs (
