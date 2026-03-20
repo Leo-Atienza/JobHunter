@@ -58,10 +58,9 @@ class TheMuseScraper(BaseScraper):
                 "descending": "true",
             }
 
-            # The Muse doesn't have a keyword search param — use category instead
-            # We pass the query and filter client-side
-            if location:
-                params["location"] = location
+            # The Muse API only accepts predefined location strings — arbitrary
+            # locations return 404.  Pass only "Flexible / Remote" for remote
+            # searches; otherwise skip the param and filter client-side.
             if remote:
                 params["location"] = "Flexible / Remote"
 
@@ -170,6 +169,25 @@ class TheMuseScraper(BaseScraper):
                 break
 
             self.rate_limit(0.5, 1.0)
+
+        # Client-side location filtering (API doesn't support arbitrary locations)
+        if location and not remote:
+            loc_lower = location.lower()
+            # Extract city name (before first comma) for flexible matching
+            loc_city = loc_lower.split(",")[0].strip()
+            before = len(results)
+            results = [
+                j for j in results
+                if not j.location
+                or loc_city in j.location.lower()
+                or loc_lower in j.location.lower()
+            ]
+            filtered_out = before - len(results)
+            if filtered_out > 0:
+                self.console.log(
+                    f"[bright_magenta]The Muse[/] Location filter: "
+                    f"{before} → {len(results)} ({filtered_out} outside '{location}')"
+                )
 
         self.console.log(
             f"[bold bright_magenta]The Muse[/] Finished — {len(results)} jobs collected."

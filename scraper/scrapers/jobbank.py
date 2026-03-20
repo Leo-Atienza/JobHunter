@@ -34,7 +34,14 @@ class JobBankScraper(BaseScraper):
         )
 
         results: list[JobResult] = []
-        headers = {"User-Agent": USER_AGENT, "Accept-Language": "en-CA,en;q=0.9"}
+        headers = {
+            "User-Agent": USER_AGENT,
+            "Accept-Language": "en-CA,en;q=0.9",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Referer": "https://www.jobbank.gc.ca/",
+            "Connection": "keep-alive",
+        }
 
         for page_num in range(1, self.MAX_PAGES + 1):
             url = (
@@ -51,7 +58,7 @@ class JobBankScraper(BaseScraper):
             )
 
             try:
-                resp = self.http.get(url, headers=headers, timeout=20)
+                resp = self.http.get(url, headers=headers, timeout=30)
                 resp.raise_for_status()
             except Exception as exc:
                 self.console.log(f"[yellow]JobBank[/] Request failed: {exc}")
