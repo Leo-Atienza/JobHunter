@@ -12,6 +12,12 @@ export interface Job {
   scraped_at: string;
   status: JobStatus;
   notes: string | null;
+  job_type: string | null;
+  experience_level: string | null;
+  skills: string | null;
+  benefits: string | null;
+  relevance_score: number;
+  country: string | null;
 }
 
 export type JobStatus = 'new' | 'saved' | 'applied' | 'interview' | 'rejected' | 'dismissed';
@@ -27,6 +33,7 @@ export interface Session {
   sources: string[] | null;
   remote: boolean;
   companies: string[] | null;
+  country: string | null;
 }
 
 export interface JobStats {
@@ -45,6 +52,12 @@ export interface JobInput {
   salary?: string;
   description?: string;
   posted_date?: string;
+  job_type?: string;
+  experience_level?: string;
+  skills?: string;
+  benefits?: string;
+  relevance_score?: number;
+  country?: string;
 }
 
 export interface CreateSessionRequest {
@@ -53,6 +66,7 @@ export interface CreateSessionRequest {
   sources?: string[];
   remote?: boolean;
   companies?: string[];
+  country?: string;
 }
 
 export interface CreateSessionResponse {

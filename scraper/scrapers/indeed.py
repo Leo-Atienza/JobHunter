@@ -371,6 +371,25 @@ class IndeedScraper(BaseScraper):
                 if not job_url.startswith("http"):
                     job_url = f"https://{domain}{job_url}"
 
+                # Extract job type from employmentType in LD+JSON
+                job_type = None
+                employment_type = data.get("employmentType", "")
+                if employment_type:
+                    emp_type_map = {
+                        "FULL_TIME": "Full-time",
+                        "PART_TIME": "Part-time",
+                        "CONTRACT": "Contract",
+                        "TEMPORARY": "Temporary",
+                        "INTERN": "Internship",
+                        "INTERNSHIP": "Internship",
+                        "FREELANCE": "Freelance",
+                    }
+                    if isinstance(employment_type, list):
+                        employment_type = employment_type[0] if employment_type else ""
+                    job_type = emp_type_map.get(
+                        employment_type.upper().strip(), employment_type.strip()
+                    )
+
                 results.append(
                     JobResult(
                         title=title,
@@ -379,6 +398,7 @@ class IndeedScraper(BaseScraper):
                         url=job_url,
                         source=self.name,
                         salary=salary_text,
+                        job_type=job_type,
                     )
                 )
             except (json.JSONDecodeError, Exception):

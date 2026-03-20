@@ -24,6 +24,12 @@ class JobResult:
     salary: Optional[str] = None
     description: Optional[str] = None
     posted_date: Optional[str] = None
+    job_type: Optional[str] = None
+    experience_level: Optional[str] = None
+    skills: Optional[str] = None
+    benefits: Optional[str] = None
+    relevance_score: int = 0
+    country: Optional[str] = None
 
     def to_dict(self) -> dict:
         """Convert to a plain dictionary for JSON serialization."""
@@ -121,6 +127,108 @@ class BaseScraper(ABC):
 
             if keep:
                 filtered.append(job)
+
+        return filtered
+
+    @staticmethod
+    def score_relevance(
+        jobs: list["JobResult"],
+        keywords: list[str],
+        min_score: int = 30,
+    ) -> list["JobResult"]:
+        """Score each job's relevance 0-100 and filter out below min_score."""
+        if not keywords:
+            for job in jobs:
+                job.relevance_score = 50
+            return jobs
+
+        scored: list["JobResult"] = []
+        for job in jobs:
+            title_lower = job.title.lower()
+            best_score = 0
+
+            for kw in keywords:
+                kw_lower = kw.lower().strip()
+                if not kw_lower:
+                    continue
+                score = 0
+
+                # Exact phrase match in title: +50
+                if kw_lower in title_lower:
+                    score += 50
+                    # Exact title match: +25 bonus
+                    if title_lower.strip() == kw_lower:
+                        score += 25
+                    # Keyword at start of title: +10 bonus
+                    elif title_lower.startswith(kw_lower):
+                        score += 10
+
+                # Token overlap ratio: up to +30
+                tokens = kw_lower.split()
+                if tokens:
+                    matched = sum(1 for t in tokens if t in title_lower)
+                    overlap = matched / len(tokens)
+                    score += int(overlap * 30)
+
+                # Company match: +10
+                if job.company and kw_lower in job.company.lower():
+                    score += 10
+
+                # Description contains keyword: +10
+                if job.description and kw_lower in job.description.lower():
+                    score += 10
+
+                best_score = max(best_score, score)
+
+            job.relevance_score = min(best_score, 100)
+            if job.relevance_score >= min_score:
+                scored.append(job)
+
+        return scored
+
+    @staticmethod
+    def filter_by_location(
+        jobs: list["JobResult"],
+        target_location: str,
+        target_country: str,
+    ) -> list["JobResult"]:
+        """Filter jobs whose location doesn't match target location/country."""
+        if not target_location and not target_country:
+            return jobs
+
+        COUNTRY_NAMES = {
+            "ca": ["canada", "ca", "canadian"],
+            "us": ["united states", "usa", "us", "u.s."],
+            "uk": ["united kingdom", "uk", "gb", "england", "scotland", "wales"],
+            "au": ["australia", "au", "australian"],
+            "de": ["germany", "de", "deutschland"],
+            "fr": ["france", "fr"],
+            "in": ["india", "in"],
+        }
+
+        country_terms = COUNTRY_NAMES.get(target_country.lower(), []) if target_country else []
+        loc_lower = target_location.lower().strip() if target_location else ""
+
+        filtered: list["JobResult"] = []
+        for job in jobs:
+            job_loc = (job.location or "").lower()
+
+            # Remote jobs always pass
+            if not job_loc or any(
+                term in job_loc for term in ("remote", "anywhere", "work from home")
+            ):
+                filtered.append(job)
+                continue
+
+            # Location string match
+            if loc_lower and loc_lower in job_loc:
+                filtered.append(job)
+                continue
+
+            # Country match
+            if country_terms and any(term in job_loc for term in country_terms):
+                filtered.append(job)
+                continue
 
         return filtered
 

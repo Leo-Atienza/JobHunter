@@ -22,8 +22,9 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
   const [sourceFilter, setSourceFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [remoteFilter, setRemoteFilter] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState<keyof Job>('scraped_at');
+  const [sortField, setSortField] = useState<keyof Job>('relevance_score');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const lastTotalRef = useRef<number>(0);
@@ -81,6 +82,10 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
 
   // Filter and sort jobs client-side
   const filteredJobs = (jobs ?? [])
+    .filter((job) => {
+      if (!remoteFilter) return true;
+      return /remote|work from home|wfh|anywhere/i.test(job.location ?? '');
+    })
     .filter((job) => {
       if (!searchQuery) return true;
       const q = searchQuery.toLowerCase();
@@ -155,8 +160,10 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
               <Filters
                 sourceFilter={sourceFilter}
                 statusFilter={statusFilter}
+                remoteFilter={remoteFilter}
                 onSourceChange={setSourceFilter}
                 onStatusChange={setStatusFilter}
+                onRemoteChange={setRemoteFilter}
                 stats={stats ?? null}
               />
               <SearchBar value={searchQuery} onChange={setSearchQuery} />

@@ -108,10 +108,21 @@ class AdzunaScraper(BaseScraper):
                         salary_text = f"Up to ${salary_max:,.0f}"
 
                     description = item.get("description", "")
-                    if description and len(description) > 500:
-                        description = description[:500] + "..."
 
                     created = item.get("created") or None
+
+                    # Map contract_type to normalized job_type
+                    raw_contract = item.get("contract_type", "")
+                    contract_type_map = {
+                        "full_time": "Full-time",
+                        "part_time": "Part-time",
+                        "contract": "Contract",
+                        "permanent": "Full-time",
+                        "temporary": "Temporary",
+                        "internship": "Internship",
+                        "freelance": "Freelance",
+                    }
+                    job_type = contract_type_map.get(raw_contract, None)
 
                     results.append(
                         JobResult(
@@ -123,6 +134,7 @@ class AdzunaScraper(BaseScraper):
                             salary=salary_text,
                             description=description or None,
                             posted_date=created,
+                            job_type=job_type,
                         )
                     )
                 except Exception:

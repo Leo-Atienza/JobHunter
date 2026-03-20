@@ -6,7 +6,8 @@ CREATE TABLE sessions (
   location VARCHAR(255),
   sources TEXT[],
   remote BOOLEAN DEFAULT false,
-  companies TEXT[]
+  companies TEXT[],
+  country VARCHAR(10)
 );
 
 CREATE TABLE jobs (
@@ -23,6 +24,12 @@ CREATE TABLE jobs (
   scraped_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   status VARCHAR(20) DEFAULT 'new',
   notes TEXT,
+  job_type VARCHAR(50),
+  experience_level VARCHAR(50),
+  skills TEXT,
+  benefits TEXT,
+  relevance_score INTEGER DEFAULT 0,
+  country VARCHAR(100),
   UNIQUE(session_code, url)
 );
 

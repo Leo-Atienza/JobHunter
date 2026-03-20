@@ -57,6 +57,8 @@ def merge_config(cfg: dict, **cli_overrides: Optional[str]) -> dict:
         search["location"] = cli_overrides["location"]
     if cli_overrides.get("companies"):
         search["companies"] = [c.strip() for c in cli_overrides["companies"].split(",")]
+    if cli_overrides.get("country"):
+        search["country"] = cli_overrides["country"]
 
     if cli_overrides.get("sources"):
         enabled = {s.strip().lower() for s in cli_overrides["sources"].split(",")}
@@ -161,6 +163,7 @@ def show_summary(results: list[dict]) -> None:
 @click.option("--dry-run", is_flag=True, help="Scrape but don't upload results.")
 @click.option("--no-filter", is_flag=True, help="Disable post-scrape relevance filtering.")
 @click.option("--api-url", default=None, help="Override API URL.")
+@click.option("--country", default=None, help="Country code (ca, us, uk, au, etc.).")
 def main(
     session: Optional[str],
     keywords: Optional[str],
@@ -171,6 +174,7 @@ def main(
     dry_run: bool,
     no_filter: bool,
     api_url: Optional[str],
+    country: Optional[str],
 ) -> None:
     """JobHunter Scraper — find jobs across multiple boards."""
 
@@ -186,6 +190,7 @@ def main(
         sources=sources,
         companies=companies,
         api_url=api_url,
+        country=country,
     )
 
     session_code: str = cfg.get("session_code", "")
@@ -194,6 +199,7 @@ def main(
     search_location: str = cfg.get("search", {}).get("location", "")
     search_remote: bool = cfg.get("search", {}).get("remote", False)
     search_companies: list[str] = cfg.get("search", {}).get("companies", [])
+    search_country: str = cfg.get("search", {}).get("country", "")
     source_flags: dict[str, bool] = cfg.get("sources", {})
 
     # ---- Validate session first (needed for config fetch) -------------------
@@ -238,6 +244,11 @@ def main(
                 console.print(
                     f"  [dim]Loaded companies from session:[/] {', '.join(search_companies)}"
                 )
+            if not search_country and remote_cfg.get("country"):
+                search_country = remote_cfg["country"]
+                console.print(
+                    f"  [dim]Loaded country from session:[/] {search_country}"
+                )
             # Load API keys from session config (server provides them)
             if remote_cfg.get("api_keys"):
                 existing_keys = cfg.setdefault("api_keys", {})
@@ -263,7 +274,12 @@ def main(
     console.print(f"  Remote:   {'Yes' if search_remote else 'No'}")
     if search_companies:
         console.print(f"  Companies: {', '.join(search_companies)}")
+    if search_country:
+        console.print(f"  Country:  {search_country}")
     console.print()
+
+    # Store country in config for scrapers to use
+    cfg["country"] = search_country
 
     # ---- Determine which sources to run ------------------------------------
     enabled_sources: list[str] = []
@@ -351,15 +367,28 @@ def main(
 
             jobs = all_jobs
 
-            # Apply relevance filtering
+            # Apply relevance scoring (replaces binary filter)
             if not no_filter and jobs:
                 before_count = len(jobs)
-                jobs = BaseScraper.filter_by_relevance(jobs, search_keywords)
+                jobs = BaseScraper.score_relevance(jobs, search_keywords)
                 filtered_out = before_count - len(jobs)
                 if filtered_out > 0:
                     console.print(
-                        f"  [dim]Relevance filter: {before_count} → {len(jobs)} jobs "
-                        f"({filtered_out} removed)[/]"
+                        f"  [dim]Relevance scoring: {before_count} → {len(jobs)} jobs "
+                        f"({filtered_out} below threshold)[/]"
+                    )
+
+            # Apply location filtering
+            if jobs and (search_location or search_country):
+                before_count = len(jobs)
+                jobs = BaseScraper.filter_by_location(
+                    jobs, search_location, search_country
+                )
+                filtered_out = before_count - len(jobs)
+                if filtered_out > 0:
+                    console.print(
+                        f"  [dim]Location filter: {before_count} → {len(jobs)} jobs "
+                        f"({filtered_out} outside target location)[/]"
                     )
 
             entry["found"] = len(jobs)

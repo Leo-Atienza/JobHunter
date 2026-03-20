@@ -345,8 +345,6 @@ class GlassdoorScraper(BaseScraper):
                         posted_date = (datetime.now() - timedelta(days=age)).strftime("%Y-%m-%d")
 
                     description = job_data.get("description") or None
-                    if description and len(description) > 500:
-                        description = description[:500] + "..."
 
                     results.append(
                         JobResult(

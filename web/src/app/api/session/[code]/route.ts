@@ -36,6 +36,7 @@ export async function GET(
       sources: session.sources,
       remote: session.remote,
       companies: session.companies,
+      country: session.country,
       ...(Object.keys(apiKeys).length > 0 && { api_keys: apiKeys }),
     });
   } catch (error) {

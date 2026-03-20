@@ -142,8 +142,6 @@ class GreenhouseScraper(BaseScraper):
                         import re
                         description = re.sub(r"<[^>]+>", " ", content)
                         description = re.sub(r"\s+", " ", description).strip()
-                        if len(description) > 500:
-                            description = description[:500] + "..."
                     else:
                         description = None
 

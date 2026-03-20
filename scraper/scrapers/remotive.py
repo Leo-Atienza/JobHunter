@@ -110,12 +110,22 @@ class RemotiveScraper(BaseScraper):
 
                 salary_text = item.get("salary", "").strip() or None
                 description = item.get("description", "")
-                # Truncate long descriptions to first 500 chars
-                if description and len(description) > 500:
-                    description = description[:500] + "..."
 
                 pub_date = item.get("publication_date") or None
                 candidate_location = item.get("candidate_required_location", "Remote")
+
+                # Remotive provides job_type directly (e.g., "full_time")
+                raw_job_type = item.get("job_type", "")
+                job_type_map = {
+                    "full_time": "Full-time",
+                    "part_time": "Part-time",
+                    "contract": "Contract",
+                    "freelance": "Freelance",
+                    "internship": "Internship",
+                    "temporary": "Temporary",
+                    "other": None,
+                }
+                job_type = job_type_map.get(raw_job_type, raw_job_type or None)
 
                 results.append(
                     JobResult(
@@ -127,6 +137,7 @@ class RemotiveScraper(BaseScraper):
                         salary=salary_text,
                         description=description,
                         posted_date=pub_date,
+                        job_type=job_type,
                     )
                 )
             except Exception:

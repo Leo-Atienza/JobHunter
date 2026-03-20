@@ -86,14 +86,20 @@ export async function POST(request: NextRequest) {
       const salary = job.salary ? sanitize(job.salary, 255) : null;
       const description = job.description ? sanitize(job.description, 50000) : null;
       const posted_date = job.posted_date ? sanitize(job.posted_date, 255) : null;
+      const job_type = job.job_type ? sanitize(job.job_type, 50) : null;
+      const experience_level = job.experience_level ? sanitize(job.experience_level, 50) : null;
+      const skills = job.skills ? sanitize(job.skills, 5000) : null;
+      const benefits = job.benefits ? sanitize(job.benefits, 5000) : null;
+      const relevance_score = typeof job.relevance_score === 'number' ? Math.min(Math.max(Math.round(job.relevance_score), 0), 100) : 0;
+      const country = job.country ? sanitize(job.country, 100) : null;
 
       try {
         const result = await sql(
-          `INSERT INTO jobs (session_code, title, company, location, url, source, salary, description, posted_date)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          `INSERT INTO jobs (session_code, title, company, location, url, source, salary, description, posted_date, job_type, experience_level, skills, benefits, relevance_score, country)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
            ON CONFLICT (session_code, url) DO NOTHING
            RETURNING id`,
-          [session_code, title, company, location, url, source, salary, description, posted_date]
+          [session_code, title, company, location, url, source, salary, description, posted_date, job_type, experience_level, skills, benefits, relevance_score, country]
         );
         if (result.length > 0) {
           inserted++;
@@ -156,7 +162,7 @@ export async function GET(request: NextRequest) {
       paramIndex++;
     }
 
-    query += ' ORDER BY scraped_at DESC';
+    query += ' ORDER BY relevance_score DESC, scraped_at DESC';
 
     const rows = await sql(query, params);
     return NextResponse.json(rows as Job[]);

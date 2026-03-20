@@ -152,8 +152,43 @@ class LeverScraper(BaseScraper):
 
                     commitment = categories.get("commitment", "")  # Full-time, etc.
                     description_plain = posting.get("descriptionPlain", "")
-                    if description_plain and len(description_plain) > 500:
-                        description_plain = description_plain[:500] + "..."
+
+                    # Map commitment to normalized job_type
+                    job_type = None
+                    if commitment:
+                        commitment_map = {
+                            "full-time": "Full-time",
+                            "full time": "Full-time",
+                            "part-time": "Part-time",
+                            "part time": "Part-time",
+                            "contract": "Contract",
+                            "internship": "Internship",
+                            "temporary": "Temporary",
+                            "freelance": "Freelance",
+                            "intern": "Internship",
+                        }
+                        job_type = commitment_map.get(
+                            commitment.lower().strip(), commitment.strip()
+                        )
+
+                    # Extract experience level from categories.level
+                    level = categories.get("level", "")
+                    experience_level = None
+                    if level:
+                        level_map = {
+                            "entry": "Entry",
+                            "junior": "Entry",
+                            "mid": "Mid",
+                            "mid-level": "Mid",
+                            "senior": "Senior",
+                            "lead": "Lead",
+                            "principal": "Principal",
+                            "intern": "Intern",
+                            "internship": "Intern",
+                        }
+                        experience_level = level_map.get(
+                            level.lower().strip(), level.strip()
+                        )
 
                     # Parse date
                     created_at = posting.get("createdAt")
@@ -176,6 +211,8 @@ class LeverScraper(BaseScraper):
                             source=self.name,
                             description=description_plain or None,
                             posted_date=posted_date,
+                            job_type=job_type,
+                            experience_level=experience_level,
                         )
                     )
                     matched += 1

@@ -98,15 +98,15 @@ class ArbeitnowScraper(BaseScraper):
                         import re
                         description = re.sub(r"<[^>]+>", " ", description)
                         description = re.sub(r"\s+", " ", description).strip()
-                        if len(description) > 500:
-                            description = description[:500] + "..."
 
                     created = item.get("created_at") or None
                     if created and isinstance(created, (int, float)):
                         from datetime import datetime
                         created = datetime.fromtimestamp(created).strftime("%Y-%m-%d")
 
+                    # Extract skills from tags
                     tags = item.get("tags", [])
+                    skills = ", ".join(tags) if tags else None
 
                     results.append(
                         JobResult(
@@ -117,6 +117,7 @@ class ArbeitnowScraper(BaseScraper):
                             source=self.name,
                             description=description or None,
                             posted_date=created,
+                            skills=skills,
                         )
                     )
                 except Exception:

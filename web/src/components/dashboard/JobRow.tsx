@@ -90,6 +90,21 @@ export function JobRow({ job, onUpdate }: JobRowProps) {
           </span>
         </td>
 
+        {/* Relevance */}
+        <td className="hidden lg:table-cell px-4 py-3">
+          {job.relevance_score > 0 ? (
+            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+              job.relevance_score >= 80 ? 'bg-green-100 text-green-700' :
+              job.relevance_score >= 50 ? 'bg-amber-100 text-amber-700' :
+              'bg-orange-100 text-orange-700'
+            }`}>
+              {job.relevance_score}%
+            </span>
+          ) : (
+            <span className="text-sm text-slate-400">—</span>
+          )}
+        </td>
+
         {/* Salary */}
         <td className="hidden xl:table-cell px-4 py-3">
           <p className="text-sm text-slate-600">
@@ -134,7 +149,37 @@ export function JobRow({ job, onUpdate }: JobRowProps) {
       {/* Expanded row */}
       {expanded && (
         <tr className="animate-slide-down">
-          <td colSpan={8} className="border-b border-slate-100 bg-slate-50/50 px-4 py-5">
+          <td colSpan={9} className="border-b border-slate-100 bg-slate-50/50 px-4 py-5">
+            {/* Job detail badges */}
+            {(job.job_type || job.experience_level || job.relevance_score > 0 || job.country) && (
+              <div className="mb-4 flex flex-wrap gap-2">
+                {job.job_type && (
+                  <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                    {job.job_type}
+                  </span>
+                )}
+                {job.experience_level && (
+                  <span className="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-semibold text-purple-700">
+                    {job.experience_level}
+                  </span>
+                )}
+                {job.relevance_score > 0 && (
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                    job.relevance_score >= 80 ? 'bg-green-100 text-green-700' :
+                    job.relevance_score >= 50 ? 'bg-amber-100 text-amber-700' :
+                    'bg-orange-100 text-orange-700'
+                  }`}>
+                    {job.relevance_score}% match
+                  </span>
+                )}
+                {job.country && (
+                  <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
+                    {job.country}
+                  </span>
+                )}
+              </div>
+            )}
+
             <div className="grid gap-6 md:grid-cols-2">
               {/* Description */}
               <div>
@@ -148,6 +193,33 @@ export function JobRow({ job, onUpdate }: JobRowProps) {
                 ) : (
                   <p className="text-sm italic text-slate-400">No description available</p>
                 )}
+
+                {/* Skills */}
+                {job.skills && (
+                  <div className="mt-3">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                      Skills
+                    </h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {job.skills.split(',').map((skill) => (
+                        <span key={skill.trim()} className="inline-flex rounded-md bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 border border-primary-200">
+                          {skill.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Benefits */}
+                {job.benefits && (
+                  <div className="mt-3">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                      Benefits
+                    </h4>
+                    <p className="text-sm text-slate-600">{job.benefits}</p>
+                  </div>
+                )}
+
                 <a
                   href={job.url}
                   target="_blank"

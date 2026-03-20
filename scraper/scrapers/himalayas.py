@@ -101,10 +101,27 @@ class HimalayasScraper(BaseScraper):
 
                     pub_date = item.get("pubDate") or item.get("publishedDate") or None
 
-                    # Truncate description
                     description = item.get("excerpt") or item.get("description") or None
-                    if description and len(description) > 500:
-                        description = description[:500] + "..."
+
+                    # Extract experience level from seniority field
+                    seniority = item.get("seniority") or None
+                    experience_level = None
+                    if seniority:
+                        seniority_map = {
+                            "entry_level": "Entry",
+                            "entry": "Entry",
+                            "mid_level": "Mid",
+                            "mid": "Mid",
+                            "senior_level": "Senior",
+                            "senior": "Senior",
+                            "lead": "Lead",
+                            "principal": "Principal",
+                            "intern": "Intern",
+                            "internship": "Intern",
+                        }
+                        experience_level = seniority_map.get(
+                            seniority.lower().strip(), seniority.strip()
+                        )
 
                     results.append(
                         JobResult(
@@ -116,6 +133,7 @@ class HimalayasScraper(BaseScraper):
                             salary=salary_text,
                             description=description,
                             posted_date=pub_date,
+                            experience_level=experience_level,
                         )
                     )
                 except Exception:

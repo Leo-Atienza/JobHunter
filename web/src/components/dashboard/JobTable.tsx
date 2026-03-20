@@ -24,6 +24,7 @@ const columns: ColumnDef[] = [
   { field: 'company', label: 'Company', className: 'hidden md:table-cell', sortable: true },
   { field: 'location', label: 'Location', className: 'hidden lg:table-cell', sortable: true },
   { field: 'source', label: 'Source', sortable: true },
+  { field: 'relevance_score', label: 'Match', className: 'hidden lg:table-cell', sortable: true },
   { field: 'salary', label: 'Salary', className: 'hidden xl:table-cell', sortable: true },
   { field: 'posted_date', label: 'Posted', className: 'hidden lg:table-cell', sortable: true },
   { field: 'status', label: 'Status', sortable: true },

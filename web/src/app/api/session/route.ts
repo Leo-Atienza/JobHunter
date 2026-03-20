@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
     const companies = body.companies?.length
       ? body.companies.slice(0, 20).map((c) => sanitize(c, 100))
       : null;
+    const country = body.country ? sanitize(body.country, 10) : null;
 
     const sql = getDb();
     let inserted = false;
@@ -67,10 +68,10 @@ export async function POST(request: NextRequest) {
       attempts++;
       try {
         const result = await sql(
-          `INSERT INTO sessions (code, keywords, location, sources, remote, companies)
-           VALUES ($1, $2, $3, $4, $5, $6)
+          `INSERT INTO sessions (code, keywords, location, sources, remote, companies, country)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
            RETURNING code, expires_at`,
-          [code, keywords, location, sources, remote, companies]
+          [code, keywords, location, sources, remote, companies, country]
         );
         if (result.length > 0) {
           inserted = true;

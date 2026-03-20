@@ -37,10 +37,11 @@ export async function getSession(code: string): Promise<{
   sources: string[] | null;
   remote: boolean;
   companies: string[] | null;
+  country: string | null;
 } | null> {
   const sql = getDb();
   const rows = await sql(
-    'SELECT code, created_at, expires_at, keywords, location, sources, remote, companies FROM sessions WHERE code = $1 AND expires_at > NOW()',
+    'SELECT code, created_at, expires_at, keywords, location, sources, remote, companies, country FROM sessions WHERE code = $1 AND expires_at > NOW()',
     [code]
   );
   if (rows.length === 0) return null;
@@ -53,5 +54,6 @@ export async function getSession(code: string): Promise<{
     sources: string[] | null;
     remote: boolean;
     companies: string[] | null;
+    country: string | null;
   };
 }

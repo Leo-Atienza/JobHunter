@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { JOB_SOURCES } from '@/lib/types';
 import type { CreateSessionRequest, CreateSessionResponse } from '@/lib/types';
+import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
+import { JOB_TITLES, COMPANIES, LOCATIONS } from '@/lib/autocomplete-data';
 
 interface SearchConfigProps {
   onSessionCreated: (code: string, expiresAt: string) => void;
@@ -25,6 +27,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
   const [location, setLocation] = useState('');
   const [selectedSources, setSelectedSources] = useState<string[]>([...JOB_SOURCES]);
   const [companies, setCompanies] = useState('');
+  const [country, setCountry] = useState('');
   const [remote, setRemote] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +64,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
         sources: selectedSources.length < JOB_SOURCES.length ? selectedSources : undefined,
         remote: remote || undefined,
         companies: parsedCompanies.length > 0 ? parsedCompanies : undefined,
+        country: country || undefined,
       };
 
       const res = await fetch('/api/session', {
@@ -112,51 +116,62 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
         </div>
 
         {/* Keywords */}
-        <div>
-          <label htmlFor="keywords" className="block text-sm font-semibold text-slate-700">
-            Job Keywords <span className="text-error-500">*</span>
-          </label>
-          <input
-            id="keywords"
-            type="text"
-            value={keywords}
-            onChange={(e) => setKeywords(e.target.value)}
-            placeholder="e.g. Software Engineer, Data Analyst"
-            className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-          />
-          <p className="mt-1 text-xs text-slate-400">Each comma-separated entry is searched as a separate role</p>
-        </div>
+        <AutocompleteInput
+          id="keywords"
+          value={keywords}
+          onChange={setKeywords}
+          suggestions={JOB_TITLES}
+          placeholder="e.g. Software Engineer, Data Analyst"
+          label="Job Keywords"
+          required
+          hint="Each comma-separated entry is searched as a separate role"
+          multiValue
+        />
 
         {/* Location */}
+        <AutocompleteInput
+          id="location"
+          value={location}
+          onChange={setLocation}
+          suggestions={LOCATIONS}
+          placeholder="e.g. Toronto, Canada"
+          label="Location"
+        />
+
+        {/* Country */}
         <div>
-          <label htmlFor="location" className="block text-sm font-semibold text-slate-700">
-            Location
+          <label htmlFor="country" className="block text-sm font-semibold text-slate-700">
+            Country
           </label>
-          <input
-            id="location"
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="e.g. Toronto, New York, London"
-            className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-          />
+          <select
+            id="country"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 bg-white focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+          >
+            <option value="">Any Country</option>
+            <option value="ca">Canada</option>
+            <option value="us">United States</option>
+            <option value="uk">United Kingdom</option>
+            <option value="au">Australia</option>
+            <option value="de">Germany</option>
+            <option value="fr">France</option>
+            <option value="in">India</option>
+          </select>
+          <p className="mt-1 text-xs text-slate-400">Strictly filter results to this country</p>
         </div>
 
         {/* Target Companies */}
-        <div>
-          <label htmlFor="companies" className="block text-sm font-semibold text-slate-700">
-            Target Companies <span className="text-xs font-normal text-slate-400">(optional)</span>
-          </label>
-          <input
-            id="companies"
-            type="text"
-            value={companies}
-            onChange={(e) => setCompanies(e.target.value)}
-            placeholder="e.g. Google, Shopify, Microsoft"
-            className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-          />
-          <p className="mt-1 text-xs text-slate-400">Leave empty to search all companies. Separate with commas.</p>
-        </div>
+        <AutocompleteInput
+          id="companies"
+          value={companies}
+          onChange={setCompanies}
+          suggestions={COMPANIES}
+          placeholder="e.g. Google, Shopify, Microsoft"
+          label="Target Companies"
+          hint="Leave empty to search all companies. Separate with commas."
+          multiValue
+        />
 
         {/* Remote toggle */}
         <label className="flex items-center gap-3 cursor-pointer">

@@ -113,12 +113,37 @@ class TheMuseScraper(BaseScraper):
                         import re
                         clean = re.sub(r"<[^>]+>", " ", contents)
                         clean = re.sub(r"\s+", " ", clean).strip()
-                        if len(clean) > 500:
-                            clean = clean[:500] + "..."
                         description = clean
 
+                    # Extract experience level from levels array
                     levels = item.get("levels", [])
                     level_names = [lv.get("name", "") for lv in levels if lv.get("name")]
+                    experience_level = None
+                    if level_names:
+                        level_map = {
+                            "Entry Level": "Entry",
+                            "Mid Level": "Mid",
+                            "Senior Level": "Senior",
+                            "Internship": "Intern",
+                            "Management": "Lead",
+                        }
+                        experience_level = level_map.get(level_names[0], level_names[0])
+
+                    # Extract job type from type field
+                    raw_type = item.get("type", "")
+                    job_type = None
+                    if raw_type:
+                        type_map = {
+                            "full-time": "Full-time",
+                            "full time": "Full-time",
+                            "part-time": "Part-time",
+                            "part time": "Part-time",
+                            "contract": "Contract",
+                            "internship": "Internship",
+                            "temporary": "Temporary",
+                            "freelance": "Freelance",
+                        }
+                        job_type = type_map.get(raw_type.lower().strip(), raw_type.strip())
 
                     results.append(
                         JobResult(
@@ -129,6 +154,8 @@ class TheMuseScraper(BaseScraper):
                             source=self.name,
                             description=description,
                             posted_date=pub_date,
+                            experience_level=experience_level,
+                            job_type=job_type,
                         )
                     )
                 except Exception:
