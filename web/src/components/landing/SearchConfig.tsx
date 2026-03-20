@@ -15,6 +15,9 @@ const SOURCE_LABELS: Record<string, string> = {
   jobbank: 'Job Bank (CA)',
   remotive: 'Remotive',
   adzuna: 'Adzuna',
+  lever: 'Lever (Company Pages)',
+  greenhouse: 'Greenhouse (Company Pages)',
+  workday: 'Workday (Enterprise)',
 };
 
 export function SearchConfig({ onSessionCreated }: SearchConfigProps) {

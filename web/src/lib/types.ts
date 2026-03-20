@@ -65,5 +65,5 @@ export interface InsertJobsResponse {
   duplicates: number;
 }
 
-export const JOB_SOURCES = ['linkedin', 'indeed', 'glassdoor', 'jobbank', 'remotive', 'adzuna'] as const;
+export const JOB_SOURCES = ['linkedin', 'indeed', 'glassdoor', 'jobbank', 'remotive', 'adzuna', 'lever', 'greenhouse', 'workday'] as const;
 export type JobSource = (typeof JOB_SOURCES)[number];

@@ -28,7 +28,7 @@ BANNER = r"""
      ╦╔═╗╔╗  ╦ ╦╦ ╦╔╗╔╔╦╗╔═╗╦═╗
      ║║ ║╠╩╗ ╠═╣║ ║║║║ ║ ║╣ ╠╦╝
     ╚╝╚═╝╚═╝ ╩ ╩╚═╝╝╚╝ ╩ ╚═╝╩╚═
-          S C R A P E R  v1.3
+          S C R A P E R  v1.4
 """
 
 SESSION_PATTERN = re.compile(r"^JH-[A-Z0-9]{4,}$")

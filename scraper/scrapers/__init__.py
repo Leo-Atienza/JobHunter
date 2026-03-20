@@ -9,6 +9,9 @@ from .adzuna import AdzunaScraper
 from .himalayas import HimalayasScraper
 from .themuse import TheMuseScraper
 from .arbeitnow import ArbeitnowScraper
+from .lever import LeverScraper
+from .greenhouse import GreenhouseScraper
+from .workday import WorkdayScraper
 
 SCRAPERS: dict[str, type] = {
     "linkedin": LinkedInScraper,
@@ -20,6 +23,9 @@ SCRAPERS: dict[str, type] = {
     "himalayas": HimalayasScraper,
     "themuse": TheMuseScraper,
     "arbeitnow": ArbeitnowScraper,
+    "lever": LeverScraper,
+    "greenhouse": GreenhouseScraper,
+    "workday": WorkdayScraper,
 }
 
 __all__ = [
@@ -33,4 +39,7 @@ __all__ = [
     "HimalayasScraper",
     "TheMuseScraper",
     "ArbeitnowScraper",
+    "LeverScraper",
+    "GreenhouseScraper",
+    "WorkdayScraper",
 ]

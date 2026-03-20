@@ -85,6 +85,9 @@ export function getSourceColor(source: string): { bg: string; text: string } {
     jobbank: { bg: 'bg-red-100', text: 'text-red-800' },
     remotive: { bg: 'bg-teal-100', text: 'text-teal-800' },
     adzuna: { bg: 'bg-orange-100', text: 'text-orange-800' },
+    lever: { bg: 'bg-cyan-100', text: 'text-cyan-800' },
+    greenhouse: { bg: 'bg-emerald-100', text: 'text-emerald-800' },
+    workday: { bg: 'bg-amber-100', text: 'text-amber-800' },
   };
   return colors[source.toLowerCase()] ?? { bg: 'bg-slate-100', text: 'text-slate-800' };
 }
