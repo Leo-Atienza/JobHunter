@@ -37,7 +37,7 @@ You need Python 3.9 or newer.
 ### Step 2: Install the scraper
 
 ```bash
-pip install jobhunter-scraper
+pip install --upgrade jobhunter-scraper
 ```
 
 That's it — no cloning, no downloading.
