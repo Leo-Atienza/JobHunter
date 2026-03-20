@@ -27,6 +27,7 @@ export async function GET(
     const apiKeys: Record<string, string> = {};
     if (process.env.ADZUNA_APP_ID) apiKeys.adzuna_app_id = process.env.ADZUNA_APP_ID;
     if (process.env.ADZUNA_API_KEY) apiKeys.adzuna_api_key = process.env.ADZUNA_API_KEY;
+    if (process.env.RAPIDAPI_KEY) apiKeys.rapidapi_key = process.env.RAPIDAPI_KEY;
 
     return NextResponse.json({
       code: session.code,

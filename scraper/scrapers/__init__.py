@@ -12,11 +12,13 @@ from .arbeitnow import ArbeitnowScraper
 from .lever import LeverScraper
 from .greenhouse import GreenhouseScraper
 from .workday import WorkdayScraper
+from .rapidapi import RapidAPIScraper
 
 SCRAPERS: dict[str, type] = {
     "linkedin": LinkedInScraper,
     "indeed": IndeedScraper,
     "glassdoor": GlassdoorScraper,
+    "rapidapi": RapidAPIScraper,
     "jobbank": JobBankScraper,
     "remotive": RemotiveScraper,
     "adzuna": AdzunaScraper,
@@ -33,6 +35,7 @@ __all__ = [
     "LinkedInScraper",
     "IndeedScraper",
     "GlassdoorScraper",
+    "RapidAPIScraper",
     "JobBankScraper",
     "RemotiveScraper",
     "AdzunaScraper",

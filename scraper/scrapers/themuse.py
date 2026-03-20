@@ -55,7 +55,6 @@ class TheMuseScraper(BaseScraper):
 
             params: dict = {
                 "page": page_num,
-                "descending": "true",
             }
 
             # The Muse API only accepts predefined location strings — arbitrary
@@ -66,7 +65,7 @@ class TheMuseScraper(BaseScraper):
 
             try:
                 resp = self.http.get(
-                    "https://www.themuse.com/api/public/v2/jobs",
+                    "https://www.themuse.com/api/public/jobs",
                     headers=headers,
                     params=params,
                     timeout=15,
@@ -169,6 +168,24 @@ class TheMuseScraper(BaseScraper):
                 break
 
             self.rate_limit(0.5, 1.0)
+
+        # Client-side keyword filtering (API has no free-text search)
+        if query:
+            query_lower = query.lower()
+            query_tokens = [t for t in query_lower.split() if len(t) > 2]
+            before = len(results)
+            results = [
+                j for j in results
+                if query_lower in j.title.lower()
+                or any(t in j.title.lower() for t in query_tokens)
+                or (j.description and query_lower in j.description.lower())
+            ]
+            filtered_out = before - len(results)
+            if filtered_out > 0:
+                self.console.log(
+                    f"[bright_magenta]The Muse[/] Keyword filter: "
+                    f"{before} → {len(results)} ({filtered_out} not matching '{query}')"
+                )
 
         # Client-side location filtering (API doesn't support arbitrary locations)
         if location and not remote:

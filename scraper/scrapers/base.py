@@ -224,6 +224,8 @@ class BaseScraper(ABC):
 
         country_terms = COUNTRY_NAMES.get(target_country.lower(), []) if target_country else []
         loc_lower = target_location.lower().strip() if target_location else ""
+        # Extract city name for flexible matching (e.g. "Toronto" from "Toronto, Canada")
+        loc_city = loc_lower.split(",")[0].strip() if loc_lower else ""
 
         filtered: list["JobResult"] = []
         for job in jobs:
@@ -236,8 +238,13 @@ class BaseScraper(ABC):
                 filtered.append(job)
                 continue
 
-            # Location string match
+            # Full location string match
             if loc_lower and loc_lower in job_loc:
+                filtered.append(job)
+                continue
+
+            # City-level match (e.g. "toronto" matches "Toronto, ON")
+            if loc_city and len(loc_city) > 2 and loc_city in job_loc:
                 filtered.append(job)
                 continue
 

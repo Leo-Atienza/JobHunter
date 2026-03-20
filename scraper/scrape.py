@@ -299,6 +299,20 @@ def main(
     # Pre-flight checks for sources that need configuration
     import os as _os
 
+    if "rapidapi" in enabled_sources:
+        api_keys = cfg.get("api_keys", {})
+        has_rapidapi_key = (
+            api_keys.get("rapidapi_key")
+            or _os.environ.get("RAPIDAPI_KEY")
+        )
+        if not has_rapidapi_key:
+            console.print(
+                "[yellow]Warning:[/] RapidAPI requires an API key. "
+                "Get one at https://rapidapi.com\n"
+                "  Set RAPIDAPI_KEY env var, "
+                "or add rapidapi_key to config.yaml under api_keys.\n"
+            )
+
     if "adzuna" in enabled_sources:
         api_keys = cfg.get("api_keys", {})
         has_adzuna_keys = (

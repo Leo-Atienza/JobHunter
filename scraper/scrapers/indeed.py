@@ -81,12 +81,20 @@ class IndeedScraper(BaseScraper):
 
         try:
             with sync_playwright() as pw:
-                browser = pw.chromium.launch(headless=True)
+                browser = pw.chromium.launch(
+                    headless=True,
+                    args=["--disable-blink-features=AutomationControlled"],
+                )
                 context = browser.new_context(
                     user_agent=USER_AGENT,
-                    viewport={"width": 1280, "height": 800},
+                    viewport={"width": 1920, "height": 1080},
+                    locale="en-US",
                 )
                 page = context.new_page()
+                # Hide automation indicators
+                page.add_init_script(
+                    'Object.defineProperty(navigator, "webdriver", {get: () => undefined})'
+                )
 
                 for page_num in range(self.MAX_PAGES):
                     start = page_num * 10
@@ -104,11 +112,29 @@ class IndeedScraper(BaseScraper):
                     )
 
                     try:
-                        page.goto(url, wait_until="domcontentloaded", timeout=30000)
-                        page.wait_for_selector(
-                            "div.job_seen_beacon, div.jobsearch-ResultsList, td.resultContent",
-                            timeout=10000,
-                        )
+                        page.goto(url, wait_until="commit", timeout=30000)
+                        # Brief wait for page to render enough to check title
+                        page.wait_for_timeout(3000)
+
+                        # Detect Cloudflare/anti-bot blocks early
+                        page_title = page.title().lower()
+                        if any(t in page_title for t in ("blocked", "just a moment", "captcha", "verify")):
+                            self.console.log(
+                                "[yellow]Indeed[/] Blocked by Cloudflare anti-bot protection — "
+                                "cannot scrape with headless browser."
+                            )
+                            break
+
+                        try:
+                            page.wait_for_selector(
+                                "div.job_seen_beacon, div.jobsearch-ResultsList, "
+                                "td.resultContent, div[data-testid='jobListing'], "
+                                "div.mosaic-zone, ul.css-zu9cdh",
+                                timeout=10000,
+                            )
+                        except PwTimeout:
+                            # Selectors may have changed — wait for network idle instead
+                            page.wait_for_load_state("networkidle", timeout=10000)
                     except PwTimeout:
                         self.console.log(
                             "[yellow]Indeed[/] Page load timed out — moving on."
@@ -118,9 +144,11 @@ class IndeedScraper(BaseScraper):
                         self.console.log(f"[yellow]Indeed[/] Could not load page: {exc}")
                         break
 
-                    # Extract from rendered page HTML
+                    # Extract from rendered page HTML — try multiple strategies
                     html = page.content()
                     page_jobs = self._extract_from_mosaic(html, domain)
+                    if not page_jobs:
+                        page_jobs = self._extract_from_next_data(html, domain)
                     if not page_jobs:
                         page_jobs = self._extract_jobs_from_html(html, domain)
 
@@ -153,22 +181,26 @@ class IndeedScraper(BaseScraper):
 
         try:
             cards = page.query_selector_all(
-                "div.job_seen_beacon, div.cardOutline, li div.result"
+                "div.job_seen_beacon, div.cardOutline, li div.result, "
+                "div[data-testid='jobListing'], div.slider_item, div.resultContent"
             )
 
             for card in cards:
                 try:
                     title_el = card.query_selector(
-                        "h2.jobTitle a span, h2.jobTitle span[title], a.jcs-JobTitle span"
+                        "h2.jobTitle a span, h2.jobTitle span[title], a.jcs-JobTitle span, "
+                        "h2 a span[id^='jobTitle'], a[data-jk] span"
                     )
                     company_el = card.query_selector(
-                        "span[data-testid='company-name'], span.companyName, span.company"
+                        "[data-testid='company-name'], span.companyName, span.company, "
+                        "span.css-92r8pb"
                     )
                     location_el = card.query_selector(
-                        "div[data-testid='text-location'], div.companyLocation, div.location"
+                        "[data-testid='text-location'], div.companyLocation, div.location, "
+                        "div.css-1p0sjhy"
                     )
                     link_el = card.query_selector(
-                        "h2.jobTitle a, a.jcs-JobTitle"
+                        "h2.jobTitle a, a.jcs-JobTitle, a[data-jk]"
                     )
                     salary_el = card.query_selector(
                         "div.salary-snippet-container, div.metadata.salary-snippet-container"
@@ -227,6 +259,13 @@ class IndeedScraper(BaseScraper):
             "Accept-Encoding": "gzip, deflate, br",
             "Connection": "keep-alive",
             "Upgrade-Insecure-Requests": "1",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "Sec-CH-UA": '"Chromium";v="123", "Google Chrome";v="123"',
+            "Sec-CH-UA-Mobile": "?0",
+            "Sec-CH-UA-Platform": '"Windows"',
         }
 
         for page_num in range(self.MAX_PAGES):
@@ -246,9 +285,9 @@ class IndeedScraper(BaseScraper):
 
             try:
                 resp = self.http.get(url, headers=headers, timeout=20)
-                if resp.status_code == 403:
+                if resp.status_code in (401, 403):
                     self.console.log(
-                        "[yellow]Indeed[/] Access denied (403) — anti-bot block."
+                        f"[yellow]Indeed[/] Access denied ({resp.status_code}) — anti-bot block."
                     )
                     break
                 resp.raise_for_status()
@@ -325,6 +364,67 @@ class IndeedScraper(BaseScraper):
                 )
             except Exception:
                 continue
+
+        return results
+
+    def _extract_from_next_data(self, html: str, domain: str) -> list[JobResult]:
+        """Extract jobs from __NEXT_DATA__ JSON (Indeed's Next.js migration)."""
+        results: list[JobResult] = []
+
+        pattern = r'<script[^>]*id="__NEXT_DATA__"[^>]*>(\{.+?\})</script>'
+        match = re.search(pattern, html, re.DOTALL)
+        if not match:
+            return results
+
+        try:
+            data = json.loads(match.group(1))
+        except json.JSONDecodeError:
+            return results
+
+        # Navigate the Next.js data structure to find job results
+        # The structure varies, so try multiple paths
+        props = data.get("props", {}).get("pageProps", {})
+
+        # Try common paths for job results in Next.js data
+        for key in ("searchResults", "results", "jobResults", "initialResults"):
+            items = props.get(key)
+            if isinstance(items, dict):
+                items = items.get("results", items.get("jobs", []))
+            if isinstance(items, list) and items:
+                for item in items:
+                    try:
+                        title = item.get("title", "").strip()
+                        if not title:
+                            continue
+                        company = item.get("company", item.get("companyName", ""))
+                        if isinstance(company, dict):
+                            company = company.get("name", "")
+                        company = company.strip() or None
+                        loc = item.get("formattedLocation", item.get("location", ""))
+                        if isinstance(loc, dict):
+                            loc = loc.get("name", loc.get("city", ""))
+                        loc = str(loc).strip() or None
+                        job_key = item.get("jobkey", item.get("jobKey", ""))
+                        if job_key:
+                            job_url = f"https://{domain}/viewjob?jk={job_key}"
+                        else:
+                            continue
+                        salary = item.get("salarySnippet", {})
+                        salary_text = salary.get("text") if isinstance(salary, dict) else None
+                        results.append(
+                            JobResult(
+                                title=title,
+                                company=company,
+                                location=loc,
+                                url=job_url,
+                                source=self.name,
+                                salary=salary_text,
+                            )
+                        )
+                    except Exception:
+                        continue
+                if results:
+                    break
 
         return results
 

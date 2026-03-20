@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import time
 from typing import Optional
 from urllib.parse import quote_plus
 
 from bs4 import BeautifulSoup
+import requests as _requests
 from rich.console import Console
 
 from .base import BaseScraper, JobResult, USER_AGENT
@@ -57,11 +59,27 @@ class JobBankScraper(BaseScraper):
                 f"[red]JobBank[/] Loading page {page_num}/{self.MAX_PAGES}..."
             )
 
-            try:
-                resp = self.http.get(url, headers=headers, timeout=30)
-                resp.raise_for_status()
-            except Exception as exc:
-                self.console.log(f"[yellow]JobBank[/] Request failed: {exc}")
+            resp = None
+            for attempt in range(2):
+                try:
+                    resp = self.http.get(url, headers=headers, timeout=(10, 20))
+                    resp.raise_for_status()
+                    break
+                except (_requests.exceptions.Timeout, _requests.exceptions.ConnectionError) as exc:
+                    if attempt == 0:
+                        self.console.log(
+                            f"[yellow]JobBank[/] Attempt {attempt + 1} failed: {exc} — retrying..."
+                        )
+                        time.sleep(3)
+                    else:
+                        self.console.log(
+                            f"[yellow]JobBank[/] Request failed after 2 attempts: {exc}. "
+                            "Site may be unreachable from your network (possibly geo-restricted to Canadian IPs)."
+                        )
+                except Exception as exc:
+                    self.console.log(f"[yellow]JobBank[/] Request failed: {exc}")
+                    break
+            if resp is None or not resp.ok:
                 break
 
             soup = BeautifulSoup(resp.text, "html.parser")
