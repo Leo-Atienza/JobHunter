@@ -14,7 +14,7 @@ const steps = [
     number: '02',
     title: 'Run the Scraper',
     description:
-      'Run the open-source scraper on your own machine. Your IP, your searches, your privacy. Supports LinkedIn, Indeed, Glassdoor, JobBank, Remotive, and Adzuna.',
+      'Run the open-source scraper on your own machine. Your IP, your searches, your privacy. Supports LinkedIn, Indeed, Glassdoor, JobBank, Remotive, Adzuna, Himalayas, The Muse, and Arbeitnow.',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="4 17 10 11 4 5" />

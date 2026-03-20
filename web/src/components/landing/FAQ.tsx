@@ -26,7 +26,7 @@ const faqItems: FAQItem[] = [
   {
     question: 'Which job boards are supported?',
     answer:
-      'Currently supported: LinkedIn, Indeed, Glassdoor, JobBank (Canada), Remotive (remote jobs), and Adzuna. More sources are being added by the community. Check the GitHub repo for the latest list.',
+      'Currently supported: LinkedIn, Indeed, Glassdoor, JobBank (Canada), Remotive, Adzuna, Himalayas, The Muse, and Arbeitnow. More sources are being added — check the GitHub repo for the latest list.',
   },
   {
     question: 'Can I self-host the entire platform?',

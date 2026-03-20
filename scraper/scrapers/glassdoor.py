@@ -7,6 +7,7 @@ import re
 from typing import Optional
 from urllib.parse import quote_plus
 
+import requests
 from rich.console import Console
 
 from .base import BaseScraper, JobResult, USER_AGENT
@@ -69,61 +70,79 @@ query JobSearchResultsQuery(
 }
 """
 
+# Fallback CSRF token (from JobSpy project) for when extraction fails
+FALLBACK_CSRF = (
+    "Ft6oHEWlRZrxDww95Cpazw:0pGUrkb2y3TyOpAIqF2vbPmUXoXVkD3oEGDVkvfeCerceQ5"
+    "-n8mBg3BovySUIjmCPHCaW0H2nQVdqzbtsYqf4Q:wcqRqeegRUa9MVLJGyujVXB7vWFPjdaS1CtrrzJq-ok"
+)
+
 
 class GlassdoorScraper(BaseScraper):
     """Scrape Glassdoor job search results via internal GraphQL API."""
 
     name = "glassdoor"
-    requires_browser = False  # No longer needs Playwright
+    requires_browser = False
 
     MAX_PAGES = 2
     RESULTS_PER_PAGE = 30
 
-    # Remote work location ID on Glassdoor
     REMOTE_LOCATION_ID = 11047
 
     def __init__(self, console: Console, config: Optional[dict] = None) -> None:
         super().__init__(console, config)
         self._csrf_token: Optional[str] = None
-        self._session_cookies: dict = {}
+        # Use a dedicated session for Glassdoor to persist cookies
+        self._session = requests.Session()
 
     def _init_session(self) -> bool:
-        """Visit Glassdoor to extract CSRF token and cookies."""
+        """Visit Glassdoor homepage to extract CSRF token and set cookies."""
         self.console.log("[magenta]Glassdoor[/] Initializing session...")
+
+        headers = {
+            "User-Agent": USER_AGENT,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
+
         try:
-            resp = self.http.get(
-                "https://www.glassdoor.com/Job/jobs.htm",
-                headers={"User-Agent": USER_AGENT},
+            # Use homepage — /Job/jobs.htm now returns 404 or redirects
+            resp = self._session.get(
+                "https://www.glassdoor.com/",
+                headers=headers,
                 timeout=15,
             )
             if resp.status_code != 200:
                 self.console.log(
                     f"[yellow]Glassdoor[/] Initial page returned status {resp.status_code}"
                 )
-                return False
 
             # Extract CSRF token from page HTML
-            token_match = re.search(r'"token":\s*"([^"]+)"', resp.text)
-            if token_match:
-                self._csrf_token = token_match.group(1)
-            else:
-                # Try alternative extraction
-                gd_match = re.search(r"gdToken['\"]:\s*['\"]([^'\"]+)", resp.text)
-                if gd_match:
-                    self._csrf_token = gd_match.group(1)
+            token_patterns = [
+                r'"token":\s*"([^"]+)"',
+                r"gdToken['\"]:\s*['\"]([^'\"]+)",
+                r'"csrfToken":\s*"([^"]+)"',
+            ]
+
+            for pattern in token_patterns:
+                match = re.search(pattern, resp.text)
+                if match:
+                    self._csrf_token = match.group(1)
+                    break
 
             if not self._csrf_token:
                 self.console.log(
-                    "[yellow]Glassdoor[/] Could not extract CSRF token from page."
+                    "[yellow]Glassdoor[/] Could not extract CSRF token — using fallback."
                 )
-                return False
+                self._csrf_token = FALLBACK_CSRF
 
             self.console.log("[magenta]Glassdoor[/] Session initialized successfully.")
             return True
 
         except Exception as exc:
             self.console.log(f"[red]Glassdoor[/] Session init failed: {exc}")
-            return False
+            # Still try with fallback token
+            self._csrf_token = FALLBACK_CSRF
+            return True
 
     def _resolve_location(self, location: str) -> tuple[Optional[int], Optional[str]]:
         """Resolve a location string to Glassdoor's locationId and locationType."""
@@ -131,7 +150,7 @@ class GlassdoorScraper(BaseScraper):
             return None, None
 
         try:
-            resp = self.http.get(
+            resp = self._session.get(
                 f"https://www.glassdoor.com/findPopularLocationAjax.htm"
                 f"?maxLocationsToReturn=5&term={quote_plus(location)}",
                 headers={"User-Agent": USER_AGENT},
@@ -143,7 +162,6 @@ class GlassdoorScraper(BaseScraper):
                     loc = locations[0]
                     loc_id = loc.get("locationId")
                     loc_type_raw = loc.get("locationType", "C")
-                    # Map single-char codes to enum values
                     type_map = {"C": "CITY", "S": "STATE", "N": "COUNTRY", "M": "METRO"}
                     loc_type = type_map.get(loc_type_raw, "CITY")
                     self.console.log(
@@ -170,7 +188,6 @@ class GlassdoorScraper(BaseScraper):
 
         results: list[JobResult] = []
 
-        # Initialize session to get CSRF token
         if not self._init_session():
             self.console.log(
                 "[yellow]Glassdoor[/] Could not initialize session — skipping."
@@ -187,7 +204,7 @@ class GlassdoorScraper(BaseScraper):
         elif location:
             location_id, location_type = self._resolve_location(location)
 
-        # Build GraphQL request headers
+        # Build GraphQL request headers with browser fingerprint headers
         headers = {
             "User-Agent": USER_AGENT,
             "Accept": "*/*",
@@ -198,6 +215,13 @@ class GlassdoorScraper(BaseScraper):
             "gd-csrf-token": self._csrf_token,
             "Origin": "https://www.glassdoor.com",
             "Referer": "https://www.glassdoor.com/",
+            # Browser fingerprint headers to avoid 403
+            "sec-ch-ua": '"Chromium";v="123", "Google Chrome";v="123", "Not;A=Brand";v="99"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Windows"',
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin",
         }
 
         page_cursor: Optional[str] = None
@@ -217,8 +241,11 @@ class GlassdoorScraper(BaseScraper):
 
             if location_id is not None:
                 variables["locationId"] = location_id
-            if location_type is not None:
-                variables["locationType"] = location_type
+                if location_type:
+                    variables["locationType"] = location_type
+                    variables["parameterUrlInput"] = (
+                        f"IL.0,12_I{location_type[0]}{location_id}"
+                    )
 
             payload = [
                 {
@@ -229,7 +256,7 @@ class GlassdoorScraper(BaseScraper):
             ]
 
             try:
-                resp = self.http.post(
+                resp = self._session.post(
                     "https://www.glassdoor.com/graph",
                     headers=headers,
                     data=json.dumps(payload),
@@ -259,7 +286,19 @@ class GlassdoorScraper(BaseScraper):
                 if isinstance(data, list):
                     data = data[0]
 
+                # Handle non-fatal errors — only abort if jobListings itself errored
+                if "errors" in data and "data" not in data:
+                    self.console.log(
+                        f"[yellow]Glassdoor[/] GraphQL errors: {data['errors'][0].get('message', 'unknown')}"
+                    )
+                    break
+
                 job_listings_data = data.get("data", {}).get("jobListings", {})
+
+                if not job_listings_data:
+                    self.console.log("[yellow]Glassdoor[/] No jobListings in response.")
+                    break
+
                 listings = job_listings_data.get("jobListings", [])
 
                 if not listings:
@@ -322,7 +361,6 @@ class GlassdoorScraper(BaseScraper):
                                 datetime.now() - timedelta(days=age)
                             ).strftime("%Y-%m-%d")
 
-                        # Description from search results (may be null)
                         description = job_data.get("description") or None
                         if description and len(description) > 500:
                             description = description[:500] + "..."
