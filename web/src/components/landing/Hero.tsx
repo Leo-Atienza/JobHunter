@@ -1,15 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { SearchConfig } from './SearchConfig';
 
 type FlowStep = 'initial' | 'configure' | 'ready';
 
+interface SavedSession {
+  code: string;
+  keywords: string[];
+  created_at: string;
+  expires_at: string;
+}
+
 export function Hero() {
   const [step, setStep] = useState<FlowStep>('initial');
   const [sessionCode, setSessionCode] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [recentSessions, setRecentSessions] = useState<SavedSession[]>([]);
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('jobhunter_sessions') || '[]') as SavedSession[];
+      // Filter out expired sessions
+      const now = new Date();
+      const valid = stored.filter((s) => new Date(s.expires_at) > now);
+      setRecentSessions(valid);
+      // Clean up expired entries
+      if (valid.length !== stored.length) {
+        localStorage.setItem('jobhunter_sessions', JSON.stringify(valid));
+      }
+    } catch {
+      // localStorage unavailable
+    }
+  }, []);
+
+  function clearHistory() {
+    localStorage.removeItem('jobhunter_sessions');
+    setRecentSessions([]);
+  }
 
   function handleSessionCreated(code: string, expires: string) {
     setSessionCode(code);
@@ -58,7 +87,7 @@ export function Hero() {
         </p>
 
         {step === 'initial' && (
-          <div className="mt-10">
+          <div className="mt-10 space-y-8">
             <button
               onClick={() => setStep('configure')}
               className="group relative inline-flex items-center gap-3 rounded-xl bg-primary-950 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-primary-950/20 transition-all hover:bg-primary-900 hover:shadow-xl hover:shadow-primary-950/30 hover:-translate-y-0.5"
@@ -69,6 +98,39 @@ export function Hero() {
               Get Started
               <span className="absolute inset-0 rounded-xl bg-white/10 opacity-0 transition-opacity group-hover:opacity-100" />
             </button>
+
+            {recentSessions.length > 0 && (
+              <div className="mx-auto max-w-md">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Recent Sessions</p>
+                  <button
+                    onClick={clearHistory}
+                    className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    Clear history
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {recentSessions.map((s) => (
+                    <a
+                      key={s.code}
+                      href={`/dashboard/${s.code}`}
+                      className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-all hover:border-primary-300 hover:shadow-md hover:-translate-y-0.5"
+                    >
+                      <div className="flex items-center gap-3 text-left">
+                        <span className="font-mono text-sm font-bold text-primary-700">{s.code}</span>
+                        <span className="text-sm text-slate-500 truncate max-w-48">
+                          {s.keywords.join(', ')}
+                        </span>
+                      </div>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 shrink-0">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

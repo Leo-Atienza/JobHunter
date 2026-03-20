@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Optional
 from urllib.parse import quote_plus
 
@@ -33,10 +34,10 @@ class AdzunaScraper(BaseScraper):
             f"[bold yellow]Adzuna[/] Searching for [cyan]'{query}'[/] in [cyan]{location}[/]"
         )
 
-        # Extract API keys from config
+        # Extract API keys from config or environment variables
         api_keys = self.config.get("api_keys", {})
-        app_id = api_keys.get("adzuna_app_id", "")
-        app_key = api_keys.get("adzuna_api_key", "")
+        app_id = api_keys.get("adzuna_app_id", "") or os.environ.get("ADZUNA_APP_ID", "")
+        app_key = api_keys.get("adzuna_api_key", "") or os.environ.get("ADZUNA_API_KEY", "")
 
         if not app_id or not app_key:
             self.console.log(

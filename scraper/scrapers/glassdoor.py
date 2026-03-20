@@ -1,7 +1,9 @@
-"""Glassdoor job scraper using Playwright (headless Chromium)."""
+"""Glassdoor job scraper using internal GraphQL API."""
 
 from __future__ import annotations
 
+import json
+import re
 from typing import Optional
 from urllib.parse import quote_plus
 
@@ -10,14 +12,149 @@ from rich.console import Console
 from .base import BaseScraper, JobResult, USER_AGENT
 
 
+# GraphQL query for job search
+JOB_SEARCH_QUERY = """
+query JobSearchResultsQuery(
+    $keyword: String,
+    $locationId: Int,
+    $locationType: LocationTypeEnum,
+    $numJobsToShow: Int!,
+    $pageCursor: String,
+    $pageNumber: Int,
+    $filterParams: [FilterParams],
+    $parameterUrlInput: String
+) {
+    jobListings(
+        contextHolder: {
+            searchParams: {
+                keyword: $keyword,
+                locationId: $locationId,
+                locationType: $locationType,
+                numPerPage: $numJobsToShow,
+                pageCursor: $pageCursor,
+                pageNumber: $pageNumber,
+                filterParams: $filterParams,
+                parameterUrlInput: $parameterUrlInput,
+                searchType: SR
+            }
+        }
+    ) {
+        totalJobsCount
+        jobListings {
+            jobview {
+                header {
+                    jobTitleText
+                    employerNameFromSearch
+                    locationName
+                    locationType
+                    ageInDays
+                    easyApply
+                    payCurrency
+                    payPeriod
+                    payPeriodAdjustedPay { p10 p50 p90 }
+                    jobLink
+                }
+                job {
+                    listingId
+                    jobTitleText
+                    description
+                }
+            }
+        }
+        paginationCursors {
+            cursor
+            pageNumber
+        }
+    }
+}
+"""
+
+
 class GlassdoorScraper(BaseScraper):
-    """Scrape Glassdoor job search results (first page only due to heavy anti-bot)."""
+    """Scrape Glassdoor job search results via internal GraphQL API."""
 
     name = "glassdoor"
-    requires_browser = True
+    requires_browser = False  # No longer needs Playwright
+
+    MAX_PAGES = 2
+    RESULTS_PER_PAGE = 30
+
+    # Remote work location ID on Glassdoor
+    REMOTE_LOCATION_ID = 11047
 
     def __init__(self, console: Console, config: Optional[dict] = None) -> None:
         super().__init__(console, config)
+        self._csrf_token: Optional[str] = None
+        self._session_cookies: dict = {}
+
+    def _init_session(self) -> bool:
+        """Visit Glassdoor to extract CSRF token and cookies."""
+        self.console.log("[magenta]Glassdoor[/] Initializing session...")
+        try:
+            resp = self.http.get(
+                "https://www.glassdoor.com/Job/jobs.htm",
+                headers={"User-Agent": USER_AGENT},
+                timeout=15,
+            )
+            if resp.status_code != 200:
+                self.console.log(
+                    f"[yellow]Glassdoor[/] Initial page returned status {resp.status_code}"
+                )
+                return False
+
+            # Extract CSRF token from page HTML
+            token_match = re.search(r'"token":\s*"([^"]+)"', resp.text)
+            if token_match:
+                self._csrf_token = token_match.group(1)
+            else:
+                # Try alternative extraction
+                gd_match = re.search(r"gdToken['\"]:\s*['\"]([^'\"]+)", resp.text)
+                if gd_match:
+                    self._csrf_token = gd_match.group(1)
+
+            if not self._csrf_token:
+                self.console.log(
+                    "[yellow]Glassdoor[/] Could not extract CSRF token from page."
+                )
+                return False
+
+            self.console.log("[magenta]Glassdoor[/] Session initialized successfully.")
+            return True
+
+        except Exception as exc:
+            self.console.log(f"[red]Glassdoor[/] Session init failed: {exc}")
+            return False
+
+    def _resolve_location(self, location: str) -> tuple[Optional[int], Optional[str]]:
+        """Resolve a location string to Glassdoor's locationId and locationType."""
+        if not location:
+            return None, None
+
+        try:
+            resp = self.http.get(
+                f"https://www.glassdoor.com/findPopularLocationAjax.htm"
+                f"?maxLocationsToReturn=5&term={quote_plus(location)}",
+                headers={"User-Agent": USER_AGENT},
+                timeout=10,
+            )
+            if resp.ok:
+                locations = resp.json()
+                if locations and len(locations) > 0:
+                    loc = locations[0]
+                    loc_id = loc.get("locationId")
+                    loc_type_raw = loc.get("locationType", "C")
+                    # Map single-char codes to enum values
+                    type_map = {"C": "CITY", "S": "STATE", "N": "COUNTRY", "M": "METRO"}
+                    loc_type = type_map.get(loc_type_raw, "CITY")
+                    self.console.log(
+                        f"[magenta]Glassdoor[/] Resolved location: "
+                        f"{loc.get('label', location)} (ID: {loc_id})"
+                    )
+                    return loc_id, loc_type
+        except Exception as exc:
+            self.console.log(f"[yellow]Glassdoor[/] Location lookup failed: {exc}")
+
+        return None, None
 
     def scrape(
         self,
@@ -25,138 +162,195 @@ class GlassdoorScraper(BaseScraper):
         location: str,
         remote: bool = False,
     ) -> list[JobResult]:
-        from playwright.sync_api import sync_playwright, TimeoutError as PwTimeout
-
         query = " ".join(keywords)
         self.console.log(
-            f"[bold magenta]Glassdoor[/] Searching for [cyan]'{query}'[/] in [cyan]{location}[/]"
+            f"[bold magenta]Glassdoor[/] Searching for [cyan]'{query}'[/]"
+            f" in [cyan]{location or '(any)'}[/]"
         )
 
         results: list[JobResult] = []
 
-        try:
-            with sync_playwright() as pw:
-                browser = pw.chromium.launch(headless=True)
-                context = browser.new_context(
-                    user_agent=USER_AGENT,
-                    viewport={"width": 1280, "height": 800},
-                    locale="en-US",
+        # Initialize session to get CSRF token
+        if not self._init_session():
+            self.console.log(
+                "[yellow]Glassdoor[/] Could not initialize session — skipping."
+            )
+            return results
+
+        # Resolve location
+        location_id: Optional[int] = None
+        location_type: Optional[str] = None
+
+        if remote:
+            location_id = self.REMOTE_LOCATION_ID
+            location_type = "STATE"
+        elif location:
+            location_id, location_type = self._resolve_location(location)
+
+        # Build GraphQL request headers
+        headers = {
+            "User-Agent": USER_AGENT,
+            "Accept": "*/*",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Content-Type": "application/json",
+            "apollographql-client-name": "job-search-next",
+            "apollographql-client-version": "4.65.5",
+            "gd-csrf-token": self._csrf_token,
+            "Origin": "https://www.glassdoor.com",
+            "Referer": "https://www.glassdoor.com/",
+        }
+
+        page_cursor: Optional[str] = None
+
+        for page_num in range(1, self.MAX_PAGES + 1):
+            self.console.log(
+                f"[magenta]Glassdoor[/] Fetching page {page_num}/{self.MAX_PAGES}..."
+            )
+
+            variables: dict = {
+                "keyword": query,
+                "numJobsToShow": self.RESULTS_PER_PAGE,
+                "pageNumber": page_num,
+                "pageCursor": page_cursor,
+                "filterParams": [],
+            }
+
+            if location_id is not None:
+                variables["locationId"] = location_id
+            if location_type is not None:
+                variables["locationType"] = location_type
+
+            payload = [
+                {
+                    "operationName": "JobSearchResultsQuery",
+                    "variables": variables,
+                    "query": JOB_SEARCH_QUERY,
+                }
+            ]
+
+            try:
+                resp = self.http.post(
+                    "https://www.glassdoor.com/graph",
+                    headers=headers,
+                    data=json.dumps(payload),
+                    timeout=20,
                 )
-                page = context.new_page()
 
-                url = (
-                    f"https://www.glassdoor.com/Job/jobs.htm"
-                    f"?sc.keyword={quote_plus(query)}"
-                    f"&locT=C&locKeyword={quote_plus(location)}"
-                )
-                if remote:
-                    url += "&remoteWorkType=1"
-
-                self.console.log("[magenta]Glassdoor[/] Loading search page...")
-
-                try:
-                    page.goto(url, wait_until="domcontentloaded", timeout=30000)
-                    # Glassdoor uses React — wait a bit for hydration
-                    page.wait_for_timeout(3000)
-                except PwTimeout:
+                if resp.status_code == 403:
                     self.console.log(
-                        "[yellow]Glassdoor[/] Page load timed out."
+                        "[yellow]Glassdoor[/] Access denied (403) — "
+                        "likely blocked by anti-bot measures."
                     )
-                    browser.close()
-                    return results
-                except Exception as exc:
+                    break
+                elif resp.status_code == 429:
                     self.console.log(
-                        f"[yellow]Glassdoor[/] Could not load page: {exc}"
+                        "[yellow]Glassdoor[/] Rate limited (429) — stopping."
                     )
-                    browser.close()
-                    return results
+                    break
 
-                # Check for bot detection / CAPTCHA
-                if "captcha" in page.url.lower() or page.query_selector(
-                    "div.cf-browser-verification"
-                ):
-                    self.console.log(
-                        "[yellow]Glassdoor[/] Bot detection triggered — skipping."
-                    )
-                    browser.close()
-                    return results
+                resp.raise_for_status()
+                data = resp.json()
+            except Exception as exc:
+                self.console.log(f"[red]Glassdoor[/] GraphQL request failed: {exc}")
+                break
 
-                # Try multiple selector strategies (Glassdoor changes DOM often)
-                card_selectors = [
-                    "li.react-job-listing",
-                    "li[data-test='jobListing']",
-                    "ul.job-list li",
-                    "div.JobsList_wrapper a[data-test='job-link']",
-                ]
+            # Parse response (wrapped in array)
+            try:
+                if isinstance(data, list):
+                    data = data[0]
 
-                cards = []
-                for sel in card_selectors:
-                    cards = page.query_selector_all(sel)
-                    if cards:
+                job_listings_data = data.get("data", {}).get("jobListings", {})
+                listings = job_listings_data.get("jobListings", [])
+
+                if not listings:
+                    self.console.log("[magenta]Glassdoor[/] No more results.")
+                    break
+
+                # Extract pagination cursor for next page
+                cursors = job_listings_data.get("paginationCursors", [])
+                page_cursor = None
+                for c in cursors:
+                    if c.get("pageNumber") == page_num + 1:
+                        page_cursor = c.get("cursor")
                         break
 
-                if not cards:
-                    self.console.log(
-                        "[yellow]Glassdoor[/] No job cards found (anti-bot or layout change)."
-                    )
-                    browser.close()
-                    return results
-
-                for card in cards:
+                for listing in listings:
                     try:
-                        title_el = card.query_selector(
-                            "a.job-title, a[data-test='job-link'], span.JobCard_jobTitle__GLyJ1"
-                        )
-                        company_el = card.query_selector(
-                            "div.job-listing-company-name, span.EmployerProfile_companyName__0emMg, "
-                            "div.employer-name"
-                        )
-                        location_el = card.query_selector(
-                            "span.job-location, div.location, span.JobCard_location__N_iYE"
-                        )
-                        salary_el = card.query_selector(
-                            "span.job-salary, div.salary-estimate, span.JobCard_salaryEstimate__arV5J"
-                        )
+                        jobview = listing.get("jobview", {})
+                        header = jobview.get("header", {})
+                        job_data = jobview.get("job", {})
 
-                        title_text = (
-                            title_el.inner_text().strip() if title_el else None
-                        )
-                        if not title_text:
+                        title = header.get("jobTitleText", "").strip()
+                        if not title:
                             continue
 
-                        company_text = (
-                            company_el.inner_text().strip() if company_el else None
-                        )
-                        location_text = (
-                            location_el.inner_text().strip() if location_el else None
-                        )
-                        salary_text = (
-                            salary_el.inner_text().strip() if salary_el else None
-                        )
+                        company = header.get("employerNameFromSearch", "").strip() or None
+                        loc_name = header.get("locationName", "").strip() or None
 
-                        href = title_el.get_attribute("href") if title_el else None
-                        if href and not href.startswith("http"):
-                            href = f"https://www.glassdoor.com{href}"
-                        if not href:
-                            href = page.url  # fallback
+                        # Build job URL
+                        job_link = header.get("jobLink", "")
+                        if job_link and not job_link.startswith("http"):
+                            job_link = f"https://www.glassdoor.com{job_link}"
+                        listing_id = job_data.get("listingId", "")
+                        if not job_link and listing_id:
+                            job_link = (
+                                f"https://www.glassdoor.com/job-listing/"
+                                f"j?jl={listing_id}"
+                            )
+                        if not job_link:
+                            continue
+
+                        # Build salary string from pay data
+                        salary_text: Optional[str] = None
+                        pay = header.get("payPeriodAdjustedPay")
+                        currency = header.get("payCurrency", "USD")
+                        if pay:
+                            p10 = pay.get("p10")
+                            p90 = pay.get("p90")
+                            if p10 and p90:
+                                salary_text = f"{currency} {p10:,.0f} - {p90:,.0f}"
+                            elif pay.get("p50"):
+                                salary_text = f"{currency} ~{pay['p50']:,.0f}"
+
+                        # Age in days for posted_date approximation
+                        age = header.get("ageInDays")
+                        posted_date: Optional[str] = None
+                        if age is not None:
+                            from datetime import datetime, timedelta
+
+                            posted_date = (
+                                datetime.now() - timedelta(days=age)
+                            ).strftime("%Y-%m-%d")
+
+                        # Description from search results (may be null)
+                        description = job_data.get("description") or None
+                        if description and len(description) > 500:
+                            description = description[:500] + "..."
 
                         results.append(
                             JobResult(
-                                title=title_text,
-                                company=company_text,
-                                location=location_text,
-                                url=href,
+                                title=title,
+                                company=company,
+                                location=loc_name,
+                                url=job_link,
                                 source=self.name,
                                 salary=salary_text,
+                                description=description,
+                                posted_date=posted_date,
                             )
                         )
                     except Exception:
                         continue
 
-                browser.close()
+                self.console.log(
+                    f"[magenta]Glassdoor[/] {len(results)} jobs so far."
+                )
 
-        except Exception as exc:
-            self.console.log(f"[red]Glassdoor[/] Scraper error: {exc}")
+            except Exception as exc:
+                self.console.log(f"[red]Glassdoor[/] Response parsing failed: {exc}")
+                break
+
+            self.rate_limit(1.0, 2.5)
 
         self.console.log(
             f"[bold magenta]Glassdoor[/] Finished — {len(results)} jobs collected."

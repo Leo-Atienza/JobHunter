@@ -26,6 +26,7 @@ export interface Session {
   location: string | null;
   sources: string[] | null;
   remote: boolean;
+  companies: string[] | null;
 }
 
 export interface JobStats {
@@ -51,6 +52,7 @@ export interface CreateSessionRequest {
   location?: string;
   sources?: string[];
   remote?: boolean;
+  companies?: string[];
 }
 
 export interface CreateSessionResponse {
