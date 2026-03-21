@@ -35,14 +35,14 @@ export function Filters({
   const activeSources = stats ? Object.keys(stats.by_source) : [];
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-col gap-3 sm:flex-wrap sm:flex-row sm:items-center">
       {/* Source filters */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-xs font-medium uppercase tracking-wider text-slate-400">Source:</span>
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        <span className="mr-1 shrink-0 text-xs font-medium uppercase tracking-wider text-slate-400">Source:</span>
         <button
           onClick={() => onSourceChange(null)}
           className={cn(
-            'rounded-full px-3 py-1 text-xs font-semibold transition-all',
+            'shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-all',
             !sourceFilter
               ? 'bg-primary-950 text-white shadow-sm'
               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -60,7 +60,7 @@ export function Filters({
               onClick={() => onSourceChange(sourceFilter === source ? null : source)}
               disabled={!isActive}
               className={cn(
-                'rounded-full px-3 py-1 text-xs font-semibold transition-all',
+                'shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-all whitespace-nowrap',
                 sourceFilter === source
                   ? `${colors.bg} ${colors.text} ring-2 ring-primary-300`
                   : isActive

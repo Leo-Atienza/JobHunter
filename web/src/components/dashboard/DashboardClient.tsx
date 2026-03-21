@@ -117,28 +117,28 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
   const hasJobs = (jobs?.length ?? 0) > 0;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen overflow-x-hidden bg-slate-50">
       {/* Top bar */}
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-4">
-            <a href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <a href="/" className="flex shrink-0 items-center gap-2 transition-opacity hover:opacity-80">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-950">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent-400">
                   <circle cx="11" cy="11" r="8" />
                   <path d="m21 21-4.3-4.3" />
                 </svg>
               </div>
-              <span className="font-display text-lg font-bold text-primary-950">JobHunter</span>
+              <span className="hidden sm:inline font-display text-lg font-bold text-primary-950">JobHunter</span>
             </a>
-            <div className="hidden sm:flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1.5">
-              <span className="font-mono text-sm font-semibold text-primary-800">{code}</span>
+            <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 sm:gap-2 sm:px-3">
+              <span className="font-mono text-xs font-semibold text-primary-800 sm:text-sm">{code}</span>
               <CopyButton text={code} />
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="hidden md:block text-right">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <div className="hidden lg:block text-right">
               <p className="text-xs text-slate-400">
                 Expires {formatTimestamp(expiresAt)}
               </p>
@@ -151,7 +151,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-6 py-6">
+      <main className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
         {/* Stats */}
         {stats && <StatsBar stats={stats} />}
 

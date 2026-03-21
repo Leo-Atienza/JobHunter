@@ -41,7 +41,8 @@ export function ShareButton({ code, jobCount, disabled }: ShareButtonProps) {
     <button
       onClick={handleShare}
       disabled={disabled}
-      className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+      title="Share"
+      className={`inline-flex items-center gap-2 rounded-xl p-2 sm:px-4 sm:py-2 text-sm font-semibold transition-all ${
         disabled
           ? 'cursor-not-allowed bg-slate-100 text-slate-400'
           : copied
@@ -54,7 +55,7 @@ export function ShareButton({ code, jobCount, disabled }: ShareButtonProps) {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12" />
           </svg>
-          Copied!
+          <span className="hidden sm:inline">Copied!</span>
         </>
       ) : (
         <>
@@ -65,7 +66,7 @@ export function ShareButton({ code, jobCount, disabled }: ShareButtonProps) {
             <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
             <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
           </svg>
-          Share
+          <span className="hidden sm:inline">Share</span>
         </>
       )}
     </button>

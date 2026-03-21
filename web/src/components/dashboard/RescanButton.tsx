@@ -27,13 +27,14 @@ export function RescanButton({ code, onRescanStart }: RescanButtonProps) {
     <>
       <button
         onClick={handleOpen}
-        className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 hover:-translate-y-0.5"
+        title="Rescan"
+        className="inline-flex items-center gap-2 rounded-xl p-2 sm:px-4 sm:py-2 text-sm font-semibold transition-all border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 hover:-translate-y-0.5"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="23 4 23 10 17 10" />
           <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
         </svg>
-        Rescan
+        <span className="hidden sm:inline">Rescan</span>
       </button>
 
       {open && (
@@ -55,7 +56,7 @@ export function RescanButton({ code, onRescanStart }: RescanButtonProps) {
 
             <div className="mt-4 rounded-lg bg-slate-900 p-4">
               <div className="flex items-start justify-between gap-2">
-                <pre className="text-sm text-slate-300 font-mono overflow-x-auto whitespace-pre-wrap">
+                <pre className="text-sm text-slate-300 font-mono overflow-x-auto whitespace-pre-wrap break-all">
                   <code>{cmd}</code>
                 </pre>
                 <CopyButton text={cmd} />

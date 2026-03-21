@@ -44,7 +44,8 @@ export function DeleteButton({ code }: DeleteButtonProps) {
     <button
       onClick={handleDelete}
       disabled={deleting}
-      className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+      title="Delete session"
+      className={`inline-flex items-center gap-2 rounded-xl p-2 sm:px-4 sm:py-2 text-sm font-semibold transition-all ${
         deleting
           ? 'cursor-not-allowed bg-slate-100 text-slate-400'
           : 'border border-red-200 bg-white text-red-600 hover:bg-red-50 hover:border-red-300 hover:-translate-y-0.5'
@@ -56,7 +57,7 @@ export function DeleteButton({ code }: DeleteButtonProps) {
         <line x1="10" y1="11" x2="10" y2="17" />
         <line x1="14" y1="11" x2="14" y2="17" />
       </svg>
-      {deleting ? 'Deleting...' : 'Delete'}
+      <span className="hidden sm:inline">{deleting ? 'Deleting...' : 'Delete'}</span>
     </button>
   );
 }

@@ -10,7 +10,8 @@ export function ExportButton({ code, disabled }: ExportButtonProps) {
     <a
       href={disabled ? undefined : `/api/jobs/export?session=${code}`}
       download
-      className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+      title="Export CSV"
+      className={`inline-flex items-center gap-2 rounded-xl p-2 sm:px-4 sm:py-2 text-sm font-semibold transition-all ${
         disabled
           ? 'cursor-not-allowed bg-slate-100 text-slate-400'
           : 'bg-primary-950 text-white shadow-md shadow-primary-950/10 hover:bg-primary-900 hover:-translate-y-0.5'
@@ -33,7 +34,7 @@ export function ExportButton({ code, disabled }: ExportButtonProps) {
         <polyline points="7 10 12 15 17 10" />
         <line x1="12" y1="15" x2="12" y2="3" />
       </svg>
-      Export CSV
+      <span className="hidden sm:inline">Export CSV</span>
     </a>
   );
 }
