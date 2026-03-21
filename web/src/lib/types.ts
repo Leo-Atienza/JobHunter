@@ -26,6 +26,8 @@ export interface Job {
   salary_max: number | null;
   /** AI-generated summary */
   ai_summary: string | null;
+  /** Whether the job URL appears to be dead (404/410) */
+  is_ghost: boolean;
   /** Sources that also have this job (populated client-side from duplicates) */
   also_on?: string[];
 }

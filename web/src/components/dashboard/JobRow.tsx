@@ -126,6 +126,11 @@ export function JobRow({ job, onUpdate }: JobRowProps) {
                 +{job.also_on.length}
               </span>
             )}
+            {job.is_ghost && (
+              <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600" title="This job listing URL returned 404 — it may have been removed">
+                Expired?
+              </span>
+            )}
           </div>
         </td>
 
@@ -194,7 +199,7 @@ export function JobRow({ job, onUpdate }: JobRowProps) {
         <tr className="animate-slide-down">
           <td colSpan={9} className="border-b border-slate-100 bg-slate-50/50 px-4 py-5">
             {/* Job detail badges */}
-            {(job.job_type || job.experience_level || job.relevance_score > 0 || job.country) && (
+            {(job.job_type || job.experience_level || job.relevance_score > 0 || job.country || job.is_ghost) && (
               <div className="mb-4 flex flex-wrap gap-2">
                 {job.job_type && (
                   <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
@@ -218,6 +223,11 @@ export function JobRow({ job, onUpdate }: JobRowProps) {
                 {job.country && (
                   <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
                     {job.country}
+                  </span>
+                )}
+                {job.is_ghost && (
+                  <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">
+                    Possibly expired
                   </span>
                 )}
               </div>

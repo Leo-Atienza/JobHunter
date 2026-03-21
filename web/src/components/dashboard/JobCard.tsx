@@ -46,6 +46,11 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
                 +{job.also_on.length}
               </span>
             )}
+            {job.is_ghost && (
+              <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600" title="This job listing URL returned 404 — it may have been removed">
+                Possibly expired
+              </span>
+            )}
           </div>
           <div onClick={(e) => e.stopPropagation()}>
             <StatusSelect jobId={job.id} currentStatus={job.status} onUpdate={onUpdate} />
