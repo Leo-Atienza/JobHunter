@@ -8,11 +8,22 @@ interface FiltersProps {
   sourceFilter: string | null;
   statusFilter: string | null;
   remoteFilter: boolean;
+  experienceFilter: string | null;
+  jobTypeFilter: string | null;
+  salaryMin: string;
+  salaryMax: string;
   onSourceChange: (source: string | null) => void;
   onStatusChange: (status: string | null) => void;
   onRemoteChange: (value: boolean) => void;
+  onExperienceChange: (level: string | null) => void;
+  onJobTypeChange: (type: string | null) => void;
+  onSalaryMinChange: (val: string) => void;
+  onSalaryMaxChange: (val: string) => void;
   stats: JobStats | null;
 }
+
+const EXPERIENCE_LEVELS = ['Entry', 'Intern', 'Mid', 'Senior', 'Lead', 'Principal'] as const;
+const JOB_TYPES = ['Full-time', 'Part-time', 'Contract', 'Internship', 'Freelance', 'Temporary'] as const;
 
 const statusLabels: Record<JobStatus, string> = {
   new: 'New',
@@ -27,9 +38,17 @@ export function Filters({
   sourceFilter,
   statusFilter,
   remoteFilter,
+  experienceFilter,
+  jobTypeFilter,
+  salaryMin,
+  salaryMax,
   onSourceChange,
   onStatusChange,
   onRemoteChange,
+  onExperienceChange,
+  onJobTypeChange,
+  onSalaryMinChange,
+  onSalaryMaxChange,
   stats,
 }: FiltersProps) {
   const activeSources = stats ? Object.keys(stats.by_source) : [];
@@ -112,13 +131,67 @@ export function Filters({
         </select>
       </div>
 
+      {/* Experience level filter */}
+      <div className="flex items-center gap-1.5">
+        <span className="mr-1 text-xs font-medium uppercase tracking-wider text-slate-400">Level:</span>
+        <select
+          value={experienceFilter ?? ''}
+          onChange={(e) => onExperienceChange(e.target.value || null)}
+          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 outline-none transition-colors focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+        >
+          <option value="">Any level</option>
+          {EXPERIENCE_LEVELS.map((level) => (
+            <option key={level} value={level}>{level}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Job type filter */}
+      <div className="flex items-center gap-1.5">
+        <span className="mr-1 text-xs font-medium uppercase tracking-wider text-slate-400">Type:</span>
+        <select
+          value={jobTypeFilter ?? ''}
+          onChange={(e) => onJobTypeChange(e.target.value || null)}
+          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 outline-none transition-colors focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+        >
+          <option value="">Any type</option>
+          {JOB_TYPES.map((type) => (
+            <option key={type} value={type}>{type}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Salary range filter */}
+      <div className="flex items-center gap-1.5">
+        <span className="mr-1 text-xs font-medium uppercase tracking-wider text-slate-400">Salary:</span>
+        <input
+          type="number"
+          placeholder="Min"
+          value={salaryMin}
+          onChange={(e) => onSalaryMinChange(e.target.value)}
+          className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+        />
+        <span className="text-xs text-slate-400">-</span>
+        <input
+          type="number"
+          placeholder="Max"
+          value={salaryMax}
+          onChange={(e) => onSalaryMaxChange(e.target.value)}
+          className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+        />
+      </div>
+
       {/* Active filter tags */}
-      {(sourceFilter || statusFilter || remoteFilter) && (
+      {(sourceFilter || statusFilter || remoteFilter || experienceFilter || jobTypeFilter || salaryMin || salaryMax) && (
         <button
           onClick={() => {
             onSourceChange(null);
             onStatusChange(null);
             onRemoteChange(false);
+            onExperienceChange(null);
+            onJobTypeChange(null);
+            onSalaryMinChange('');
+            onSalaryMaxChange('');
           }}
           className="inline-flex items-center gap-1 rounded-full bg-error-100 px-3 py-1 text-xs font-medium text-error-600 transition-colors hover:bg-error-200"
         >

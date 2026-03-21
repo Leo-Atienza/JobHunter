@@ -118,7 +118,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
             Configure Your Search
           </h3>
           <p className="mt-1 text-sm text-slate-500">
-            Set your preferences, then run the generated command.
+            Set your preferences and search across multiple job boards instantly.
           </p>
         </div>
 
@@ -271,7 +271,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
               Generating Session...
             </span>
           ) : (
-            'Generate Session & Get Command'
+            'Search Jobs'
           )}
         </button>
       </div>

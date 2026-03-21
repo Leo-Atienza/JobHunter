@@ -2,16 +2,18 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import useSWR from 'swr';
-import type { Job, JobStats } from '@/lib/types';
+import type { Job, JobStats, Session } from '@/lib/types';
 import { StatsBar } from './StatsBar';
 import { Filters } from './Filters';
 import { SearchBar } from './SearchBar';
 import { JobTable } from './JobTable';
+import { JobCard } from './JobCard';
 import { ExportButton } from './ExportButton';
 import { ShareButton } from './ShareButton';
 import { DeleteButton } from './DeleteButton';
 import { RescanButton } from './RescanButton';
 import { WaitingState } from './WaitingState';
+import { ScrapeProgress } from './ScrapeProgress';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { formatTimestamp } from '@/lib/utils';
 import { ActionsMenu } from './ActionsMenu';
@@ -27,7 +29,12 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
   const [sourceFilter, setSourceFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [remoteFilter, setRemoteFilter] = useState(false);
+  const [experienceFilter, setExperienceFilter] = useState<string | null>(null);
+  const [jobTypeFilter, setJobTypeFilter] = useState<string | null>(null);
+  const [salaryMin, setSalaryMin] = useState('');
+  const [salaryMax, setSalaryMax] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [sortField, setSortField] = useState<keyof Job>('relevance_score');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
@@ -49,6 +56,13 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
     `/api/jobs/stats?session=${code}`,
     fetcher,
     { refreshInterval, revalidateOnFocus: true }
+  );
+
+  // Fetch session preferences (for auto-scraping source list)
+  const { data: session } = useSWR<Session>(
+    `/api/session/${code}`,
+    fetcher,
+    { revalidateOnFocus: false }
   );
 
   // Adaptive polling — slow down when nothing changes
@@ -89,11 +103,50 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
     setRefreshInterval(10000);
   }, []);
 
+  // Merge duplicates: hide duplicate rows, add "also_on" sources to primary
+  const allJobs = jobs ?? [];
+  const primaryJobs = (() => {
+    const duplicateSourceMap = new Map<number, string[]>();
+    // Collect sources from duplicate entries
+    for (const job of allJobs) {
+      if (job.duplicate_of) {
+        const existing = duplicateSourceMap.get(job.duplicate_of) ?? [];
+        existing.push(job.source);
+        duplicateSourceMap.set(job.duplicate_of, existing);
+      }
+    }
+    // Filter out duplicates, attach also_on to primaries
+    return allJobs
+      .filter((job) => !job.duplicate_of)
+      .map((job) => ({
+        ...job,
+        also_on: duplicateSourceMap.get(job.id) ?? [],
+      }));
+  })();
+
   // Filter and sort jobs client-side
-  const filteredJobs = (jobs ?? [])
+  const filteredJobs = primaryJobs
     .filter((job) => {
       if (!remoteFilter) return true;
       return /remote|work from home|wfh|anywhere/i.test(job.location ?? '');
+    })
+    .filter((job) => {
+      if (!experienceFilter) return true;
+      return job.experience_level?.toLowerCase() === experienceFilter.toLowerCase();
+    })
+    .filter((job) => {
+      if (!jobTypeFilter) return true;
+      return job.job_type?.toLowerCase() === jobTypeFilter.toLowerCase();
+    })
+    .filter((job) => {
+      const minVal = salaryMin ? parseInt(salaryMin, 10) * 1000 : 0;
+      const maxVal = salaryMax ? parseInt(salaryMax, 10) * 1000 : Infinity;
+      if (!minVal && maxVal === Infinity) return true;
+      // If job has no parsed salary, include it (don't hide jobs with unknown salary)
+      if (!job.salary_min && !job.salary_max) return true;
+      const jobMin = job.salary_min ?? 0;
+      const jobMax = job.salary_max ?? Infinity;
+      return jobMax >= minVal && jobMin <= maxVal;
     })
     .filter((job) => {
       if (!searchQuery) return true;
@@ -176,7 +229,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
             ))}
           </div>
         ) : !hasJobs ? (
-          <WaitingState code={code} />
+          <ScrapeProgress code={code} sessionSources={session?.sources ?? null} />
         ) : (
           <>
             {/* Filters and search */}
@@ -185,28 +238,68 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 sourceFilter={sourceFilter}
                 statusFilter={statusFilter}
                 remoteFilter={remoteFilter}
+                experienceFilter={experienceFilter}
+                jobTypeFilter={jobTypeFilter}
+                salaryMin={salaryMin}
+                salaryMax={salaryMax}
                 onSourceChange={setSourceFilter}
                 onStatusChange={setStatusFilter}
                 onRemoteChange={setRemoteFilter}
+                onExperienceChange={setExperienceFilter}
+                onJobTypeChange={setJobTypeFilter}
+                onSalaryMinChange={setSalaryMin}
+                onSalaryMaxChange={setSalaryMax}
                 stats={stats ?? null}
               />
               <SearchBar value={searchQuery} onChange={setSearchQuery} />
             </div>
 
-            {/* Results count */}
-            <div className="mt-4 text-sm text-slate-500">
-              Showing <span className="font-semibold text-primary-800">{filteredJobs.length}</span> of{' '}
-              <span className="font-semibold">{jobs?.length ?? 0}</span> jobs
+            {/* Results count + view toggle */}
+            <div className="mt-4 flex items-center justify-between">
+              <div className="text-sm text-slate-500">
+                Showing <span className="font-semibold text-primary-800">{filteredJobs.length}</span> of{' '}
+                <span className="font-semibold">{jobs?.length ?? 0}</span> jobs
+              </div>
+              <div className="flex items-center rounded-lg border border-slate-200 bg-white p-0.5">
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${viewMode === 'table' ? 'bg-primary-950 text-white' : 'text-slate-500 hover:text-slate-700'}`}
+                  title="Table view"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
+                    <line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setViewMode('cards')}
+                  className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${viewMode === 'cards' ? 'bg-primary-950 text-white' : 'text-slate-500 hover:text-slate-700'}`}
+                  title="Card view"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
-            {/* Job table */}
-            <JobTable
-              jobs={filteredJobs}
-              sortField={sortField}
-              sortDirection={sortDirection}
-              onSort={handleSort}
-              onJobUpdate={handleJobUpdate}
-            />
+            {/* Job list */}
+            {viewMode === 'table' ? (
+              <JobTable
+                jobs={filteredJobs}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+                onJobUpdate={handleJobUpdate}
+              />
+            ) : (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredJobs.map((job) => (
+                  <JobCard key={job.id} job={job} onUpdate={handleJobUpdate} />
+                ))}
+              </div>
+            )}
           </>
         )}
       </main>

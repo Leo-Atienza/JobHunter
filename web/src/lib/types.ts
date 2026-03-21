@@ -18,6 +18,16 @@ export interface Job {
   benefits: string | null;
   relevance_score: number;
   country: string | null;
+  /** FK to the original job this is a cross-source duplicate of */
+  duplicate_of: number | null;
+  /** Parsed annual salary min */
+  salary_min: number | null;
+  /** Parsed annual salary max */
+  salary_max: number | null;
+  /** AI-generated summary */
+  ai_summary: string | null;
+  /** Sources that also have this job (populated client-side from duplicates) */
+  also_on?: string[];
 }
 
 export type JobStatus = 'new' | 'saved' | 'applied' | 'interview' | 'rejected' | 'dismissed';

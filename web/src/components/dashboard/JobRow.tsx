@@ -13,12 +13,29 @@ interface JobRowProps {
 export function JobRow({ job, onUpdate }: JobRowProps) {
   const [expanded, setExpanded] = useState(false);
   const [notes, setNotes] = useState(job.notes ?? '');
+  const [aiSummary, setAiSummary] = useState<string | null>(job.ai_summary ?? null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const summaryFetchedRef = useRef(false);
 
   // Keep notes in sync with prop changes
   useEffect(() => {
     setNotes(job.notes ?? '');
   }, [job.notes]);
+
+  // Fetch AI summary on expand (if not already cached)
+  useEffect(() => {
+    if (!expanded || aiSummary || summaryFetchedRef.current || !job.description) return;
+    summaryFetchedRef.current = true;
+    setSummaryLoading(true);
+    fetch(`/api/jobs/${job.id}/summarize`, { method: 'POST' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { summary?: string } | null) => {
+        if (data?.summary) setAiSummary(data.summary);
+      })
+      .catch(() => {})
+      .finally(() => setSummaryLoading(false));
+  }, [expanded, aiSummary, job.id, job.description]);
 
   const saveNotes = useCallback(
     (newNotes: string) => {
@@ -98,11 +115,18 @@ export function JobRow({ job, onUpdate }: JobRowProps) {
 
         {/* Source */}
         <td className="px-4 py-3">
-          <span
-            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${sourceColors.bg} ${sourceColors.text}`}
-          >
-            {job.source}
-          </span>
+          <div className="flex flex-wrap items-center gap-1">
+            <span
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${sourceColors.bg} ${sourceColors.text}`}
+            >
+              {job.source}
+            </span>
+            {job.also_on && job.also_on.length > 0 && (
+              <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500" title={`Also on: ${job.also_on.join(', ')}`}>
+                +{job.also_on.length}
+              </span>
+            )}
+          </div>
         </td>
 
         {/* Relevance */}
@@ -122,9 +146,13 @@ export function JobRow({ job, onUpdate }: JobRowProps) {
 
         {/* Salary */}
         <td className="hidden xl:table-cell px-4 py-3">
-          <p className="text-sm text-slate-600">
-            {job.salary ?? '—'}
-          </p>
+          {job.salary ? (
+            <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+              {job.salary}
+            </span>
+          ) : (
+            <span className="text-sm text-slate-400">—</span>
+          )}
         </td>
 
         {/* Posted */}
@@ -191,6 +219,29 @@ export function JobRow({ job, onUpdate }: JobRowProps) {
                   <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
                     {job.country}
                   </span>
+                )}
+              </div>
+            )}
+
+            {/* AI Summary */}
+            {(aiSummary || summaryLoading) && (
+              <div className="mb-4 rounded-xl border border-primary-200 bg-primary-50/50 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-600">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
+                  </svg>
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-primary-600">AI Summary</h4>
+                </div>
+                {summaryLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-primary-500">
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Generating summary...
+                  </div>
+                ) : (
+                  <p className="text-sm leading-relaxed text-primary-900">{aiSummary}</p>
                 )}
               </div>
             )}
