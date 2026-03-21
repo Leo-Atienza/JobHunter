@@ -4,6 +4,7 @@ declare module 'next-auth' {
   interface Session {
     user: {
       id: string;
+      hasResume?: boolean;
     } & DefaultSession['user'];
   }
 }
@@ -11,5 +12,6 @@ declare module 'next-auth' {
 declare module 'next-auth/jwt' {
   interface JWT {
     userId?: string;
+    hasResume?: boolean;
   }
 }

@@ -18,6 +18,8 @@ import { CopyButton } from '@/components/ui/CopyButton';
 import { formatTimestamp } from '@/lib/utils';
 import { ActionsMenu } from './ActionsMenu';
 import { UserMenu } from '@/components/auth/UserMenu';
+import { ResumeUpload } from './ResumeUpload';
+import { useSession } from 'next-auth/react';
 
 interface DashboardClientProps {
   code: string;
@@ -42,6 +44,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
   const lastTotalRef = useRef<number>(0);
   const staleCountRef = useRef<number>(0);
   const [refreshInterval, setRefreshInterval] = useState(10000);
+  const { data: authSession } = useSession();
 
   // Build query URL
   let jobsUrl = `/api/jobs?session=${code}`;
@@ -224,6 +227,15 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
       <main className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
         {/* Stats */}
         {stats && <StatsBar stats={stats} />}
+
+        {/* Resume upload for match scoring */}
+        <div className="mt-4">
+          <ResumeUpload
+            sessionCode={code}
+            onScored={handleJobUpdate}
+            isSignedIn={!!authSession?.user?.id}
+          />
+        </div>
 
         {isLoading ? (
           /* Loading skeleton */

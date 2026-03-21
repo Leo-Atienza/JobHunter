@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { sessionExists } from '@/lib/session';
 import { sanitize } from '@/lib/utils';
-import type { Job, JobInput } from '@/lib/types';
+import { computeMatchScore } from '@/lib/match-scoring';
+import type { Job, JobInput, ResumeProfile } from '@/lib/types';
 import { JOB_STATUSES } from '@/lib/types';
 
 const jobRateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -112,6 +113,43 @@ export async function POST(request: NextRequest) {
     }
 
     incrementJobCount(session_code, inserted);
+
+    // Auto-score newly inserted jobs if user has a resume profile
+    if (inserted > 0) {
+      try {
+        const [sessionRow] = await sql(
+          'SELECT user_id FROM sessions WHERE code = $1',
+          [session_code],
+        );
+        if (sessionRow?.user_id) {
+          const [userRow] = await sql(
+            'SELECT resume_skills FROM users WHERE id = $1 AND resume_skills IS NOT NULL',
+            [sessionRow.user_id],
+          );
+          if (userRow?.resume_skills) {
+            const profile = userRow.resume_skills as ResumeProfile;
+            const unscoredJobs = await sql(
+              'SELECT id, title, skills, description, experience_level FROM jobs WHERE session_code = $1 AND relevance_score = 0 AND duplicate_of IS NULL',
+              [session_code],
+            );
+            for (const job of unscoredJobs) {
+              const score = computeMatchScore(profile, {
+                title: job.title,
+                skills: job.skills,
+                description: job.description,
+                experience_level: job.experience_level,
+              });
+              if (score > 0) {
+                await sql('UPDATE jobs SET relevance_score = $1 WHERE id = $2', [score, job.id]);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        // Non-critical — don't fail the insert response
+        console.error('Auto-score error:', err);
+      }
+    }
 
     return NextResponse.json({ inserted, duplicates });
   } catch (error) {

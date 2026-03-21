@@ -90,5 +90,12 @@ export interface InsertJobsResponse {
   duplicates: number;
 }
 
+export interface ResumeProfile {
+  skills: string[];
+  experience_years: number | null;
+  titles: string[];
+  summary: string;
+}
+
 export const JOB_SOURCES = ['linkedin', 'indeed', 'glassdoor', 'rapidapi', 'jobbank', 'remotive', 'adzuna', 'himalayas', 'themuse', 'arbeitnow', 'lever', 'greenhouse', 'workday', 'jooble', 'jobicy', 'devitjobs'] as const;
 export type JobSource = (typeof JOB_SOURCES)[number];
