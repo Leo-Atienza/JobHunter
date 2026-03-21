@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { SERVER_SCRAPER_NAMES } from '@/lib/scrapers';
 
 interface SourceStatus {
@@ -92,9 +93,9 @@ export function RescanButton({ code, onRescanStart, onComplete }: RescanButtonPr
         <span className="hidden sm:inline">{scanning ? 'Scanning...' : 'Rescan'}</span>
       </button>
 
-      {/* Progress dropdown */}
-      {showProgress && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Progress modal — portaled to body to escape sticky header stacking context */}
+      {showProgress && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => { if (!scanning) setShowProgress(false); }}
@@ -162,7 +163,8 @@ export function RescanButton({ code, onRescanStart, onComplete }: RescanButtonPr
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
