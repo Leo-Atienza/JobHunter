@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import type { Job } from '@/lib/types';
 import { StatusSelect } from './StatusSelect';
-import { getSourceColor, formatDate } from '@/lib/utils';
+import { getSourceColor, getSourceDisplayName, formatDate } from '@/lib/utils';
 
 interface JobRowProps {
   job: Job;
@@ -119,7 +119,7 @@ export function JobRow({ job, onUpdate }: JobRowProps) {
             <span
               className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${sourceColors.bg} ${sourceColors.text}`}
             >
-              {job.source}
+              {getSourceDisplayName(job.source)}
             </span>
             {job.also_on && job.also_on.length > 0 && (
               <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500" title={`Also on: ${job.also_on.join(', ')}`}>

@@ -92,6 +92,19 @@ export function getSourceColor(source: string): { bg: string; text: string } {
     lever: { bg: 'bg-cyan-100', text: 'text-cyan-800' },
     greenhouse: { bg: 'bg-emerald-100', text: 'text-emerald-800' },
     workday: { bg: 'bg-amber-100', text: 'text-amber-800' },
+    jooble: { bg: 'bg-violet-100', text: 'text-violet-800' },
+    'linkedin-public': { bg: 'bg-blue-100', text: 'text-blue-800' },
   };
   return colors[source.toLowerCase()] ?? { bg: 'bg-slate-100', text: 'text-slate-800' };
+}
+
+/** Human-friendly display name for a scraper source. */
+const SOURCE_DISPLAY: Record<string, string> = {
+  'linkedin-public': 'LinkedIn',
+  themuse: 'The Muse',
+  devitjobs: 'DevIT Jobs',
+};
+
+export function getSourceDisplayName(source: string): string {
+  return SOURCE_DISPLAY[source.toLowerCase()] ?? source.charAt(0).toUpperCase() + source.slice(1);
 }

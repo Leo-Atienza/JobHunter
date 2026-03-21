@@ -2,7 +2,7 @@
 
 import type { JobStats, JobStatus } from '@/lib/types';
 import { JOB_SOURCES, JOB_STATUSES } from '@/lib/types';
-import { getSourceColor, cn } from '@/lib/utils';
+import { getSourceColor, getSourceDisplayName, cn } from '@/lib/utils';
 
 interface FiltersProps {
   sourceFilter: string | null;
@@ -87,7 +87,7 @@ export function Filters({
                     : 'bg-slate-50 text-slate-300 cursor-not-allowed'
               )}
             >
-              {source}
+              {getSourceDisplayName(source)}
               {count > 0 && <span className="ml-1 opacity-60">{count}</span>}
             </button>
           );

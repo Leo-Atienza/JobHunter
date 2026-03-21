@@ -103,5 +103,5 @@ export interface ResumeProfile {
   summary: string;
 }
 
-export const JOB_SOURCES = ['linkedin', 'indeed', 'glassdoor', 'rapidapi', 'jobbank', 'remotive', 'adzuna', 'himalayas', 'themuse', 'arbeitnow', 'lever', 'greenhouse', 'workday', 'jooble', 'jobicy', 'devitjobs'] as const;
+export const JOB_SOURCES = ['linkedin', 'linkedin-public', 'indeed', 'glassdoor', 'rapidapi', 'jobbank', 'remotive', 'adzuna', 'himalayas', 'themuse', 'arbeitnow', 'lever', 'greenhouse', 'workday', 'jooble', 'jobicy', 'devitjobs'] as const;
 export type JobSource = (typeof JOB_SOURCES)[number];

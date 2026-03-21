@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Job } from '@/lib/types';
 import { StatusSelect } from './StatusSelect';
-import { getSourceColor, formatDate } from '@/lib/utils';
+import { getSourceColor, getSourceDisplayName, formatDate } from '@/lib/utils';
 
 interface JobCardProps {
   job: Job;
@@ -39,7 +39,7 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-1.5">
             <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${sourceColors.bg} ${sourceColors.text}`}>
-              {job.source}
+              {getSourceDisplayName(job.source)}
             </span>
             {job.also_on && job.also_on.length > 0 && (
               <span className="inline-flex items-center rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500" title={`Also on: ${job.also_on.join(', ')}`}>
