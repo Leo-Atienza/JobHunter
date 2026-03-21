@@ -8,6 +8,9 @@ import { Filters } from './Filters';
 import { SearchBar } from './SearchBar';
 import { JobTable } from './JobTable';
 import { ExportButton } from './ExportButton';
+import { ShareButton } from './ShareButton';
+import { DeleteButton } from './DeleteButton';
+import { RescanButton } from './RescanButton';
 import { WaitingState } from './WaitingState';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { formatTimestamp } from '@/lib/utils';
@@ -80,6 +83,11 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
     void mutateJobs();
   }, [mutateJobs]);
 
+  const handleRescanStart = useCallback(() => {
+    staleCountRef.current = 0;
+    setRefreshInterval(10000);
+  }, []);
+
   // Filter and sort jobs client-side
   const filteredJobs = (jobs ?? [])
     .filter((job) => {
@@ -129,13 +137,16 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="hidden md:block text-right">
               <p className="text-xs text-slate-400">
                 Expires {formatTimestamp(expiresAt)}
               </p>
             </div>
+            <RescanButton code={code} onRescanStart={handleRescanStart} />
+            <ShareButton code={code} jobCount={stats?.total ?? 0} disabled={!hasJobs} />
             <ExportButton code={code} disabled={!hasJobs} />
+            <DeleteButton code={code} />
           </div>
         </div>
       </header>

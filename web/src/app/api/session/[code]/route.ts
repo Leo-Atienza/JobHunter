@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isValidCodeFormat, getSession } from '@/lib/session';
+import { getDb } from '@/lib/db';
 
 export async function GET(
   _request: NextRequest,
@@ -42,6 +43,34 @@ export async function GET(
     });
   } catch (error) {
     console.error('Session GET error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ code: string }> }
+) {
+  try {
+    const { code } = await params;
+
+    if (!isValidCodeFormat(code)) {
+      return NextResponse.json(
+        { error: 'Invalid session code format' },
+        { status: 400 }
+      );
+    }
+
+    const sql = getDb();
+    // CASCADE on foreign key will delete all associated jobs
+    await sql('DELETE FROM sessions WHERE code = $1', [code]);
+
+    return NextResponse.json({ deleted: true });
+  } catch (error) {
+    console.error('Session DELETE error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
