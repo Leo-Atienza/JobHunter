@@ -157,6 +157,19 @@ class GlassdoorScraper(BaseScraper):
                                 "span[data-test='detailSalary'], "
                                 "div.SalaryEstimate"
                             )
+                            # Extract job description/snippet from card
+                            desc_el = card.query_selector(
+                                "div.JobCard_jobDescriptionSnippet__yWW8q, "
+                                "div[data-test='descSnippet'], "
+                                "div.JobCard_jobCardDescription__szp2i, "
+                                "div.jobDescriptionSnippet, "
+                                "div.job-description"
+                            )
+                            # Also try extracting job type / metadata
+                            type_el = card.query_selector(
+                                "div.JobCard_jobType__Opc8k, "
+                                "span[data-test='job-type']"
+                            )
 
                             title_text = title_el.inner_text().strip() if title_el else None
                             if not title_text:
@@ -165,6 +178,8 @@ class GlassdoorScraper(BaseScraper):
                             company_text = company_el.inner_text().strip() if company_el else None
                             location_text = location_el.inner_text().strip() if location_el else None
                             salary_text = salary_el.inner_text().strip() if salary_el else None
+                            description_text = desc_el.inner_text().strip() if desc_el else None
+                            type_text = type_el.inner_text().strip() if type_el else None
 
                             href = title_el.get_attribute("href") if title_el else None
                             if not href:
@@ -184,6 +199,8 @@ class GlassdoorScraper(BaseScraper):
                                     url=href.split("?")[0],
                                     source=self.name,
                                     salary=salary_text,
+                                    description=description_text,
+                                    job_type=type_text,
                                 )
                             )
                         except Exception:

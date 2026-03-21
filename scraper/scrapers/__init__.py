@@ -13,6 +13,9 @@ from .lever import LeverScraper
 from .greenhouse import GreenhouseScraper
 from .workday import WorkdayScraper
 from .rapidapi import RapidAPIScraper
+from .jooble import JoobleScraper
+from .jobicy import JobicyScraper
+from .devitjobs import DevITjobsScraper
 
 SCRAPERS: dict[str, type] = {
     "linkedin": LinkedInScraper,
@@ -28,6 +31,9 @@ SCRAPERS: dict[str, type] = {
     "lever": LeverScraper,
     "greenhouse": GreenhouseScraper,
     "workday": WorkdayScraper,
+    "jooble": JoobleScraper,
+    "jobicy": JobicyScraper,
+    "devitjobs": DevITjobsScraper,
 }
 
 __all__ = [
@@ -45,4 +51,7 @@ __all__ = [
     "LeverScraper",
     "GreenhouseScraper",
     "WorkdayScraper",
+    "JoobleScraper",
+    "JobicyScraper",
+    "DevITjobsScraper",
 ]

@@ -38,6 +38,8 @@ DEFAULT_COMPANIES = [
     "snapcommerce",
     "league",
     "paytm-labs",
+    # Verified international companies on Lever
+    "plaid",
 ]
 
 

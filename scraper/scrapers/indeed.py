@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import random
 import re
 from typing import Optional
 from urllib.parse import quote_plus
@@ -83,18 +84,58 @@ class IndeedScraper(BaseScraper):
             with sync_playwright() as pw:
                 browser = pw.chromium.launch(
                     headless=True,
-                    args=["--disable-blink-features=AutomationControlled"],
+                    args=[
+                        "--disable-blink-features=AutomationControlled",
+                        "--disable-features=IsolateOrigins,site-per-process",
+                        "--disable-dev-shm-usage",
+                        "--no-first-run",
+                        "--no-default-browser-check",
+                    ],
                 )
+                # Randomize viewport to avoid fingerprinting
+                width = random.choice([1366, 1440, 1536, 1920])
+                height = random.choice([768, 900, 864, 1080])
                 context = browser.new_context(
                     user_agent=USER_AGENT,
-                    viewport={"width": 1920, "height": 1080},
+                    viewport={"width": width, "height": height},
                     locale="en-US",
+                    timezone_id="America/Toronto",
+                    extra_http_headers={
+                        "Accept-Language": "en-US,en;q=0.9",
+                        "Sec-CH-UA": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+                        "Sec-CH-UA-Mobile": "?0",
+                        "Sec-CH-UA-Platform": '"Windows"',
+                    },
                 )
                 page = context.new_page()
                 # Hide automation indicators
-                page.add_init_script(
-                    'Object.defineProperty(navigator, "webdriver", {get: () => undefined})'
-                )
+                page.add_init_script("""
+                    Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+                    Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
+                    Object.defineProperty(navigator, 'languages', {get: () => ['en-US', 'en']});
+                    window.chrome = {runtime: {}};
+                """)
+
+                # Visit homepage first to get cookies (more realistic browsing)
+                try:
+                    page.goto(f"https://{domain}/", wait_until="domcontentloaded", timeout=15000)
+                    page.wait_for_timeout(2000)
+                    # Dismiss cookie consent / popups if present
+                    for btn_sel in [
+                        "button#onetrust-accept-btn-handler",
+                        "button[data-gnav-element-name='Cookie-accept']",
+                        "button.icl-Button--primary",
+                    ]:
+                        try:
+                            btn = page.query_selector(btn_sel)
+                            if btn:
+                                btn.click()
+                                page.wait_for_timeout(500)
+                                break
+                        except Exception:
+                            continue
+                except Exception:
+                    pass  # Homepage visit is best-effort
 
                 for page_num in range(self.MAX_PAGES):
                     start = page_num * 10
@@ -113,8 +154,8 @@ class IndeedScraper(BaseScraper):
 
                     try:
                         page.goto(url, wait_until="commit", timeout=30000)
-                        # Brief wait for page to render enough to check title
-                        page.wait_for_timeout(3000)
+                        # Longer wait for page to stabilize
+                        page.wait_for_timeout(4000)
 
                         # Detect Cloudflare/anti-bot blocks early
                         page_title = page.title().lower()

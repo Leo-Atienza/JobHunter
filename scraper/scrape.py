@@ -327,6 +327,20 @@ def main(
                 "or add them to config.yaml under api_keys.\n"
             )
 
+    if "jooble" in enabled_sources:
+        api_keys = cfg.get("api_keys", {})
+        has_jooble_key = (
+            api_keys.get("jooble_api_key")
+            or _os.environ.get("JOOBLE_API_KEY")
+        )
+        if not has_jooble_key:
+            console.print(
+                "[yellow]Warning:[/] Jooble requires an API key. "
+                "Get a free key at https://jooble.org/api/about\n"
+                "  Set JOOBLE_API_KEY env var, "
+                "or add jooble_api_key to config.yaml under api_keys.\n"
+            )
+
     # ---- Run scrapers -------------------------------------------------------
     run_results: list[dict] = []
 

@@ -24,6 +24,9 @@ const SOURCE_LABELS: Record<string, string> = {
   lever: 'Lever (Company Pages)',
   greenhouse: 'Greenhouse (Company Pages)',
   workday: 'Workday (Enterprise)',
+  jooble: 'Jooble',
+  jobicy: 'Jobicy (Remote)',
+  devitjobs: 'DevITjobs',
 };
 
 export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
@@ -240,14 +243,14 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
                 </div>
                 <span className="text-sm font-medium">
                   {SOURCE_LABELS[source] ?? source}
-                  {source === 'adzuna' && (
-                    <span className="ml-1 text-xs text-slate-400" title="Requires free API key from developer.adzuna.com">*</span>
+                  {(source === 'adzuna' || source === 'jooble') && (
+                    <span className="ml-1 text-xs text-slate-400" title={source === 'adzuna' ? 'Requires free API key from developer.adzuna.com' : 'Requires free API key from jooble.org/api/about'}>*</span>
                   )}
                 </span>
               </label>
             ))}
           </div>
-          <p className="mt-1.5 text-xs text-slate-400">* Adzuna requires free API keys from developer.adzuna.com</p>
+          <p className="mt-1.5 text-xs text-slate-400">* Adzuna and Jooble require free API keys (developer.adzuna.com / jooble.org/api/about)</p>
         </div>
 
         {error && (
