@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     const sql = getDb();
 
-    const [totalResult, sourceResult, statusResult, lastUpdatedResult] = await Promise.all([
+    const [totalResult, sourceResult, statusResult, lastUpdatedResult, salaryResult, ghostResult, matchResult] = await Promise.all([
       sql('SELECT COUNT(*)::int as total FROM jobs WHERE session_code = $1', [session]),
       sql(
         'SELECT source, COUNT(*)::int as count FROM jobs WHERE session_code = $1 GROUP BY source ORDER BY count DESC',
@@ -37,6 +37,18 @@ export async function GET(request: NextRequest) {
       ),
       sql(
         'SELECT MAX(scraped_at) as last_updated FROM jobs WHERE session_code = $1',
+        [session]
+      ),
+      sql(
+        'SELECT ROUND(AVG(salary_min))::int as avg_salary, COUNT(*)::int as with_salary FROM jobs WHERE session_code = $1 AND salary_min IS NOT NULL',
+        [session]
+      ),
+      sql(
+        'SELECT COUNT(*)::int as ghost_count FROM jobs WHERE session_code = $1 AND is_ghost = true',
+        [session]
+      ),
+      sql(
+        'SELECT ROUND(AVG(relevance_score))::int as avg_match FROM jobs WHERE session_code = $1 AND relevance_score > 0',
         [session]
       ),
     ]);
@@ -56,6 +68,10 @@ export async function GET(request: NextRequest) {
       by_source,
       by_status,
       last_updated: (lastUpdatedResult[0]?.last_updated as string) ?? null,
+      avg_salary: (salaryResult[0]?.avg_salary as number) ?? null,
+      with_salary_count: (salaryResult[0]?.with_salary as number) ?? 0,
+      ghost_count: (ghostResult[0]?.ghost_count as number) ?? 0,
+      avg_match: (matchResult[0]?.avg_match as number) ?? null,
     };
 
     return NextResponse.json(stats);

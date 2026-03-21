@@ -203,7 +203,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
             </div>
             {/* Desktop: show individual buttons */}
             <div className="hidden sm:flex items-center gap-2">
-              <RescanButton code={code} onRescanStart={handleRescanStart} />
+              <RescanButton code={code} onRescanStart={handleRescanStart} onComplete={handleJobUpdate} />
               <ShareButton code={code} jobCount={stats?.total ?? 0} disabled={!hasJobs} />
               <ExportButton code={code} disabled={!hasJobs} />
               <DeleteButton code={code} />
@@ -215,6 +215,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 hasJobs={hasJobs}
                 jobCount={stats?.total ?? 0}
                 onRescanStart={handleRescanStart}
+                onRescanComplete={handleJobUpdate}
               />
             </div>
             <div className="ml-1 border-l border-slate-200 pl-2">

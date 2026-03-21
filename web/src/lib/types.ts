@@ -54,6 +54,10 @@ export interface JobStats {
   by_source: Record<string, number>;
   by_status: Record<string, number>;
   last_updated: string | null;
+  avg_salary: number | null;
+  with_salary_count: number;
+  ghost_count: number;
+  avg_match: number | null;
 }
 
 export interface JobInput {

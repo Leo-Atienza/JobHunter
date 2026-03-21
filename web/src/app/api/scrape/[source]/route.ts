@@ -6,6 +6,7 @@ import { SERVER_SCRAPERS } from '@/lib/scrapers';
 import type { ScrapeParams } from '@/lib/scrapers/types';
 import type { JobInput } from '@/lib/types';
 import { parseSalary } from '@/lib/salary-parser';
+import { matchesCountry } from '@/lib/country-filter';
 
 export const maxDuration = 60; // Vercel Pro; free tier caps at 10s
 
@@ -57,14 +58,22 @@ export async function POST(
       });
     }
 
+    // Filter jobs by country if session has a country preference
+    const filteredJobs = session.country
+      ? result.jobs.filter((job) => matchesCountry(job.location, job.country, session.country))
+      : result.jobs;
+
+    const filtered = result.jobs.length - filteredJobs.length;
+
     // Insert jobs into DB
-    const { inserted, duplicates } = await insertJobs(body.session_code, result.jobs);
+    const { inserted, duplicates } = await insertJobs(body.session_code, filteredJobs);
 
     return NextResponse.json({
       source,
       inserted,
       duplicates,
       total: result.jobs.length,
+      filtered,
     });
   } catch (error) {
     console.error('Scrape error:', error);

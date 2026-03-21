@@ -95,15 +95,48 @@ export function StatsBar({ stats }: StatsBarProps) {
         </div>
       </div>
 
-      {/* Quick info */}
+      {/* Salary insights */}
       <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
-        <p className="text-[10px] sm:text-xs font-medium uppercase tracking-wider text-slate-400">Sources Active</p>
-        <p className="mt-1 sm:mt-2 font-display text-2xl sm:text-4xl font-extrabold text-accent-500">
-          <AnimatedCounter value={sources.length} />
-        </p>
-        <p className="mt-1 text-[10px] sm:text-xs text-slate-400 truncate">
-          {sources.map(([s]) => s).join(', ') || 'None yet'}
-        </p>
+        <p className="text-[10px] sm:text-xs font-medium uppercase tracking-wider text-slate-400">Salary Insights</p>
+        {stats.avg_salary ? (
+          <>
+            <p className="mt-1 sm:mt-2 font-display text-2xl sm:text-4xl font-extrabold text-emerald-600">
+              ${Math.round(stats.avg_salary / 1000)}k
+            </p>
+            <p className="mt-1 text-[10px] sm:text-xs text-slate-400">
+              avg across {stats.with_salary_count} jobs with salary
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="mt-1 sm:mt-2 font-display text-2xl sm:text-4xl font-extrabold text-slate-300">—</p>
+            <p className="mt-1 text-[10px] sm:text-xs text-slate-400">No salary data yet</p>
+          </>
+        )}
+      </div>
+
+      {/* Job quality */}
+      <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+        <p className="text-[10px] sm:text-xs font-medium uppercase tracking-wider text-slate-400">Job Quality</p>
+        <div className="mt-2 sm:mt-3 flex flex-wrap gap-2">
+          {stats.avg_match !== null && (
+            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-semibold ${
+              stats.avg_match >= 60 ? 'bg-green-100 text-green-700' :
+              stats.avg_match >= 40 ? 'bg-amber-100 text-amber-700' :
+              'bg-orange-100 text-orange-700'
+            }`}>
+              {stats.avg_match}% avg match
+            </span>
+          )}
+          {stats.ghost_count > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] sm:text-xs font-semibold text-red-600">
+              {stats.ghost_count} expired
+            </span>
+          )}
+          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] sm:text-xs font-semibold text-slate-600">
+            {sources.length} sources
+          </span>
+        </div>
       </div>
     </div>
   );
