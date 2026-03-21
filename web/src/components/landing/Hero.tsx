@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CopyButton } from '@/components/ui/CopyButton';
+import { useSession } from 'next-auth/react';
 import { SearchConfig } from './SearchConfig';
 
-type FlowStep = 'initial' | 'configure' | 'ready';
+type FlowStep = 'initial' | 'configure';
 
 interface SavedSession {
   code: string;
@@ -13,20 +13,27 @@ interface SavedSession {
   expires_at: string;
 }
 
-export function Hero() {
-  const [step, setStep] = useState<FlowStep>('initial');
-  const [sessionCode, setSessionCode] = useState<string | null>(null);
-  const [expiresAt, setExpiresAt] = useState<string | null>(null);
-  const [recentSessions, setRecentSessions] = useState<SavedSession[]>([]);
+interface CloudSession {
+  code: string;
+  keywords: string[] | null;
+  created_at: string;
+  expires_at: string;
+  job_count: number;
+}
 
+export function Hero() {
+  const { data: authSession } = useSession();
+  const [step, setStep] = useState<FlowStep>('initial');
+  const [recentSessions, setRecentSessions] = useState<SavedSession[]>([]);
+  const [cloudSessions, setCloudSessions] = useState<CloudSession[]>([]);
+
+  // Load localStorage sessions
   useEffect(() => {
     try {
       const stored = JSON.parse(localStorage.getItem('jobhunter_sessions') || '[]') as SavedSession[];
-      // Filter out expired sessions
       const now = new Date();
       const valid = stored.filter((s) => new Date(s.expires_at) > now);
       setRecentSessions(valid);
-      // Clean up expired entries
       if (valid.length !== stored.length) {
         localStorage.setItem('jobhunter_sessions', JSON.stringify(valid));
       }
@@ -34,6 +41,18 @@ export function Hero() {
       // localStorage unavailable
     }
   }, []);
+
+  // Load cloud sessions for signed-in users
+  useEffect(() => {
+    if (!authSession?.user) {
+      setCloudSessions([]);
+      return;
+    }
+    fetch('/api/user/sessions')
+      .then((r) => r.json())
+      .then((data) => setCloudSessions(data.sessions ?? []))
+      .catch(() => {});
+  }, [authSession?.user]);
 
   function clearHistory() {
     localStorage.removeItem('jobhunter_sessions');
@@ -98,10 +117,53 @@ export function Hero() {
               <span className="absolute inset-0 rounded-xl bg-white/10 opacity-0 transition-opacity group-hover:opacity-100" />
             </button>
 
+            {/* Cloud sessions for signed-in users */}
+            {cloudSessions.length > 0 && (
+              <div className="mx-auto max-w-md">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">My Sessions</p>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                      </svg>
+                      Saved
+                    </span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {cloudSessions.map((s) => (
+                    <a
+                      key={s.code}
+                      href={`/dashboard/${s.code}`}
+                      className="flex items-center justify-between rounded-xl border border-primary-100 bg-white px-4 py-3 shadow-sm transition-all hover:border-primary-300 hover:shadow-md hover:-translate-y-0.5"
+                    >
+                      <div className="flex items-center gap-3 text-left">
+                        <span className="font-mono text-sm font-bold text-primary-700">{s.code}</span>
+                        <span className="text-sm text-slate-500 truncate max-w-36">
+                          {s.keywords?.join(', ') ?? 'No keywords'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-400">{s.job_count} jobs</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 shrink-0">
+                          <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Local sessions (anonymous) */}
             {recentSessions.length > 0 && (
               <div className="mx-auto max-w-md">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Recent Sessions</p>
+                  <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
+                    {cloudSessions.length > 0 ? 'Local History' : 'Recent Sessions'}
+                  </p>
                   <button
                     onClick={clearHistory}
                     className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
@@ -139,13 +201,7 @@ export function Hero() {
           </div>
         )}
 
-        {step === 'ready' && sessionCode && (
-          <div className="mt-10 animate-slide-up">
-            <SessionReady code={sessionCode} expiresAt={expiresAt} />
-          </div>
-        )}
-
-        <div className="mt-16 flex items-center justify-center gap-8 text-sm text-slate-400">
+        <div className="mt-16 flex flex-wrap items-center justify-center gap-6 sm:gap-8 text-sm text-slate-400">
           <div className="flex items-center gap-2">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -154,10 +210,10 @@ export function Hero() {
           </div>
           <div className="flex items-center gap-2">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
             </svg>
-            48h sessions
+            Sign in to save forever
           </div>
           <div className="flex items-center gap-2">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -172,92 +228,3 @@ export function Hero() {
   );
 }
 
-function SessionReady({ code, expiresAt }: { code: string; expiresAt: string | null }) {
-  const apiUrl = typeof window !== 'undefined' ? window.location.origin : 'https://jobhunter.vercel.app';
-
-  return (
-    <div className="mx-auto max-w-lg space-y-6">
-      {/* Session code card */}
-      <div className="rounded-2xl border border-primary-200 bg-white p-8 shadow-xl shadow-primary-950/5">
-        <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Your Session Code</p>
-        <div className="mt-3 flex items-center justify-center gap-3">
-          <span className="font-mono text-4xl font-bold tracking-widest text-primary-950">
-            {code}
-          </span>
-          <CopyButton text={code} />
-        </div>
-        {expiresAt && (
-          <p className="mt-3 text-xs text-slate-400">
-            Expires {new Date(expiresAt).toLocaleString()}
-          </p>
-        )}
-      </div>
-
-      {/* Steps */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-        <h3 className="font-display text-base font-bold text-primary-950">Next Steps</h3>
-
-        <div className="flex gap-3 items-start">
-          <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700">1</span>
-          <div className="text-sm text-slate-600 w-full">
-            <p className="font-medium text-slate-800">Install the scraper &amp; browser engine</p>
-            <div className="mt-1.5 rounded-lg bg-slate-900 p-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <code className="text-sm text-slate-300 font-mono">pip install --upgrade jobhunter-scraper</code>
-                <CopyButton text="pip install --upgrade jobhunter-scraper" />
-              </div>
-              <div className="flex items-center justify-between border-t border-slate-700 pt-2">
-                <code className="text-sm text-slate-300 font-mono">python -m playwright install chromium</code>
-                <CopyButton text="python -m playwright install chromium" />
-              </div>
-            </div>
-            <p className="mt-1 text-xs text-slate-400">Only needed once. Requires Python 3.9+.</p>
-          </div>
-        </div>
-
-        <div className="flex gap-3 items-start">
-          <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700">2</span>
-          <div className="text-sm text-slate-600 w-full">
-            <p className="font-medium text-slate-800">Run the scraper</p>
-            <ScraperCommand code={code} apiUrl={apiUrl} />
-          </div>
-        </div>
-
-        <div className="flex gap-3 items-start">
-          <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700">3</span>
-          <div className="text-sm text-slate-600">
-            <p className="font-medium text-slate-800">View results on your dashboard</p>
-          </div>
-        </div>
-      </div>
-
-      <a
-        href={`/dashboard/${code}`}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent-500 px-6 py-3.5 text-base font-semibold text-primary-950 shadow-md shadow-accent-500/20 transition-all hover:bg-accent-400 hover:-translate-y-0.5"
-      >
-        Open Dashboard
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M5 12h14M12 5l7 7-7 7" />
-        </svg>
-      </a>
-    </div>
-  );
-}
-
-function ScraperCommand({ code, apiUrl }: { code: string; apiUrl: string }) {
-  const cmd = `python -m scrape --session ${code} --api-url ${apiUrl}`;
-
-  return (
-    <div className="mt-1.5 rounded-lg bg-slate-900 p-3">
-      <div className="flex items-start justify-between gap-2">
-        <pre className="text-sm text-slate-300 font-mono overflow-x-auto whitespace-pre-wrap">
-          <code>{cmd}</code>
-        </pre>
-        <CopyButton text={cmd} />
-      </div>
-      <p className="mt-2 text-xs text-slate-500">
-        Your keywords and location are saved to the session. The scraper will fetch them automatically.
-      </p>
-    </div>
-  );
-}

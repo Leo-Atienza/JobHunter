@@ -4,6 +4,7 @@ import { generateCode } from '@/lib/session';
 import { sanitize } from '@/lib/utils';
 import type { CreateSessionRequest } from '@/lib/types';
 import { JOB_SOURCES } from '@/lib/types';
+import { auth } from '@/lib/auth';
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
@@ -58,6 +59,10 @@ export async function POST(request: NextRequest) {
       : null;
     const country = body.country ? sanitize(body.country, 10) : null;
 
+    // Check if user is authenticated — attach user_id for persistent sessions
+    const session = await auth();
+    const userId = session?.user?.id ?? null;
+
     const sql = getDb();
     let inserted = false;
     let attempts = 0;
@@ -67,11 +72,15 @@ export async function POST(request: NextRequest) {
       const code = generateCode();
       attempts++;
       try {
+        // Logged-in users get no expiry (set far future); anonymous get 48h
+        const expiryExpr = userId
+          ? "NOW() + INTERVAL '10 years'"
+          : "NOW() + INTERVAL '48 hours'";
         const result = await sql(
-          `INSERT INTO sessions (code, keywords, location, sources, remote, companies, country)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)
+          `INSERT INTO sessions (code, keywords, location, sources, remote, companies, country, user_id, expires_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, ${expiryExpr})
            RETURNING code, expires_at`,
-          [code, keywords, location, sources, remote, companies, country]
+          [code, keywords, location, sources, remote, companies, country, userId]
         );
         if (result.length > 0) {
           inserted = true;

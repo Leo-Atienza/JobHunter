@@ -13,7 +13,8 @@ async function validateSession(code: string): Promise<{ valid: boolean; expiresA
 
   const sql = getDb();
   const rows = await sql(
-    'SELECT expires_at FROM sessions WHERE code = $1 AND expires_at > NOW()',
+    `SELECT expires_at FROM sessions
+     WHERE code = $1 AND (expires_at > NOW() OR user_id IS NOT NULL)`,
     [code]
   );
 

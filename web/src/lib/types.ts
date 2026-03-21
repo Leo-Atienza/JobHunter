@@ -44,6 +44,7 @@ export interface Session {
   remote: boolean;
   companies: string[] | null;
   country: string | null;
+  user_id: string | null;
 }
 
 export interface JobStats {

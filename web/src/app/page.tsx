@@ -2,6 +2,7 @@ import { Hero } from '@/components/landing/Hero';
 import { HowItWorks } from '@/components/landing/HowItWorks';
 
 import { FAQ } from '@/components/landing/FAQ';
+import { UserMenu } from '@/components/auth/UserMenu';
 
 export default function HomePage() {
   return (
@@ -19,14 +20,17 @@ export default function HomePage() {
               JobHunter
             </span>
           </div>
-          <a
-            href="https://github.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm font-medium text-slate-600 transition-colors hover:text-primary-700"
-          >
-            GitHub
-          </a>
+          <div className="flex items-center gap-4">
+            <a
+              href="https://github.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium text-slate-600 transition-colors hover:text-primary-700"
+            >
+              GitHub
+            </a>
+            <UserMenu />
+          </div>
         </div>
       </nav>
 
@@ -41,7 +45,7 @@ export default function HomePage() {
             Open source job search aggregator. Your data, your searches, your control.
           </p>
           <p className="mt-4 text-xs text-slate-400">
-            Sessions expire after 48 hours. No account needed.
+            Anonymous sessions expire after 48 hours. Sign in with Google to save sessions permanently.
           </p>
         </div>
       </footer>

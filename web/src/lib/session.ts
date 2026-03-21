@@ -22,7 +22,7 @@ export function isValidCodeFormat(code: string): boolean {
 export async function sessionExists(code: string): Promise<boolean> {
   const sql = getDb();
   const rows = await sql(
-    'SELECT 1 FROM sessions WHERE code = $1 AND expires_at > NOW()',
+    'SELECT 1 FROM sessions WHERE code = $1 AND (expires_at > NOW() OR user_id IS NOT NULL)',
     [code]
   );
   return rows.length > 0;
@@ -38,10 +38,11 @@ export async function getSession(code: string): Promise<{
   remote: boolean;
   companies: string[] | null;
   country: string | null;
+  user_id: string | null;
 } | null> {
   const sql = getDb();
   const rows = await sql(
-    'SELECT code, created_at, expires_at, keywords, location, sources, remote, companies, country FROM sessions WHERE code = $1 AND expires_at > NOW()',
+    'SELECT code, created_at, expires_at, keywords, location, sources, remote, companies, country, user_id FROM sessions WHERE code = $1 AND (expires_at > NOW() OR user_id IS NOT NULL)',
     [code]
   );
   if (rows.length === 0) return null;
@@ -55,5 +56,6 @@ export async function getSession(code: string): Promise<{
     remote: boolean;
     companies: string[] | null;
     country: string | null;
+    user_id: string | null;
   };
 }

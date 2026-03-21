@@ -17,6 +17,7 @@ import { ScrapeProgress } from './ScrapeProgress';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { formatTimestamp } from '@/lib/utils';
 import { ActionsMenu } from './ActionsMenu';
+import { UserMenu } from '@/components/auth/UserMenu';
 
 interface DashboardClientProps {
   code: string;
@@ -212,6 +213,9 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 jobCount={stats?.total ?? 0}
                 onRescanStart={handleRescanStart}
               />
+            </div>
+            <div className="ml-1 border-l border-slate-200 pl-2">
+              <UserMenu />
             </div>
           </div>
         </div>

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     const sql = getDb();
     const result = await sql(
-      'DELETE FROM sessions WHERE expires_at < NOW() RETURNING code'
+      'DELETE FROM sessions WHERE expires_at < NOW() AND user_id IS NULL RETURNING code'
     );
 
     const deletedCount = result.length;
