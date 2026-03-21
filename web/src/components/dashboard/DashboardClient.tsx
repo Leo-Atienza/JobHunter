@@ -14,6 +14,7 @@ import { RescanButton } from './RescanButton';
 import { WaitingState } from './WaitingState';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { formatTimestamp } from '@/lib/utils';
+import { ActionsMenu } from './ActionsMenu';
 
 interface DashboardClientProps {
   code: string;
@@ -120,7 +121,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
     <div className="min-h-screen overflow-x-hidden bg-slate-50">
       {/* Top bar */}
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <a href="/" className="flex shrink-0 items-center gap-2 transition-opacity hover:opacity-80">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-950">
@@ -143,10 +144,22 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 Expires {formatTimestamp(expiresAt)}
               </p>
             </div>
-            <RescanButton code={code} onRescanStart={handleRescanStart} />
-            <ShareButton code={code} jobCount={stats?.total ?? 0} disabled={!hasJobs} />
-            <ExportButton code={code} disabled={!hasJobs} />
-            <DeleteButton code={code} />
+            {/* Desktop: show individual buttons */}
+            <div className="hidden sm:flex items-center gap-2">
+              <RescanButton code={code} onRescanStart={handleRescanStart} />
+              <ShareButton code={code} jobCount={stats?.total ?? 0} disabled={!hasJobs} />
+              <ExportButton code={code} disabled={!hasJobs} />
+              <DeleteButton code={code} />
+            </div>
+            {/* Mobile: collapsed menu */}
+            <div className="sm:hidden">
+              <ActionsMenu
+                code={code}
+                hasJobs={hasJobs}
+                jobCount={stats?.total ?? 0}
+                onRescanStart={handleRescanStart}
+              />
+            </div>
           </div>
         </div>
       </header>
@@ -167,7 +180,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
         ) : (
           <>
             {/* Filters and search */}
-            <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <Filters
                 sourceFilter={sourceFilter}
                 statusFilter={statusFilter}

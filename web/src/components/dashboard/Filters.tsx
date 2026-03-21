@@ -37,7 +37,7 @@ export function Filters({
   return (
     <div className="flex flex-col gap-3 sm:flex-wrap sm:flex-row sm:items-center">
       {/* Source filters */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
         <span className="mr-1 shrink-0 text-xs font-medium uppercase tracking-wider text-slate-400">Source:</span>
         <button
           onClick={() => onSourceChange(null)}
