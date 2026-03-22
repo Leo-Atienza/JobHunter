@@ -37,6 +37,8 @@ export async function POST(
       return NextResponse.json({ error: 'Session not found or expired' }, { status: 404 });
     }
 
+    const sql = getDb();
+
     // Build scrape params from session preferences
     const scrapeParams: ScrapeParams = {
       keywords: session.keywords ?? [],
@@ -45,10 +47,14 @@ export async function POST(
       country: session.country ?? undefined,
     };
 
-    // Run the scraper
+    // Run the scraper with timing
+    const startMs = Date.now();
     const result = await scraperFn(scrapeParams);
+    const durationMs = Date.now() - startMs;
 
     if (result.error) {
+      // Log the error
+      await logScrapeRun(sql, body.session_code, source, 'error', 0, 0, 0, result.error, durationMs);
       return NextResponse.json({
         source,
         inserted: 0,
@@ -67,6 +73,9 @@ export async function POST(
 
     // Insert jobs into DB
     const { inserted, duplicates } = await insertJobs(body.session_code, filteredJobs);
+
+    // Log success
+    await logScrapeRun(sql, body.session_code, source, 'success', result.jobs.length, inserted, duplicates, null, durationMs);
 
     return NextResponse.json({
       source,
@@ -159,4 +168,27 @@ async function insertJobs(
   }
 
   return { inserted, duplicates };
+}
+
+/** Persist a scraper run outcome for health monitoring. Fire-and-forget. */
+async function logScrapeRun(
+  sql: ReturnType<typeof getDb>,
+  sessionCode: string,
+  source: string,
+  status: 'success' | 'error',
+  jobsFound: number,
+  jobsInserted: number,
+  duplicates: number,
+  errorMessage: string | null,
+  durationMs: number,
+) {
+  try {
+    await sql(
+      `INSERT INTO scrape_logs (session_code, source, status, jobs_found, jobs_inserted, duplicates, error_message, duration_ms)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [sessionCode, source, status, jobsFound, jobsInserted, duplicates, errorMessage, durationMs],
+    );
+  } catch {
+    // Non-critical — don't let logging failures break scraping
+  }
 }

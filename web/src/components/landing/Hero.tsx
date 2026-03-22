@@ -100,7 +100,7 @@ export function Hero() {
         </h1>
 
         <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-slate-600 sm:text-xl">
-          Search 16 job sources instantly — Remotive, Himalayas, Lever, Greenhouse, and more.
+          Search 12 job sources instantly — Remotive, Himalayas, Lever, Greenhouse, and more.
           AI-powered summaries, smart deduplication, and advanced filters. All free.
         </p>
 

@@ -76,7 +76,7 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
     remotive: 'Remotive', himalayas: 'Himalayas', arbeitnow: 'Arbeitnow',
     jobicy: 'Jobicy', devitjobs: 'DevITjobs', themuse: 'The Muse',
     lever: 'Lever', greenhouse: 'Greenhouse', workday: 'Workday',
-    adzuna: 'Adzuna', jooble: 'Jooble', linkedin: 'LinkedIn',
+    adzuna: 'Adzuna', jooble: 'Jooble', 'linkedin-public': 'LinkedIn', linkedin: 'LinkedIn',
     indeed: 'Indeed', glassdoor: 'Glassdoor', rapidapi: 'RapidAPI',
     jobbank: 'Job Bank',
   };
