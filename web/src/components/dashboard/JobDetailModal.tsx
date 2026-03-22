@@ -113,7 +113,7 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
       {/* Slide-out panel */}
       <div
         ref={panelRef}
-        className="relative z-10 flex h-full w-full max-w-2xl flex-col bg-white shadow-2xl animate-slide-in-right"
+        className="relative z-10 flex h-full w-full flex-col bg-white shadow-2xl animate-slide-in-right sm:max-w-2xl"
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
@@ -179,7 +179,7 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
           </div>
 
           {/* Key info grid */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-2 min-[400px]:grid-cols-2 sm:grid-cols-3 sm:gap-3">
             {job.location && (
               <div className="rounded-lg bg-slate-50 p-3">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Location</p>

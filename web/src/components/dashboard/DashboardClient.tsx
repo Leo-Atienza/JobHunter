@@ -7,7 +7,7 @@ import { StatsBar } from './StatsBar';
 import { Filters } from './Filters';
 import { SearchBar } from './SearchBar';
 import { JobTable } from './JobTable';
-import { JobCard } from './JobCard';
+import { LazyJobCard } from './LazyJobCard';
 import { ExportButton } from './ExportButton';
 import { ShareButton } from './ShareButton';
 import { DeleteButton } from './DeleteButton';
@@ -38,7 +38,9 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
   const [salaryMin, setSalaryMin] = useState('');
   const [salaryMax, setSalaryMax] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>(
+    typeof window !== 'undefined' && window.innerWidth < 640 ? 'cards' : 'table'
+  );
   const [sortField, setSortField] = useState<keyof Job>('relevance_score');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -363,9 +365,9 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 onJobClick={handleJobClick}
               />
             ) : (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-4 grid gap-3 grid-cols-1 min-[500px]:grid-cols-2 lg:grid-cols-3">
                 {paginatedJobs.map((job) => (
-                  <JobCard key={job.id} job={job} onUpdate={handleJobUpdate} onJobClick={handleJobClick} />
+                  <LazyJobCard key={job.id} job={job} onUpdate={handleJobUpdate} onJobClick={handleJobClick} />
                 ))}
               </div>
             )}
