@@ -7,6 +7,7 @@ import type { ScrapeParams } from '@/lib/scrapers/types';
 import type { JobInput } from '@/lib/types';
 import { parseSalary } from '@/lib/salary-parser';
 import { matchesCountry } from '@/lib/country-filter';
+import { extractSkills, extractBenefits } from '@/lib/skills-extractor';
 
 export const maxDuration = 60; // Vercel Pro; free tier caps at 10s
 
@@ -131,8 +132,8 @@ async function insertJobs(
     const posted_date = job.posted_date ? sanitize(job.posted_date, 255) : null;
     const job_type = job.job_type ? sanitize(job.job_type, 50) : null;
     const experience_level = job.experience_level ? sanitize(job.experience_level, 50) : null;
-    const skills = job.skills ? sanitize(job.skills, 5000) : null;
-    const benefits = job.benefits ? sanitize(job.benefits, 5000) : null;
+    const skills = job.skills ? sanitize(job.skills, 5000) : extractSkills(description);
+    const benefits = job.benefits ? sanitize(job.benefits, 5000) : extractBenefits(description);
     const relevance_score = typeof job.relevance_score === 'number'
       ? Math.min(Math.max(Math.round(job.relevance_score), 0), 100)
       : 0;

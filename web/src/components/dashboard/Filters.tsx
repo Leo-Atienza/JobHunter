@@ -13,6 +13,10 @@ interface FiltersProps {
   jobTypeFilter: string | null;
   salaryMin: string;
   salaryMax: string;
+  freshnessFilter: string | null;
+  hideGhosts: boolean;
+  companyFilter: string | null;
+  sessionCompanies: string[] | null;
   onSourceChange: (source: string | null) => void;
   onStatusChange: (status: string | null) => void;
   onRemoteChange: (value: boolean) => void;
@@ -20,6 +24,9 @@ interface FiltersProps {
   onJobTypeChange: (type: string | null) => void;
   onSalaryMinChange: (val: string) => void;
   onSalaryMaxChange: (val: string) => void;
+  onFreshnessChange: (val: string | null) => void;
+  onHideGhostsChange: (val: boolean) => void;
+  onCompanyChange: (val: string | null) => void;
   stats: JobStats | null;
 }
 
@@ -43,6 +50,10 @@ export function Filters({
   jobTypeFilter,
   salaryMin,
   salaryMax,
+  freshnessFilter,
+  hideGhosts,
+  companyFilter,
+  sessionCompanies,
   onSourceChange,
   onStatusChange,
   onRemoteChange,
@@ -50,6 +61,9 @@ export function Filters({
   onJobTypeChange,
   onSalaryMinChange,
   onSalaryMaxChange,
+  onFreshnessChange,
+  onHideGhostsChange,
+  onCompanyChange,
   stats,
 }: FiltersProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -63,6 +77,9 @@ export function Filters({
     jobTypeFilter,
     salaryMin,
     salaryMax,
+    freshnessFilter,
+    hideGhosts,
+    companyFilter,
   ].filter(Boolean).length;
 
   const clearAll = () => {
@@ -73,6 +90,9 @@ export function Filters({
     onJobTypeChange(null);
     onSalaryMinChange('');
     onSalaryMaxChange('');
+    onFreshnessChange(null);
+    onHideGhostsChange(false);
+    onCompanyChange(null);
   };
 
   const filterContent = (
@@ -204,6 +224,62 @@ export function Filters({
             className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
           />
         </div>
+
+        {/* Freshness filter */}
+        <div className="flex items-center gap-1.5">
+          <span className="mr-1 text-xs font-medium uppercase tracking-wider text-slate-400">Posted:</span>
+          <select
+            value={freshnessFilter ?? ''}
+            onChange={(e) => onFreshnessChange(e.target.value || null)}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 outline-none transition-colors focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+          >
+            <option value="">Any time</option>
+            <option value="1">Last 24 hours</option>
+            <option value="3">Last 3 days</option>
+            <option value="7">Last 7 days</option>
+            <option value="14">Last 14 days</option>
+            <option value="30">Last 30 days</option>
+          </select>
+        </div>
+
+        {/* Hide ghost jobs toggle */}
+        <label className="flex items-center gap-2 cursor-pointer">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={hideGhosts}
+            onClick={() => onHideGhostsChange(!hideGhosts)}
+            className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ${
+              hideGhosts ? 'bg-error-400' : 'bg-slate-200'
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ${
+                hideGhosts ? 'translate-x-4' : 'translate-x-0'
+              }`}
+            />
+          </button>
+          <span className="text-xs font-medium text-slate-600">
+            Hide expired{stats?.ghost_count ? ` (${stats.ghost_count})` : ''}
+          </span>
+        </label>
+
+        {/* Company filter (from session) */}
+        {sessionCompanies && sessionCompanies.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            <span className="mr-1 text-xs font-medium uppercase tracking-wider text-slate-400">Company:</span>
+            <select
+              value={companyFilter ?? ''}
+              onChange={(e) => onCompanyChange(e.target.value || null)}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 outline-none transition-colors focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+            >
+              <option value="">All companies</option>
+              {sessionCompanies.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Clear filters */}
         {activeFilterCount > 0 && (

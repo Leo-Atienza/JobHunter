@@ -96,17 +96,21 @@ export function JobCard({ job, onUpdate, onJobClick }: JobCardProps) {
               <span className="truncate max-w-[140px]">{job.location}</span>
             </span>
           )}
-          {job.posted_date && (
-            <span>{job.posted_date}</span>
-          )}
-          {!job.posted_date && (
-            <span>{formatDate(job.scraped_at)}</span>
-          )}
+          <span>{formatDate(job.posted_date ?? job.scraped_at)}</span>
         </div>
 
         {/* Tags row */}
-        {(job.job_type || job.experience_level) && (
+        {(job.job_type || job.experience_level || job.relevance_score > 0) && (
           <div className="mt-2 flex flex-wrap gap-1">
+            {job.relevance_score > 0 && (
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                job.relevance_score >= 80 ? 'bg-green-50 text-green-700' :
+                job.relevance_score >= 50 ? 'bg-amber-50 text-amber-700' :
+                'bg-orange-50 text-orange-700'
+              }`}>
+                {job.relevance_score}% match
+              </span>
+            )}
             {job.job_type && (
               <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-600">
                 {job.job_type}

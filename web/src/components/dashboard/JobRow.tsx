@@ -164,7 +164,7 @@ export function JobRow({ job, onUpdate, onJobClick }: JobRowProps) {
         {/* Posted */}
         <td className="hidden lg:table-cell px-4 py-3">
           <p className="text-sm text-slate-500">
-            {job.posted_date ?? formatDate(job.scraped_at)}
+            {formatDate(job.posted_date ?? job.scraped_at)}
           </p>
         </td>
 

@@ -37,6 +37,9 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
   const [jobTypeFilter, setJobTypeFilter] = useState<string | null>(null);
   const [salaryMin, setSalaryMin] = useState('');
   const [salaryMax, setSalaryMax] = useState('');
+  const [freshnessFilter, setFreshnessFilter] = useState<string | null>(null);
+  const [hideGhosts, setHideGhosts] = useState(false);
+  const [companyFilter, setCompanyFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>(
     typeof window !== 'undefined' && window.innerWidth < 640 ? 'cards' : 'table'
@@ -154,10 +157,28 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
         const minVal = salaryMin ? parseInt(salaryMin, 10) * 1000 : 0;
         const maxVal = salaryMax ? parseInt(salaryMax, 10) * 1000 : Infinity;
         if (!minVal && maxVal === Infinity) return true;
-        if (!job.salary_min && !job.salary_max) return true;
+        // Exclude jobs with no salary data when salary filter is active
+        if (!job.salary_min && !job.salary_max) return false;
         const jobMin = job.salary_min ?? 0;
         const jobMax = job.salary_max ?? Infinity;
         return jobMax >= minVal && jobMin <= maxVal;
+      })
+      .filter((job) => {
+        if (!freshnessFilter) return true;
+        const days = parseInt(freshnessFilter, 10);
+        const cutoff = Date.now() - days * 86400000;
+        // Use posted_date if available, fall back to scraped_at
+        const dateStr = job.posted_date ?? job.scraped_at;
+        const parsed = new Date(dateStr).getTime();
+        return !isNaN(parsed) && parsed >= cutoff;
+      })
+      .filter((job) => {
+        if (!hideGhosts) return true;
+        return !job.is_ghost;
+      })
+      .filter((job) => {
+        if (!companyFilter) return true;
+        return job.company?.toLowerCase().includes(companyFilter.toLowerCase()) ?? false;
       })
       .filter((job) => {
         if (!searchQuery) return true;
@@ -178,7 +199,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
         const cmp = String(aVal).localeCompare(String(bVal), undefined, { numeric: true });
         return sortDirection === 'asc' ? cmp : -cmp;
       });
-  }, [primaryJobs, remoteFilter, experienceFilter, jobTypeFilter, salaryMin, salaryMax, searchQuery, sortField, sortDirection]);
+  }, [primaryJobs, remoteFilter, experienceFilter, jobTypeFilter, salaryMin, salaryMax, freshnessFilter, hideGhosts, companyFilter, searchQuery, sortField, sortDirection]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
@@ -309,6 +330,10 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 jobTypeFilter={jobTypeFilter}
                 salaryMin={salaryMin}
                 salaryMax={salaryMax}
+                freshnessFilter={freshnessFilter}
+                hideGhosts={hideGhosts}
+                companyFilter={companyFilter}
+                sessionCompanies={session?.companies ?? null}
                 onSourceChange={(v) => { setSourceFilter(v); resetPage(); }}
                 onStatusChange={(v) => { setStatusFilter(v); resetPage(); }}
                 onRemoteChange={(v) => { setRemoteFilter(v); resetPage(); }}
@@ -316,6 +341,9 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 onJobTypeChange={(v) => { setJobTypeFilter(v); resetPage(); }}
                 onSalaryMinChange={(v) => { setSalaryMin(v); resetPage(); }}
                 onSalaryMaxChange={(v) => { setSalaryMax(v); resetPage(); }}
+                onFreshnessChange={(v) => { setFreshnessFilter(v); resetPage(); }}
+                onHideGhostsChange={(v) => { setHideGhosts(v); resetPage(); }}
+                onCompanyChange={(v) => { setCompanyFilter(v); resetPage(); }}
                 stats={stats ?? null}
               />
               <SearchBar value={searchQuery} onChange={(v) => { setSearchQuery(v); resetPage(); }} />
@@ -328,6 +356,9 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 <span className="font-semibold">{primaryJobs.length}</span> jobs
                 {filteredJobs.length !== primaryJobs.length && (
                   <span className="text-slate-400 ml-1">(filtered)</span>
+                )}
+                {stats && stats.ghost_count > 0 && !hideGhosts && (
+                  <span className="ml-2 text-error-500">{stats.ghost_count} possibly expired</span>
                 )}
               </div>
               <div className="flex items-center rounded-lg border border-slate-200 bg-white p-0.5">
