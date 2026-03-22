@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import useSWR from 'swr';
 import type { Job, JobStats, Session } from '@/lib/types';
 import { StatsBar } from './StatsBar';
@@ -12,8 +12,9 @@ import { ExportButton } from './ExportButton';
 import { ShareButton } from './ShareButton';
 import { DeleteButton } from './DeleteButton';
 import { RescanButton } from './RescanButton';
-import { WaitingState } from './WaitingState';
 import { ScrapeProgress } from './ScrapeProgress';
+import { Pagination } from './Pagination';
+import { JobDetailModal } from './JobDetailModal';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { formatTimestamp } from '@/lib/utils';
 import { ActionsMenu } from './ActionsMenu';
@@ -40,6 +41,9 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [sortField, setSortField] = useState<keyof Job>('relevance_score');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
 
   const lastTotalRef = useRef<number>(0);
   const staleCountRef = useRef<number>(0);
@@ -75,7 +79,6 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
       if (stats.total === lastTotalRef.current) {
         staleCountRef.current++;
         if (staleCountRef.current >= 12) {
-          // ~2 minutes at 10s intervals
           setRefreshInterval(60000);
         }
       } else {
@@ -94,6 +97,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
         setSortField(field);
         setSortDirection('asc');
       }
+      setCurrentPage(1);
     },
     [sortField]
   );
@@ -107,11 +111,13 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
     setRefreshInterval(10000);
   }, []);
 
+  // Reset page when filters change
+  const resetPage = useCallback(() => setCurrentPage(1), []);
+
   // Merge duplicates: hide duplicate rows, add "also_on" sources to primary
   const allJobs = jobs ?? [];
-  const primaryJobs = (() => {
+  const primaryJobs = useMemo(() => {
     const duplicateSourceMap = new Map<number, string[]>();
-    // Collect sources from duplicate entries
     for (const job of allJobs) {
       if (job.duplicate_of) {
         const existing = duplicateSourceMap.get(job.duplicate_of) ?? [];
@@ -119,57 +125,99 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
         duplicateSourceMap.set(job.duplicate_of, existing);
       }
     }
-    // Filter out duplicates, attach also_on to primaries
     return allJobs
       .filter((job) => !job.duplicate_of)
       .map((job) => ({
         ...job,
         also_on: duplicateSourceMap.get(job.id) ?? [],
       }));
-  })();
+  }, [allJobs]);
 
   // Filter and sort jobs client-side
-  const filteredJobs = primaryJobs
-    .filter((job) => {
-      if (!remoteFilter) return true;
-      return /remote|work from home|wfh|anywhere/i.test(job.location ?? '');
-    })
-    .filter((job) => {
-      if (!experienceFilter) return true;
-      return job.experience_level?.toLowerCase() === experienceFilter.toLowerCase();
-    })
-    .filter((job) => {
-      if (!jobTypeFilter) return true;
-      return job.job_type?.toLowerCase() === jobTypeFilter.toLowerCase();
-    })
-    .filter((job) => {
-      const minVal = salaryMin ? parseInt(salaryMin, 10) * 1000 : 0;
-      const maxVal = salaryMax ? parseInt(salaryMax, 10) * 1000 : Infinity;
-      if (!minVal && maxVal === Infinity) return true;
-      // If job has no parsed salary, include it (don't hide jobs with unknown salary)
-      if (!job.salary_min && !job.salary_max) return true;
-      const jobMin = job.salary_min ?? 0;
-      const jobMax = job.salary_max ?? Infinity;
-      return jobMax >= minVal && jobMin <= maxVal;
-    })
-    .filter((job) => {
-      if (!searchQuery) return true;
-      const q = searchQuery.toLowerCase();
-      return (
-        job.title.toLowerCase().includes(q) ||
-        (job.company?.toLowerCase().includes(q) ?? false) ||
-        (job.location?.toLowerCase().includes(q) ?? false) ||
-        (job.salary?.toLowerCase().includes(q) ?? false)
-      );
-    })
-    .sort((a, b) => {
-      const aVal = a[sortField];
-      const bVal = b[sortField];
-      if (aVal === null || aVal === undefined) return 1;
-      if (bVal === null || bVal === undefined) return -1;
-      const cmp = String(aVal).localeCompare(String(bVal), undefined, { numeric: true });
-      return sortDirection === 'asc' ? cmp : -cmp;
-    });
+  const filteredJobs = useMemo(() => {
+    return primaryJobs
+      .filter((job) => {
+        if (!remoteFilter) return true;
+        return /remote|work from home|wfh|anywhere/i.test(job.location ?? '');
+      })
+      .filter((job) => {
+        if (!experienceFilter) return true;
+        return job.experience_level?.toLowerCase() === experienceFilter.toLowerCase();
+      })
+      .filter((job) => {
+        if (!jobTypeFilter) return true;
+        return job.job_type?.toLowerCase() === jobTypeFilter.toLowerCase();
+      })
+      .filter((job) => {
+        const minVal = salaryMin ? parseInt(salaryMin, 10) * 1000 : 0;
+        const maxVal = salaryMax ? parseInt(salaryMax, 10) * 1000 : Infinity;
+        if (!minVal && maxVal === Infinity) return true;
+        if (!job.salary_min && !job.salary_max) return true;
+        const jobMin = job.salary_min ?? 0;
+        const jobMax = job.salary_max ?? Infinity;
+        return jobMax >= minVal && jobMin <= maxVal;
+      })
+      .filter((job) => {
+        if (!searchQuery) return true;
+        const q = searchQuery.toLowerCase();
+        return (
+          job.title.toLowerCase().includes(q) ||
+          (job.company?.toLowerCase().includes(q) ?? false) ||
+          (job.location?.toLowerCase().includes(q) ?? false) ||
+          (job.salary?.toLowerCase().includes(q) ?? false) ||
+          (job.description?.toLowerCase().includes(q) ?? false)
+        );
+      })
+      .sort((a, b) => {
+        const aVal = a[sortField];
+        const bVal = b[sortField];
+        if (aVal === null || aVal === undefined) return 1;
+        if (bVal === null || bVal === undefined) return -1;
+        const cmp = String(aVal).localeCompare(String(bVal), undefined, { numeric: true });
+        return sortDirection === 'asc' ? cmp : -cmp;
+      });
+  }, [primaryJobs, remoteFilter, experienceFilter, jobTypeFilter, salaryMin, salaryMax, searchQuery, sortField, sortDirection]);
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedJobs = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return filteredJobs.slice(start, start + pageSize);
+  }, [filteredJobs, safePage, pageSize]);
+
+  // Keep page in bounds when filters shrink result set
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  // Job detail modal
+  const selectedJob = useMemo(
+    () => filteredJobs.find((j) => j.id === selectedJobId) ?? null,
+    [filteredJobs, selectedJobId],
+  );
+
+  const selectedIndex = selectedJob ? filteredJobs.indexOf(selectedJob) : -1;
+
+  const handleJobClick = useCallback((jobId: number) => {
+    setSelectedJobId(jobId);
+  }, []);
+
+  const handleModalNavigate = useCallback((direction: 'prev' | 'next') => {
+    if (selectedIndex === -1) return;
+    const newIndex = direction === 'prev' ? selectedIndex - 1 : selectedIndex + 1;
+    if (newIndex >= 0 && newIndex < filteredJobs.length) {
+      setSelectedJobId(filteredJobs[newIndex].id);
+      // If navigating beyond current page, update page
+      const newPage = Math.floor(newIndex / pageSize) + 1;
+      if (newPage !== safePage) setCurrentPage(newPage);
+    }
+  }, [selectedIndex, filteredJobs, pageSize, safePage]);
+
+  const handlePageSizeChange = useCallback((size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  }, []);
 
   const isLoading = jobs === undefined;
   const hasJobs = (jobs?.length ?? 0) > 0;
@@ -259,23 +307,26 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 jobTypeFilter={jobTypeFilter}
                 salaryMin={salaryMin}
                 salaryMax={salaryMax}
-                onSourceChange={setSourceFilter}
-                onStatusChange={setStatusFilter}
-                onRemoteChange={setRemoteFilter}
-                onExperienceChange={setExperienceFilter}
-                onJobTypeChange={setJobTypeFilter}
-                onSalaryMinChange={setSalaryMin}
-                onSalaryMaxChange={setSalaryMax}
+                onSourceChange={(v) => { setSourceFilter(v); resetPage(); }}
+                onStatusChange={(v) => { setStatusFilter(v); resetPage(); }}
+                onRemoteChange={(v) => { setRemoteFilter(v); resetPage(); }}
+                onExperienceChange={(v) => { setExperienceFilter(v); resetPage(); }}
+                onJobTypeChange={(v) => { setJobTypeFilter(v); resetPage(); }}
+                onSalaryMinChange={(v) => { setSalaryMin(v); resetPage(); }}
+                onSalaryMaxChange={(v) => { setSalaryMax(v); resetPage(); }}
                 stats={stats ?? null}
               />
-              <SearchBar value={searchQuery} onChange={setSearchQuery} />
+              <SearchBar value={searchQuery} onChange={(v) => { setSearchQuery(v); resetPage(); }} />
             </div>
 
             {/* Results count + view toggle */}
             <div className="mt-4 flex items-center justify-between">
               <div className="text-sm text-slate-500">
                 Showing <span className="font-semibold text-primary-800">{filteredJobs.length}</span> of{' '}
-                <span className="font-semibold">{jobs?.length ?? 0}</span> jobs
+                <span className="font-semibold">{primaryJobs.length}</span> jobs
+                {filteredJobs.length !== primaryJobs.length && (
+                  <span className="text-slate-400 ml-1">(filtered)</span>
+                )}
               </div>
               <div className="flex items-center rounded-lg border border-slate-200 bg-white p-0.5">
                 <button
@@ -301,25 +352,48 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
               </div>
             </div>
 
-            {/* Job list */}
+            {/* Job list — paginated */}
             {viewMode === 'table' ? (
               <JobTable
-                jobs={filteredJobs}
+                jobs={paginatedJobs}
                 sortField={sortField}
                 sortDirection={sortDirection}
                 onSort={handleSort}
                 onJobUpdate={handleJobUpdate}
+                onJobClick={handleJobClick}
               />
             ) : (
               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredJobs.map((job) => (
-                  <JobCard key={job.id} job={job} onUpdate={handleJobUpdate} />
+                {paginatedJobs.map((job) => (
+                  <JobCard key={job.id} job={job} onUpdate={handleJobUpdate} onJobClick={handleJobClick} />
                 ))}
               </div>
             )}
+
+            {/* Pagination */}
+            <Pagination
+              currentPage={safePage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              totalItems={filteredJobs.length}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={handlePageSizeChange}
+            />
           </>
         )}
       </main>
+
+      {/* Job detail slide-out */}
+      {selectedJob && (
+        <JobDetailModal
+          job={selectedJob}
+          onClose={() => setSelectedJobId(null)}
+          onUpdate={handleJobUpdate}
+          onNavigate={handleModalNavigate}
+          hasPrev={selectedIndex > 0}
+          hasNext={selectedIndex < filteredJobs.length - 1}
+        />
+      )}
     </div>
   );
 }

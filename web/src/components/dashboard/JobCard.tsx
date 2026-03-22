@@ -8,9 +8,10 @@ import { getSourceColor, getSourceDisplayName, formatDate } from '@/lib/utils';
 interface JobCardProps {
   job: Job;
   onUpdate: () => void;
+  onJobClick?: (jobId: number) => void;
 }
 
-export function JobCard({ job, onUpdate }: JobCardProps) {
+export function JobCard({ job, onUpdate, onJobClick }: JobCardProps) {
   const [showDetails, setShowDetails] = useState(false);
   const [aiSummary, setAiSummary] = useState<string | null>(job.ai_summary ?? null);
   const [summaryLoading, setSummaryLoading] = useState(false);
@@ -120,13 +121,23 @@ export function JobCard({ job, onUpdate }: JobCardProps) {
         )}
       </div>
 
-      {/* Expand/collapse details */}
-      <button
-        onClick={() => setShowDetails(!showDetails)}
-        className="w-full border-t border-slate-100 px-4 py-2 text-xs font-medium text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
-      >
-        {showDetails ? 'Hide details' : 'Show details'}
-      </button>
+      {/* Actions */}
+      <div className="flex border-t border-slate-100">
+        <button
+          onClick={() => setShowDetails(!showDetails)}
+          className="flex-1 px-4 py-2 text-xs font-medium text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+        >
+          {showDetails ? 'Hide details' : 'Show details'}
+        </button>
+        {onJobClick && (
+          <button
+            onClick={() => onJobClick(job.id)}
+            className="border-l border-slate-100 px-4 py-2 text-xs font-medium text-primary-500 hover:bg-primary-50 hover:text-primary-700 transition-colors"
+          >
+            Full view
+          </button>
+        )}
+      </div>
 
       {showDetails && (
         <div className="border-t border-slate-100 px-4 py-3 space-y-3">

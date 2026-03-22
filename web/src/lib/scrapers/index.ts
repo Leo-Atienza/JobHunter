@@ -13,6 +13,8 @@ import { scrapeWorkday } from './workday';
 import { scrapeAdzuna } from './adzuna';
 import { scrapeJooble } from './jooble';
 import { scrapeLinkedInPublic } from './linkedin-public';
+import { scrapeCareerjet } from './careerjet';
+import { scrapeUsajobs } from './usajobs';
 
 /** All server-side scrapers keyed by source name. */
 export const SERVER_SCRAPERS: Record<string, ScraperFn> = {
@@ -28,6 +30,8 @@ export const SERVER_SCRAPERS: Record<string, ScraperFn> = {
   adzuna: scrapeAdzuna,
   jooble: scrapeJooble,
   'linkedin-public': scrapeLinkedInPublic,
+  careerjet: scrapeCareerjet,
+  usajobs: scrapeUsajobs,
 };
 
 /** Sources that can run server-side (no browser needed). */

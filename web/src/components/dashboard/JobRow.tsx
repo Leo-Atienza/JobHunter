@@ -8,9 +8,10 @@ import { getSourceColor, getSourceDisplayName, formatDate } from '@/lib/utils';
 interface JobRowProps {
   job: Job;
   onUpdate: () => void;
+  onJobClick?: (jobId: number) => void;
 }
 
-export function JobRow({ job, onUpdate }: JobRowProps) {
+export function JobRow({ job, onUpdate, onJobClick }: JobRowProps) {
   const [expanded, setExpanded] = useState(false);
   const [notes, setNotes] = useState(job.notes ?? '');
   const [aiSummary, setAiSummary] = useState<string | null>(job.ai_summary ?? null);
@@ -176,21 +177,36 @@ export function JobRow({ job, onUpdate }: JobRowProps) {
           />
         </td>
 
-        {/* Expand arrow */}
+        {/* Actions */}
         <td className="px-4 py-3">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={`text-slate-400 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
+          <div className="flex items-center gap-1">
+            {onJobClick && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onJobClick(job.id); }}
+                className="rounded-md p-1 text-slate-400 transition-colors hover:bg-primary-50 hover:text-primary-600"
+                title="View details"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+              </button>
+            )}
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={`text-slate-400 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </div>
         </td>
       </tr>
 

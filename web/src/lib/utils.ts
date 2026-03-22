@@ -94,6 +94,8 @@ export function getSourceColor(source: string): { bg: string; text: string } {
     workday: { bg: 'bg-amber-100', text: 'text-amber-800' },
     jooble: { bg: 'bg-violet-100', text: 'text-violet-800' },
     'linkedin-public': { bg: 'bg-blue-100', text: 'text-blue-800' },
+    careerjet: { bg: 'bg-rose-100', text: 'text-rose-800' },
+    usajobs: { bg: 'bg-blue-100', text: 'text-blue-700' },
   };
   return colors[source.toLowerCase()] ?? { bg: 'bg-slate-100', text: 'text-slate-800' };
 }
@@ -103,6 +105,8 @@ const SOURCE_DISPLAY: Record<string, string> = {
   'linkedin-public': 'LinkedIn',
   themuse: 'The Muse',
   devitjobs: 'DevIT Jobs',
+  careerjet: 'CareerJet',
+  usajobs: 'USAJobs',
 };
 
 export function getSourceDisplayName(source: string): string {
