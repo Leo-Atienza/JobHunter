@@ -54,7 +54,7 @@ export async function scrapeThemuse(params: ScrapeParams): Promise<ScrapeResult>
       });
     }
 
-    if (page + 1 >= (data?.page_count ?? 0)) break;
+    if (page + 1 >= (data?.page_count ?? Infinity)) break;
   }
 
   // Client-side keyword + location filtering (API has no free-text search)

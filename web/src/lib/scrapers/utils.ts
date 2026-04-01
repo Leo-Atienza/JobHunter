@@ -27,9 +27,14 @@ export async function fetchJson<T = unknown>(
         ...init.headers,
       },
     });
-    if (!resp.ok) return null;
+    if (!resp.ok) {
+      console.warn(`fetchJson ${resp.status} ${resp.statusText} — ${url}`);
+      return null;
+    }
     return (await resp.json()) as T;
-  } catch {
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`fetchJson error — ${url}: ${msg}`);
     return null;
   } finally {
     clearTimeout(timer);
@@ -75,7 +80,7 @@ export function matchesKeywords(text: string, keywords: string[]): boolean {
   // Full phrase match
   if (textLower.includes(combined)) return true;
 
-  // Any token match
-  const tokens = combined.split(/\s+/).filter((t) => t.length > 2);
+  // Any token match (>= 2 chars so "IT", "QA", "ML" are included)
+  const tokens = combined.split(/\s+/).filter((t) => t.length >= 2);
   return tokens.some((t) => textLower.includes(t));
 }

@@ -76,7 +76,9 @@ export async function scrapeWorkday(params: ScrapeParams): Promise<ScrapeResult>
                 posted_date: p.postedOn || undefined,
               };
             });
-        } catch {
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn(`Workday scraper failed for ${displayName}: ${msg}`);
           return [];
         }
       })
