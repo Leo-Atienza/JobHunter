@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { neon } from '@neondatabase/serverless';
 import { generateCode } from '@/lib/session';
 import { sanitize } from '@/lib/utils';
 import type { CreateSessionRequest } from '@/lib/types';
@@ -7,6 +7,17 @@ import { JOB_SOURCES } from '@/lib/types';
 import { auth } from '@/lib/auth';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { inferCountryFromLocation } from '@/lib/country-filter';
+
+/**
+ * Convert a JS array to a Postgres TEXT[] literal string.
+ * The neon() HTTP driver can't infer array types from JS arrays,
+ * so we serialize them as Postgres-compatible strings.
+ */
+function pgTextArray(arr: string[] | null): string | null {
+  if (!arr || arr.length === 0) return null;
+  const escaped = arr.map((s) => '"' + s.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"');
+  return '{' + escaped.join(',') + '}';
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -65,7 +76,7 @@ export async function POST(request: NextRequest) {
       console.error('Auth check failed (non-fatal):', e instanceof Error ? e.message : e);
     }
 
-    const sql = getDb();
+    const sql = neon(process.env.DATABASE_URL!);
     let inserted = false;
     let attempts = 0;
     const maxAttempts = 10;
@@ -78,23 +89,13 @@ export async function POST(request: NextRequest) {
         const expiryExpr = userId
           ? "NOW() + INTERVAL '10 years'"
           : "NOW() + INTERVAL '48 hours'";
-
-        // Insert session — dream_job added via separate UPDATE to avoid
-        // Neon HTTP driver type inference issues with 10+ parameters
         const result = await sql(
-          `INSERT INTO sessions (code, keywords, location, sources, remote, companies, country, user_id, firecrawl_urls, expires_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, ${expiryExpr})
+          `INSERT INTO sessions (code, keywords, location, sources, remote, companies, country, user_id, firecrawl_urls, dream_job, expires_at)
+           VALUES ($1, $2::TEXT[], $3, $4::TEXT[], $5::BOOLEAN, $6::TEXT[], $7, $8, $9::TEXT[], $10::TEXT, ${expiryExpr})
            RETURNING code, expires_at`,
-          [code, keywords, location, sources, remote, companies, country, userId, firecrawlUrls]
+          [code, pgTextArray(keywords), location, pgTextArray(sources), remote, pgTextArray(companies), country, userId, pgTextArray(firecrawlUrls), dreamJob]
         );
         if (result.length > 0) {
-          // Set dream_job in a separate query to stay under 9 params
-          if (dreamJob) {
-            await sql(
-              'UPDATE sessions SET dream_job = $1 WHERE code = $2',
-              [dreamJob, result[0].code]
-            );
-          }
           inserted = true;
           return NextResponse.json(
             { code: result[0].code, expires_at: result[0].expires_at },
