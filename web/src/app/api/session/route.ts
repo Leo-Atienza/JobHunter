@@ -79,10 +79,10 @@ export async function POST(request: NextRequest) {
           ? "NOW() + INTERVAL '10 years'"
           : "NOW() + INTERVAL '48 hours'";
         const result = await pool.query(
-          `INSERT INTO sessions (code, keywords, location, sources, remote, companies, country, user_id, firecrawl_urls, dream_job, expires_at)
-           VALUES ($1, $2::TEXT[], $3, $4::TEXT[], $5::BOOLEAN, $6::TEXT[], $7, $8, $9::TEXT[], $10, ${expiryExpr})
+          `INSERT INTO sessions (code, dream_job, keywords, location, sources, remote, companies, country, user_id, firecrawl_urls, expires_at)
+           VALUES ($1, $2, $3::TEXT[], $4, $5::TEXT[], $6::BOOLEAN, $7::TEXT[], $8, $9, $10::TEXT[], ${expiryExpr})
            RETURNING code, expires_at`,
-          [code, keywords, location, sources, remote, companies, country, userId, firecrawlUrls, dreamJob]
+          [code, dreamJob, keywords, location, sources, remote, companies, country, userId, firecrawlUrls]
         );
         if (result.rows.length > 0) {
           inserted = true;
