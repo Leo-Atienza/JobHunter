@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import type { Job } from '@/lib/types';
 import { StatusSelect } from './StatusSelect';
 import { getSourceColor, getSourceDisplayName, formatDate } from '@/lib/utils';
+import { formatDescription } from '@/lib/format-description';
 
 interface JobDetailModalProps {
   job: Job;
@@ -14,9 +15,10 @@ interface JobDetailModalProps {
   onNavigate?: (direction: 'prev' | 'next') => void;
   hasPrev?: boolean;
   hasNext?: boolean;
+  sessionCode: string;
 }
 
-export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, hasNext }: JobDetailModalProps) {
+export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, hasNext, sessionCode }: JobDetailModalProps) {
   const [notes, setNotes] = useState(job.notes ?? '');
   const [aiSummary, setAiSummary] = useState<string | null>(job.ai_summary ?? null);
   const [summaryLoading, setSummaryLoading] = useState(false);
@@ -27,6 +29,38 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
 
   // SSR guard — createPortal needs document.body
   useEffect(() => { setMounted(true); }, []);
+
+  // Focus trap — focus panel on mount, trap Tab within it, restore focus on unmount
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!panel) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const closeBtn = panel.querySelector<HTMLElement>('button[aria-label="Close"]');
+    closeBtn?.focus();
+
+    function handleTab(e: KeyboardEvent) {
+      if (e.key !== 'Tab' || !panel) return;
+      const focusable = panel.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener('keydown', handleTab);
+    return () => {
+      document.removeEventListener('keydown', handleTab);
+      previouslyFocused?.focus();
+    };
+  }, []);
 
   // Reset state when job changes
   useEffect(() => {
@@ -79,7 +113,7 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
         try {
           await fetch(`/api/jobs/${job.id}`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-Session-Code': sessionCode },
             body: JSON.stringify({ notes: newNotes }),
           });
         } catch {}
@@ -93,20 +127,12 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
     saveNotes(value);
   }
 
-  const formattedDescription = useMemo(() => {
-    if (!job.description) return null;
-    let text = job.description;
-    text = text.replace(/\s*(Requirements|Qualifications|Responsibilities|What you['']ll do|What we offer|About|Skills|Benefits|Duties|Experience|Education|Preferred|Must have|Nice to have|Key|Overview|Summary|Description|Role|Position|Job Type|Who you are|What you bring|Why join|Perks|Compensation|Salary|Location|How to apply)(\s*[:—\-])/gi, '\n\n$1$2');
-    text = text.replace(/\s*([•·▪▸►●○◆\-–—]\s)/g, '\n$1');
-    text = text.replace(/\s+(\d+[.)]\s)/g, '\n$1');
-    text = text.replace(/\n{3,}/g, '\n\n');
-    return text.trim();
-  }, [job.description]);
+  const formattedDescription = useMemo(() => formatDescription(job.description), [job.description]);
 
   const sourceColors = getSourceColor(job.source);
 
   const modal = (
-    <div className="fixed inset-0 z-50 flex items-start justify-end">
+    <div className="fixed inset-0 z-50 flex items-start justify-end" role="dialog" aria-modal="true" aria-labelledby="job-modal-title">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
@@ -125,6 +151,7 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
                   disabled={!hasPrev}
                   className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
                   title="Previous job (Left arrow)"
+                  aria-label="Previous job"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="15 18 9 12 15 6" />
@@ -135,6 +162,7 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
                   disabled={!hasNext}
                   className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
                   title="Next job (Right arrow)"
+                  aria-label="Next job"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="9 18 15 12 9 6" />
@@ -160,6 +188,7 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
             onClick={onClose}
             className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
             title="Close (Esc)"
+            aria-label="Close"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -172,7 +201,7 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
         <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
           {/* Title + company */}
           <div>
-            <h2 className="text-xl font-bold text-primary-950 leading-tight">{job.title}</h2>
+            <h2 id="job-modal-title" className="text-xl font-bold text-primary-950 leading-tight">{job.title}</h2>
             {job.company && (
               <p className="mt-1 text-sm font-medium text-slate-600">{job.company}</p>
             )}
@@ -225,7 +254,7 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
           {/* Status */}
           <div className="flex items-center gap-3">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Status:</span>
-            <StatusSelect jobId={job.id} currentStatus={job.status} onUpdate={onUpdate} />
+            <StatusSelect jobId={job.id} currentStatus={job.status} onUpdate={onUpdate} sessionCode={sessionCode} />
           </div>
 
           {/* AI Summary */}

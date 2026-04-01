@@ -9,7 +9,7 @@ interface ArbeitnowJob {
 }
 
 export async function scrapeArbeitnow(params: ScrapeParams): Promise<ScrapeResult> {
-  const query = params.keywords.join(' ');
+  const _query = params.keywords.join(' ');
   const jobs = [];
 
   for (let page = 1; page <= 3; page++) {

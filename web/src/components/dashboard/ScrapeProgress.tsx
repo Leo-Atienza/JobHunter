@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { SERVER_SCRAPER_NAMES, LOCAL_ONLY_SOURCES } from '@/lib/scrapers';
+import { getSourceDisplayName } from '@/lib/utils';
 
 interface ScrapeProgressProps {
   code: string;
@@ -72,14 +73,6 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
   const totalInserted = entries.reduce((acc, [, s]) => acc + (s.inserted ?? 0), 0);
   const allDone = totalDone >= entries.length && entries.length > 0;
 
-  const SOURCE_LABELS: Record<string, string> = {
-    remotive: 'Remotive', himalayas: 'Himalayas', arbeitnow: 'Arbeitnow',
-    jobicy: 'Jobicy', devitjobs: 'DevITjobs', themuse: 'The Muse',
-    lever: 'Lever', greenhouse: 'Greenhouse', workday: 'Workday',
-    adzuna: 'Adzuna', jooble: 'Jooble', 'linkedin-public': 'LinkedIn', linkedin: 'LinkedIn',
-    indeed: 'Indeed', glassdoor: 'Glassdoor', rapidapi: 'RapidAPI',
-    jobbank: 'Job Bank',
-  };
 
   return (
     <div className="mt-8 animate-fade-in">
@@ -123,7 +116,7 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
               className="flex items-center justify-between rounded-lg px-3 py-2 text-sm"
             >
               <span className={status.state === 'done' ? 'text-slate-700' : status.state === 'error' ? 'text-error-600' : 'text-slate-500'}>
-                {SOURCE_LABELS[source] ?? source}
+                {getSourceDisplayName(source)}
               </span>
               <span className="flex items-center gap-2">
                 {status.state === 'pending' && (
@@ -156,7 +149,7 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
 
         {localSources.length > 0 && (
           <p className="mt-4 text-xs text-slate-400 text-center">
-            {localSources.map((s) => SOURCE_LABELS[s] ?? s).join(', ')} require the local scraper (Python/Docker).
+            {localSources.map((s) => getSourceDisplayName(s)).join(', ')} require the local scraper (Python/Docker).
           </p>
         )}
       </div>

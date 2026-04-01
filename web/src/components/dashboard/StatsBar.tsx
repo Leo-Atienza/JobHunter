@@ -40,7 +40,7 @@ export function StatsBar({ stats }: StatsBarProps) {
   const statuses = Object.entries(stats.by_status);
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 lg:grid-cols-5">
       {/* Total jobs */}
       <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
         <p className="text-[10px] sm:text-xs font-medium uppercase tracking-wider text-slate-400">Total Jobs</p>

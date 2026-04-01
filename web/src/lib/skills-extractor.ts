@@ -25,7 +25,6 @@ const SKILLS_SECTION_PATTERN = /(?:requirements|qualifications|skills|what you(?
 
 const BENEFITS_SECTION_PATTERN = /(?:benefits|perks|what we offer|why join|compensation|we offer|our benefits|employee benefits|what's in it for you)\s*[:—\-\n]/i;
 
-const BULLET_PATTERN = /(?:^|\n)\s*[•·▪▸►●○◆\-–—*]\s*(.+)/g;
 
 /**
  * Extract skills from a job description.

@@ -18,7 +18,7 @@ const LEVEL_MAP: Record<string, string> = {
 };
 
 export async function scrapeThemuse(params: ScrapeParams): Promise<ScrapeResult> {
-  const query = params.keywords.join(' ');
+  const _query = params.keywords.join(' ');
   const allJobs = [];
 
   for (let page = 0; page < 3; page++) {

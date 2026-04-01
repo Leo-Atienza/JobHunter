@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { SERVER_SCRAPER_NAMES } from '@/lib/scrapers';
+import { getSourceDisplayName } from '@/lib/utils';
 
 interface SourceStatus {
   state: 'pending' | 'running' | 'done' | 'error';
@@ -15,13 +16,6 @@ interface RescanButtonProps {
   onRescanStart: () => void;
   onComplete: () => void;
 }
-
-const SOURCE_LABELS: Record<string, string> = {
-  remotive: 'Remotive', himalayas: 'Himalayas', arbeitnow: 'Arbeitnow',
-  jobicy: 'Jobicy', devitjobs: 'DevITjobs', themuse: 'The Muse',
-  lever: 'Lever', greenhouse: 'Greenhouse', workday: 'Workday',
-  adzuna: 'Adzuna', jooble: 'Jooble',
-};
 
 export function RescanButton({ code, onRescanStart, onComplete }: RescanButtonProps) {
   const [scanning, setScanning] = useState(false);
@@ -128,7 +122,7 @@ export function RescanButton({ code, onRescanStart, onComplete }: RescanButtonPr
                     status.state === 'done' ? 'text-slate-700' :
                     status.state === 'error' ? 'text-red-600' : 'text-slate-500'
                   }>
-                    {SOURCE_LABELS[source] ?? source}
+                    {getSourceDisplayName(source)}
                   </span>
                   <span>
                     {status.state === 'pending' && <span className="text-xs text-slate-400">Waiting...</span>}

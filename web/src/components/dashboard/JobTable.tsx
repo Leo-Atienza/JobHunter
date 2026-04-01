@@ -11,6 +11,7 @@ interface JobTableProps {
   onSort: (field: keyof Job) => void;
   onJobUpdate: () => void;
   onJobClick?: (jobId: number) => void;
+  sessionCode: string;
 }
 
 interface ColumnDef {
@@ -47,7 +48,7 @@ function SortIndicator({ field, sortField, sortDirection }: { field: keyof Job; 
   );
 }
 
-export function JobTable({ jobs, sortField, sortDirection, onSort, onJobUpdate, onJobClick }: JobTableProps) {
+export function JobTable({ jobs, sortField, sortDirection, onSort, onJobUpdate, onJobClick, sessionCode }: JobTableProps) {
   if (jobs.length === 0) {
     return (
       <div className="mt-8 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-16">
@@ -94,7 +95,7 @@ export function JobTable({ jobs, sortField, sortDirection, onSort, onJobUpdate, 
           </thead>
           <tbody className="divide-y divide-slate-100">
             {jobs.map((job) => (
-              <JobRow key={job.id} job={job} onUpdate={onJobUpdate} onJobClick={onJobClick} />
+              <JobRow key={job.id} job={job} onUpdate={onJobUpdate} onJobClick={onJobClick} sessionCode={sessionCode} />
             ))}
           </tbody>
         </table>

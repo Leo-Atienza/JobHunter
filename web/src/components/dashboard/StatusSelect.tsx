@@ -8,6 +8,7 @@ interface StatusSelectProps {
   jobId: number;
   currentStatus: JobStatus;
   onUpdate: () => void;
+  sessionCode: string;
 }
 
 const statusStyles: Record<JobStatus, string> = {
@@ -28,7 +29,7 @@ const statusLabels: Record<JobStatus, string> = {
   dismissed: 'Dismissed',
 };
 
-export function StatusSelect({ jobId, currentStatus, onUpdate }: StatusSelectProps) {
+export function StatusSelect({ jobId, currentStatus, onUpdate, sessionCode }: StatusSelectProps) {
   const [loading, setLoading] = useState(false);
 
   async function handleChange(newStatus: string) {
@@ -37,7 +38,7 @@ export function StatusSelect({ jobId, currentStatus, onUpdate }: StatusSelectPro
     try {
       const res = await fetch(`/api/jobs/${jobId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Session-Code': sessionCode },
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) {

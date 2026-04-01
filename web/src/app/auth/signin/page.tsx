@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { signIn } from '@/lib/auth';
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
@@ -15,7 +16,7 @@ export default async function SignInPage() {
     <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
       <div className="w-full max-w-sm animate-fade-in">
         <div className="text-center mb-8">
-          <a href="/" className="inline-flex items-center gap-2 mb-6">
+          <Link href="/" className="inline-flex items-center gap-2 mb-6">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-950">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent-400">
                 <circle cx="11" cy="11" r="8" />
@@ -23,7 +24,7 @@ export default async function SignInPage() {
               </svg>
             </div>
             <span className="font-display text-xl font-bold text-primary-950">JobHunter</span>
-          </a>
+          </Link>
           <h1 className="font-display text-2xl font-bold text-primary-950">Welcome back</h1>
           <p className="mt-2 text-sm text-slate-500">
             Sign in to save sessions permanently and access them from any device.

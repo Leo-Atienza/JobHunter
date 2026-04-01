@@ -5,29 +5,11 @@ import { JOB_SOURCES } from '@/lib/types';
 import type { CreateSessionRequest, CreateSessionResponse } from '@/lib/types';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { JOB_TITLES, COMPANIES, LOCATIONS } from '@/lib/autocomplete-data';
+import { SOURCE_LABELS_EXTENDED as SOURCE_LABELS } from '@/lib/utils';
 
 interface SearchConfigProps {
   onSessionCreated: (code: string, expiresAt: string) => void;
 }
-
-const SOURCE_LABELS: Record<string, string> = {
-  linkedin: 'LinkedIn',
-  indeed: 'Indeed',
-  glassdoor: 'Glassdoor',
-  rapidapi: 'RapidAPI (Jobs Index)',
-  jobbank: 'Job Bank (CA)',
-  remotive: 'Remotive',
-  adzuna: 'Adzuna',
-  himalayas: 'Himalayas',
-  themuse: 'The Muse',
-  arbeitnow: 'Arbeitnow',
-  lever: 'Lever (Company Pages)',
-  greenhouse: 'Greenhouse (Company Pages)',
-  workday: 'Workday (Enterprise)',
-  jooble: 'Jooble',
-  jobicy: 'Jobicy (Remote)',
-  devitjobs: 'DevITjobs',
-};
 
 export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
   const [keywords, setKeywords] = useState('');

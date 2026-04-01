@@ -5,32 +5,14 @@ import { sanitize } from '@/lib/utils';
 import type { CreateSessionRequest } from '@/lib/types';
 import { JOB_SOURCES } from '@/lib/types';
 import { auth } from '@/lib/auth';
-
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(ip: string, maxRequests = 10, windowMs = 3600000): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + windowMs });
-    return true;
-  }
-
-  if (entry.count >= maxRequests) {
-    return false;
-  }
-
-  entry.count++;
-  return true;
-}
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
     const forwarded = request.headers.get('x-forwarded-for');
     const ip = forwarded?.split(',')[0]?.trim() ?? 'unknown';
 
-    if (!checkRateLimit(ip)) {
+    if (!(await checkRateLimit(`session:${ip}`, 10, 3600000))) {
       return NextResponse.json(
         { error: 'Too many requests. Max 10 sessions per hour.' },
         { status: 429 }

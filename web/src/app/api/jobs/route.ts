@@ -5,31 +5,7 @@ import { sanitize } from '@/lib/utils';
 import { computeMatchScore } from '@/lib/match-scoring';
 import type { Job, JobInput, ResumeProfile } from '@/lib/types';
 import { JOB_STATUSES } from '@/lib/types';
-
-const jobRateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-function checkJobRateLimit(sessionCode: string, maxJobs = 500, windowMs = 3600000): boolean {
-  const now = Date.now();
-  const entry = jobRateLimitMap.get(sessionCode);
-
-  if (!entry || now > entry.resetAt) {
-    jobRateLimitMap.set(sessionCode, { count: 0, resetAt: now + windowMs });
-    return true;
-  }
-
-  if (entry.count >= maxJobs) {
-    return false;
-  }
-
-  return true;
-}
-
-function incrementJobCount(sessionCode: string, count: number) {
-  const entry = jobRateLimitMap.get(sessionCode);
-  if (entry) {
-    entry.count += count;
-  }
-}
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,7 +39,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!checkJobRateLimit(session_code)) {
+    if (!(await checkRateLimit(`jobs:${session_code}`, 500, 3600000))) {
       return NextResponse.json(
         { error: 'Rate limit exceeded. Max 500 jobs per session per hour.' },
         { status: 429 }
@@ -112,7 +88,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    incrementJobCount(session_code, inserted);
+    // Rate limit counter was already incremented by checkRateLimit
 
     // Auto-score newly inserted jobs if user has a resume profile
     if (inserted > 0) {

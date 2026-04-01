@@ -132,3 +132,16 @@
     display: none;
   }
 }
+
+/* Native dialog backdrop */
+dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+/* View Transition: modal slide */
+::view-transition-old(job-modal-panel),
+::view-transition-new(job-modal-panel) {
+  animation-duration: 0.25s;
+  animation-timing-function: ease-out;
+}

@@ -1,42 +1,27 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import type { Job } from '@/lib/types';
 import { StatusSelect } from './StatusSelect';
+import { AISummaryBlock } from './AISummaryBlock';
+import { useAISummary } from '@/hooks/useAISummary';
+import { formatDescription } from '@/lib/format-description';
 import { getSourceColor, getSourceDisplayName, formatDate } from '@/lib/utils';
 
 interface JobRowProps {
   job: Job;
   onUpdate: () => void;
   onJobClick?: (jobId: number) => void;
+  sessionCode: string;
 }
 
-export function JobRow({ job, onUpdate, onJobClick }: JobRowProps) {
+export function JobRow({ job, onUpdate, onJobClick, sessionCode }: JobRowProps) {
   const [expanded, setExpanded] = useState(false);
   const [notes, setNotes] = useState(job.notes ?? '');
-  const [aiSummary, setAiSummary] = useState<string | null>(job.ai_summary ?? null);
-  const [summaryLoading, setSummaryLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const summaryFetchedRef = useRef(false);
-
-  // Keep notes in sync with prop changes
-  useEffect(() => {
-    setNotes(job.notes ?? '');
-  }, [job.notes]);
-
-  // Fetch AI summary on expand (if not already cached)
-  useEffect(() => {
-    if (!expanded || aiSummary || summaryFetchedRef.current || !job.description) return;
-    summaryFetchedRef.current = true;
-    setSummaryLoading(true);
-    fetch(`/api/jobs/${job.id}/summarize`, { method: 'POST' })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: { summary?: string } | null) => {
-        if (data?.summary) setAiSummary(data.summary);
-      })
-      .catch(() => {})
-      .finally(() => setSummaryLoading(false));
-  }, [expanded, aiSummary, job.id, job.description]);
+  const { summary: aiSummary, loading: summaryLoading } = useAISummary(
+    job.id, job.ai_summary ?? null, !!job.description, expanded,
+  );
 
   const saveNotes = useCallback(
     (newNotes: string) => {
@@ -47,7 +32,7 @@ export function JobRow({ job, onUpdate, onJobClick }: JobRowProps) {
         try {
           await fetch(`/api/jobs/${job.id}`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-Session-Code': sessionCode },
             body: JSON.stringify({ notes: newNotes }),
           });
         } catch {
@@ -63,20 +48,7 @@ export function JobRow({ job, onUpdate, onJobClick }: JobRowProps) {
     saveNotes(value);
   }
 
-  // Format raw description text into readable paragraphs
-  const formattedDescription = useMemo(() => {
-    if (!job.description) return null;
-    let text = job.description;
-    // Add line breaks before common section headers
-    text = text.replace(/\s*(Requirements|Qualifications|Responsibilities|What you['']ll do|What we offer|About|Skills|Benefits|Duties|Experience|Education|Preferred|Must have|Nice to have|Key|Overview|Summary|Description|Role|Position|Job Type|Who you are|What you bring|Why join|Perks|Compensation|Salary|Location|How to apply)(\s*[:—\-])/gi, '\n\n$1$2');
-    // Add line breaks before bullet-like patterns
-    text = text.replace(/\s*([•·▪▸►●○◆\-–—]\s)/g, '\n$1');
-    // Add line breaks before numbered lists
-    text = text.replace(/\s+(\d+[.)]\s)/g, '\n$1');
-    // Collapse 3+ newlines into 2
-    text = text.replace(/\n{3,}/g, '\n\n');
-    return text.trim();
-  }, [job.description]);
+  const formattedDescription = useMemo(() => formatDescription(job.description), [job.description]);
 
   const sourceColors = getSourceColor(job.source);
 
@@ -85,6 +57,10 @@ export function JobRow({ job, onUpdate, onJobClick }: JobRowProps) {
       <tr
         className="group cursor-pointer transition-colors hover:bg-primary-50/30"
         onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(!expanded); } }}
       >
         {/* Title */}
         <td className="px-4 py-3">
@@ -174,6 +150,7 @@ export function JobRow({ job, onUpdate, onJobClick }: JobRowProps) {
             jobId={job.id}
             currentStatus={job.status}
             onUpdate={onUpdate}
+            sessionCode={sessionCode}
           />
         </td>
 
@@ -250,27 +227,9 @@ export function JobRow({ job, onUpdate, onJobClick }: JobRowProps) {
             )}
 
             {/* AI Summary */}
-            {(aiSummary || summaryLoading) && (
-              <div className="mb-4 rounded-xl border border-primary-200 bg-primary-50/50 p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-600">
-                    <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
-                  </svg>
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-primary-600">AI Summary</h4>
-                </div>
-                {summaryLoading ? (
-                  <div className="flex items-center gap-2 text-sm text-primary-500">
-                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Generating summary...
-                  </div>
-                ) : (
-                  <p className="text-sm leading-relaxed text-primary-900">{aiSummary}</p>
-                )}
-              </div>
-            )}
+            <div className="mb-4">
+              <AISummaryBlock summary={aiSummary} loading={summaryLoading} />
+            </div>
 
             <div className="grid gap-6 md:grid-cols-2">
               {/* Description */}

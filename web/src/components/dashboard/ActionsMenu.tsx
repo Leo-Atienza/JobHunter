@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { SERVER_SCRAPER_NAMES } from '@/lib/scrapers';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 interface ActionsMenuProps {
   code: string;
@@ -20,6 +21,8 @@ export function ActionsMenu({ code, hasJobs, jobCount, onRescanStart, onRescanCo
   const [scanTotal, setScanTotal] = useState(0);
   const [copied, setCopied] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click
@@ -81,13 +84,15 @@ export function ActionsMenu({ code, hasJobs, jobCount, onRescanStart, onRescanCo
     window.location.href = `/api/jobs/export?session=${code}`;
   }
 
-  async function handleDelete() {
+  function handleDeleteClick() {
     setOpen(false);
-    const confirmed = window.confirm(
-      `Delete session ${code}? This will permanently remove the session and all its jobs.`
-    );
-    if (!confirmed) return;
+    setShowDeleteConfirm(true);
+  }
+
+  async function handleDeleteConfirm() {
+    setShowDeleteConfirm(false);
     setDeleting(true);
+    setDeleteError(null);
     try {
       const res = await fetch(`/api/session/${code}`, { method: 'DELETE' });
       if (!res.ok && res.status !== 404) throw new Error('Failed');
@@ -99,7 +104,7 @@ export function ActionsMenu({ code, hasJobs, jobCount, onRescanStart, onRescanCo
       router.push('/');
     } catch {
       setDeleting(false);
-      alert('Failed to delete session. Please try again.');
+      setDeleteError('Failed to delete session. Please try again.');
     }
   }
 
@@ -164,7 +169,7 @@ export function ActionsMenu({ code, hasJobs, jobCount, onRescanStart, onRescanCo
           </button>
           <div className="my-1 border-t border-slate-100" />
           <button
-            onClick={handleDelete}
+            onClick={handleDeleteClick}
             disabled={deleting}
             className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
           >
@@ -176,6 +181,18 @@ export function ActionsMenu({ code, hasJobs, jobCount, onRescanStart, onRescanCo
           </button>
         </div>
       )}
+      {deleteError && (
+        <p className="absolute right-0 top-full mt-1 whitespace-nowrap text-xs text-red-500">{deleteError}</p>
+      )}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title="Delete Session"
+        message={`Delete session ${code}? This will permanently remove the session and all its jobs.`}
+        confirmLabel="Delete"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setShowDeleteConfirm(false)}
+        destructive
+      />
     </div>
   );
 }

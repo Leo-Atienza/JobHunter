@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { getSourceDisplayName } from '@/lib/utils';
 
 interface SourceHealth {
   total_runs: number;
@@ -24,20 +25,6 @@ interface HealthData {
   };
 }
 
-const SOURCE_LABELS: Record<string, string> = {
-  remotive: 'Remotive',
-  himalayas: 'Himalayas',
-  arbeitnow: 'Arbeitnow',
-  jobicy: 'Jobicy',
-  devitjobs: 'DevITjobs',
-  themuse: 'The Muse',
-  lever: 'Lever',
-  greenhouse: 'Greenhouse',
-  workday: 'Workday',
-  adzuna: 'Adzuna',
-  jooble: 'Jooble',
-  'linkedin-public': 'LinkedIn',
-};
 
 function statusColor(rate: number): string {
   if (rate >= 90) return 'text-success-600 bg-success-50';
@@ -184,7 +171,7 @@ export function ScraperHealthDashboard() {
                   {entries.map(([source, s]) => (
                     <tr key={source} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3 font-medium text-primary-950">
-                        {SOURCE_LABELS[source] ?? source}
+                        {getSourceDisplayName(source)}
                       </td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor(s.success_rate)}`}>

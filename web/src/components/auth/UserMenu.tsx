@@ -2,6 +2,7 @@
 
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 
 export function UserMenu() {
   const { data: session, status } = useSession();
@@ -70,7 +71,7 @@ export function UserMenu() {
             <p className="text-sm font-medium text-slate-900 truncate">{session.user.name}</p>
             <p className="text-xs text-slate-500 truncate">{session.user.email}</p>
           </div>
-          <a
+          <Link
             href="/"
             className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
           >
@@ -79,7 +80,7 @@ export function UserMenu() {
               <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
             My Sessions
-          </a>
+          </Link>
           <button
             onClick={() => signOut()}
             className="flex w-full items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"

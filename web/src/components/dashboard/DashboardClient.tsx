@@ -18,6 +18,7 @@ import { JobDetailModal } from './JobDetailModal';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { formatTimestamp } from '@/lib/utils';
 import { ActionsMenu } from './ActionsMenu';
+import Link from 'next/link';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { ResumeUpload } from './ResumeUpload';
 import { useSession } from 'next-auth/react';
@@ -41,9 +42,11 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
   const [hideGhosts, setHideGhosts] = useState(false);
   const [companyFilter, setCompanyFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>(
-    typeof window !== 'undefined' && window.innerWidth < 640 ? 'cards' : 'table'
-  );
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>(() => {
+    if (typeof window === 'undefined') return 'table';
+    return (localStorage.getItem('jobhunter_view_mode') as 'table' | 'cards')
+      ?? (window.innerWidth < 640 ? 'cards' : 'table');
+  });
   const [sortField, setSortField] = useState<keyof Job>('relevance_score');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -223,7 +226,13 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
   const selectedIndex = selectedJob ? filteredJobs.indexOf(selectedJob) : -1;
 
   const handleJobClick = useCallback((jobId: number) => {
-    setSelectedJobId(jobId);
+    if ('startViewTransition' in document) {
+      (document as unknown as { startViewTransition: (cb: () => void) => void }).startViewTransition(() => {
+        setSelectedJobId(jobId);
+      });
+    } else {
+      setSelectedJobId(jobId);
+    }
   }, []);
 
   const handleModalNavigate = useCallback((direction: 'prev' | 'next') => {
@@ -251,7 +260,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <a href="/" className="flex shrink-0 items-center gap-2 transition-opacity hover:opacity-80">
+            <Link href="/" className="flex shrink-0 items-center gap-2 transition-opacity hover:opacity-80">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-950">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent-400">
                   <circle cx="11" cy="11" r="8" />
@@ -259,7 +268,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 </svg>
               </div>
               <span className="hidden sm:inline font-display text-lg font-bold text-primary-950">JobHunter</span>
-            </a>
+            </Link>
             <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 sm:gap-2 sm:px-3">
               <span className="font-mono text-xs font-semibold text-primary-800 sm:text-sm">{code}</span>
               <CopyButton text={code} />
@@ -296,9 +305,17 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
+      <main id="main-content" className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
         {/* Stats */}
-        {stats && <StatsBar stats={stats} />}
+        {stats ? (
+          <StatsBar stats={stats} />
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-24 animate-pulse rounded-xl bg-slate-200" />
+            ))}
+          </div>
+        )}
 
         {/* Resume upload for match scoring */}
         <div className="mt-4">
@@ -351,7 +368,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
 
             {/* Results count + view toggle */}
             <div className="mt-4 flex items-center justify-between">
-              <div className="text-sm text-slate-500">
+              <div className="text-sm text-slate-500" aria-live="polite" aria-atomic="true">
                 Showing <span className="font-semibold text-primary-800">{filteredJobs.length}</span> of{' '}
                 <span className="font-semibold">{primaryJobs.length}</span> jobs
                 {filteredJobs.length !== primaryJobs.length && (
@@ -363,9 +380,10 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
               </div>
               <div className="flex items-center rounded-lg border border-slate-200 bg-white p-0.5">
                 <button
-                  onClick={() => setViewMode('table')}
+                  onClick={() => { setViewMode('table'); localStorage.setItem('jobhunter_view_mode', 'table'); }}
                   className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${viewMode === 'table' ? 'bg-primary-950 text-white' : 'text-slate-500 hover:text-slate-700'}`}
                   title="Table view"
+                  aria-label="Switch to table view"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
@@ -373,9 +391,10 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                   </svg>
                 </button>
                 <button
-                  onClick={() => setViewMode('cards')}
+                  onClick={() => { setViewMode('cards'); localStorage.setItem('jobhunter_view_mode', 'cards'); }}
                   className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${viewMode === 'cards' ? 'bg-primary-950 text-white' : 'text-slate-500 hover:text-slate-700'}`}
                   title="Card view"
+                  aria-label="Switch to card view"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
@@ -394,11 +413,12 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 onSort={handleSort}
                 onJobUpdate={handleJobUpdate}
                 onJobClick={handleJobClick}
+                sessionCode={code}
               />
             ) : (
               <div className="mt-4 grid gap-3 grid-cols-1 min-[500px]:grid-cols-2 lg:grid-cols-3">
                 {paginatedJobs.map((job) => (
-                  <LazyJobCard key={job.id} job={job} onUpdate={handleJobUpdate} onJobClick={handleJobClick} />
+                  <LazyJobCard key={job.id} job={job} onUpdate={handleJobUpdate} onJobClick={handleJobClick} sessionCode={code} />
                 ))}
               </div>
             )}
@@ -425,6 +445,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
           onNavigate={handleModalNavigate}
           hasPrev={selectedIndex > 0}
           hasNext={selectedIndex < filteredJobs.length - 1}
+          sessionCode={code}
         />
       )}
     </div>

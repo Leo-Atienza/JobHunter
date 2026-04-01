@@ -8,13 +8,14 @@ interface LazyJobCardProps {
   job: Job;
   onUpdate: () => void;
   onJobClick?: (jobId: number) => void;
+  sessionCode: string;
 }
 
 /**
  * Lazy-loads a JobCard using IntersectionObserver.
  * Shows a lightweight placeholder until the card scrolls into view.
  */
-export function LazyJobCard({ job, onUpdate, onJobClick }: LazyJobCardProps) {
+export function LazyJobCard({ job, onUpdate, onJobClick, sessionCode }: LazyJobCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -44,7 +45,7 @@ export function LazyJobCard({ job, onUpdate, onJobClick }: LazyJobCardProps) {
 
   return (
     <div ref={ref}>
-      <JobCard job={job} onUpdate={onUpdate} onJobClick={onJobClick} />
+      <JobCard job={job} onUpdate={onUpdate} onJobClick={onJobClick} sessionCode={sessionCode} />
     </div>
   );
 }

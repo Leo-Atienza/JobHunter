@@ -59,7 +59,7 @@ export async function scrapeJobicy(params: ScrapeParams): Promise<ScrapeResult> 
   // Try with industry filter first
   const resp = await fetchJson<{ jobs?: JobicyJob[] }>(buildUrl(true));
   // Check for HTML response (bot protection)
-  let items = resp?.jobs ?? [];
+  const items = resp?.jobs ?? [];
   let jobs = parseJobs(items);
 
   if (!jobs.length && industry) {

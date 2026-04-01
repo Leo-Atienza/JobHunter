@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 import { SearchConfig } from './SearchConfig';
 
 type FlowStep = 'initial' | 'configure';
@@ -134,7 +135,7 @@ export function Hero() {
                 </div>
                 <div className="space-y-2">
                   {cloudSessions.map((s) => (
-                    <a
+                    <Link
                       key={s.code}
                       href={`/dashboard/${s.code}`}
                       className="flex items-center justify-between rounded-xl border border-primary-100 bg-white px-4 py-3 shadow-sm transition-all hover:border-primary-300 hover:shadow-md hover:-translate-y-0.5"
@@ -151,7 +152,7 @@ export function Hero() {
                           <path d="M5 12h14M12 5l7 7-7 7" />
                         </svg>
                       </div>
-                    </a>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -173,7 +174,7 @@ export function Hero() {
                 </div>
                 <div className="space-y-2">
                   {recentSessions.map((s) => (
-                    <a
+                    <Link
                       key={s.code}
                       href={`/dashboard/${s.code}`}
                       className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-all hover:border-primary-300 hover:shadow-md hover:-translate-y-0.5"
@@ -187,7 +188,7 @@ export function Hero() {
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 shrink-0">
                         <path d="M5 12h14M12 5l7 7-7 7" />
                       </svg>
-                    </a>
+                    </Link>
                   ))}
                 </div>
               </div>

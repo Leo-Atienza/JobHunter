@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import useSWR from 'swr';
+import Link from 'next/link';
 import type { ResumeProfile } from '@/lib/types';
 
 interface ResumeUploadProps {
@@ -129,9 +130,9 @@ export function ResumeUpload({ sessionCode, onScored, isSignedIn }: ResumeUpload
               Upload your resume for match scores
             </p>
             <p className="text-xs text-slate-400">
-              <a href="/auth/signin" className="text-primary-500 hover:text-primary-600 font-medium">
+              <Link href="/auth/signin" className="text-primary-500 hover:text-primary-600 font-medium">
                 Sign in
-              </a>{' '}
+              </Link>{' '}
               to get personalized job match percentages
             </p>
           </div>

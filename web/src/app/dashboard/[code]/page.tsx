@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { getDb } from '@/lib/db';
 import { isValidCodeFormat } from '@/lib/session';
 import { DashboardClient } from '@/components/dashboard/DashboardClient';
@@ -55,7 +56,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
             The session code <span className="font-mono font-semibold text-primary-700">{code}</span> is
             invalid or has expired. Sessions last 48 hours.
           </p>
-          <a
+          <Link
             href="/"
             className="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary-950 px-6 py-3 font-semibold text-white shadow-lg shadow-primary-950/20 transition-all hover:bg-primary-900 hover:-translate-y-0.5"
           >
@@ -63,7 +64,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
             Generate New Session
-          </a>
+          </Link>
         </div>
       </main>
     );

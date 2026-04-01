@@ -1,8 +1,11 @@
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
 /**
- * Simple className merger — joins truthy values with spaces.
+ * Merge class names with Tailwind CSS conflict resolution.
  */
-export function cn(...classes: (string | false | null | undefined)[]): string {
-  return classes.filter(Boolean).join(' ');
+export function cn(...inputs: ClassValue[]): string {
+  return twMerge(clsx(inputs));
 }
 
 /**
@@ -101,8 +104,42 @@ export function getSourceColor(source: string): { bg: string; text: string } {
 /** Human-friendly display name for a scraper source. */
 const SOURCE_DISPLAY: Record<string, string> = {
   'linkedin-public': 'LinkedIn',
+  linkedin: 'LinkedIn',
+  indeed: 'Indeed',
+  glassdoor: 'Glassdoor',
+  rapidapi: 'RapidAPI',
+  jobbank: 'Job Bank',
+  remotive: 'Remotive',
+  adzuna: 'Adzuna',
+  himalayas: 'Himalayas',
   themuse: 'The Muse',
-  devitjobs: 'DevIT Jobs',
+  arbeitnow: 'Arbeitnow',
+  lever: 'Lever',
+  greenhouse: 'Greenhouse',
+  workday: 'Workday',
+  jooble: 'Jooble',
+  jobicy: 'Jobicy',
+  devitjobs: 'DevITjobs',
+};
+
+/** Extended labels with contextual hints (for source selection UI). */
+export const SOURCE_LABELS_EXTENDED: Record<string, string> = {
+  linkedin: 'LinkedIn',
+  indeed: 'Indeed',
+  glassdoor: 'Glassdoor',
+  rapidapi: 'RapidAPI (Jobs Index)',
+  jobbank: 'Job Bank (CA)',
+  remotive: 'Remotive',
+  adzuna: 'Adzuna',
+  himalayas: 'Himalayas',
+  themuse: 'The Muse',
+  arbeitnow: 'Arbeitnow',
+  lever: 'Lever (Company Pages)',
+  greenhouse: 'Greenhouse (Company Pages)',
+  workday: 'Workday (Enterprise)',
+  jooble: 'Jooble',
+  jobicy: 'Jobicy (Remote)',
+  devitjobs: 'DevITjobs',
 };
 
 export function getSourceDisplayName(source: string): string {

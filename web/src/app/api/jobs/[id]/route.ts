@@ -19,6 +19,32 @@ export async function PATCH(
       );
     }
 
+    const sessionCode = request.headers.get('x-session-code');
+    if (!sessionCode) {
+      return NextResponse.json(
+        { error: 'Missing session code' },
+        { status: 403 }
+      );
+    }
+
+    const sql = getDb();
+    const jobOwnership = await sql(
+      'SELECT session_code FROM jobs WHERE id = $1',
+      [jobId]
+    );
+    if (jobOwnership.length === 0) {
+      return NextResponse.json(
+        { error: 'Job not found' },
+        { status: 404 }
+      );
+    }
+    if (jobOwnership[0].session_code !== sessionCode) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json() as { status?: string; notes?: string };
     const updates: string[] = [];
     const values: (string | number)[] = [];
@@ -50,7 +76,6 @@ export async function PATCH(
     }
 
     values.push(jobId);
-    const sql = getDb();
     const result = await sql(
       `UPDATE jobs SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
       values
