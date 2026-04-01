@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { Pool } from '@neondatabase/serverless';
 import { generateCode } from '@/lib/session';
 import { sanitize } from '@/lib/utils';
 import type { CreateSessionRequest } from '@/lib/types';
@@ -8,14 +8,8 @@ import { auth } from '@/lib/auth';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { inferCountryFromLocation } from '@/lib/country-filter';
 
-/** Convert a JS string array to a Postgres array literal: {val1,val2} */
-function toPgArray(arr: string[] | null): string | null {
-  if (!arr || arr.length === 0) return null;
-  const escaped = arr.map((s) => `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`);
-  return `{${escaped.join(',')}}`;
-}
-
 export async function POST(request: NextRequest) {
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   try {
     const forwarded = request.headers.get('x-forwarded-for');
     const ip = forwarded?.split(',')[0]?.trim() ?? 'unknown';
@@ -70,10 +64,8 @@ export async function POST(request: NextRequest) {
       userId = session?.user?.id ?? null;
     } catch (e) {
       console.error('Auth check failed (non-fatal):', e instanceof Error ? e.message : e);
-      // Continue without auth — anonymous session
     }
 
-    const sql = getDb();
     let inserted = false;
     let attempts = 0;
     const maxAttempts = 10;
@@ -86,16 +78,16 @@ export async function POST(request: NextRequest) {
         const expiryExpr = userId
           ? "NOW() + INTERVAL '10 years'"
           : "NOW() + INTERVAL '48 hours'";
-        const result = await sql(
+        const result = await pool.query(
           `INSERT INTO sessions (code, keywords, location, sources, remote, companies, country, user_id, firecrawl_urls, dream_job, expires_at)
-           VALUES ($1, $2::TEXT[], $3, $4::TEXT[], $5, $6::TEXT[], $7, $8, $9::TEXT[], $10, ${expiryExpr})
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, ${expiryExpr})
            RETURNING code, expires_at`,
-          [code, toPgArray(keywords), location, toPgArray(sources), remote, toPgArray(companies), country, userId, toPgArray(firecrawlUrls), dreamJob]
+          [code, keywords, location, sources, remote, companies, country, userId, firecrawlUrls, dreamJob]
         );
-        if (result.length > 0) {
+        if (result.rows.length > 0) {
           inserted = true;
           return NextResponse.json(
-            { code: result[0].code, expires_at: result[0].expires_at },
+            { code: result.rows[0].code, expires_at: result.rows[0].expires_at },
             { status: 201 }
           );
         }
@@ -116,10 +108,12 @@ export async function POST(request: NextRequest) {
     const errMsg = error instanceof Error
       ? `${error.message}\n${error.stack}`
       : String(error);
-    console.error('Session creation error [FULL]:', errMsg);
+    console.error('Session creation error:', errMsg);
     return NextResponse.json(
-      { error: 'Internal server error', _dbg: error instanceof Error ? error.message : String(error) },
+      { error: 'Internal server error' },
       { status: 500 }
     );
+  } finally {
+    await pool.end();
   }
 }
