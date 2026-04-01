@@ -16,6 +16,7 @@ const statusStyles: Record<JobStatus, string> = {
   saved: 'border-purple-300 bg-purple-50 text-purple-800',
   applied: 'border-amber-300 bg-amber-50 text-amber-800',
   interview: 'border-green-300 bg-green-50 text-green-800',
+  offer: 'border-emerald-300 bg-emerald-50 text-emerald-800',
   rejected: 'border-red-300 bg-red-50 text-red-800',
   dismissed: 'border-slate-300 bg-slate-50 text-slate-600',
 };
@@ -25,6 +26,7 @@ const statusLabels: Record<JobStatus, string> = {
   saved: 'Saved',
   applied: 'Applied',
   interview: 'Interview',
+  offer: 'Offer',
   rejected: 'Rejected',
   dismissed: 'Dismissed',
 };

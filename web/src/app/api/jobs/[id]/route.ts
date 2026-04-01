@@ -60,6 +60,7 @@ export async function PATCH(
       updates.push(`status = $${paramIndex}`);
       values.push(body.status);
       paramIndex++;
+      updates.push(`status_changed_at = NOW()`);
     }
 
     if (body.notes !== undefined) {

@@ -296,6 +296,17 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <Link
+              href="/saved"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-300"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="5" height="18" rx="1" />
+                <rect x="10" y="8" width="5" height="13" rx="1" />
+                <rect x="17" y="5" width="5" height="16" rx="1" />
+              </svg>
+              Tracker
+            </Link>
             <div className="hidden lg:block text-right">
               <p className="text-xs text-slate-400">
                 Expires {formatTimestamp(expiresAt)}

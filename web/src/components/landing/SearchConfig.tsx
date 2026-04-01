@@ -7,6 +7,7 @@ import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { JOB_TITLES, COMPANIES, LOCATIONS } from '@/lib/autocomplete-data';
 import { SOURCE_LABELS_EXTENDED as SOURCE_LABELS } from '@/lib/utils';
 import { inferCountryFromLocation, getCountryLabel } from '@/lib/country-filter';
+import { FirecrawlCreditsBadge } from '@/components/dashboard/FirecrawlCreditsBadge';
 
 const COUNTRY_FLAGS: Record<string, string> = {
   ca: '\u{1F1E8}\u{1F1E6}',
@@ -471,6 +472,12 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
             ))}
           </div>
           <p className="mt-1.5 text-xs text-slate-400">* Requires free API key</p>
+          {selectedSources.includes('firecrawl') && (
+            <div className="mt-2 flex items-center gap-2 animate-fade-in">
+              <span className="text-xs text-slate-400">Firecrawl:</span>
+              <FirecrawlCreditsBadge />
+            </div>
+          )}
         </div>
 
         {error && (

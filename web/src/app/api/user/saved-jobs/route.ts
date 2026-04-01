@@ -13,9 +13,11 @@ export async function GET() {
     `SELECT j.*, s.keywords as session_keywords
      FROM jobs j
      JOIN sessions s ON j.session_code = s.code
-     WHERE s.user_id = $1 AND j.status = 'saved' AND j.duplicate_of IS NULL
-     ORDER BY j.scraped_at DESC
-     LIMIT 200`,
+     WHERE s.user_id = $1
+       AND j.status NOT IN ('new', 'dismissed')
+       AND j.duplicate_of IS NULL
+     ORDER BY j.status_changed_at DESC NULLS LAST, j.scraped_at DESC
+     LIMIT 500`,
     [session.user.id]
   );
 

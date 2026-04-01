@@ -30,13 +30,15 @@ export interface Job {
   ai_summary: string | null;
   /** Whether the job URL appears to be dead (404/410) */
   is_ghost: boolean;
+  /** When the status was last changed */
+  status_changed_at: string | null;
   /** Sources that also have this job (populated client-side from duplicates) */
   also_on?: string[];
 }
 
-export type JobStatus = 'new' | 'saved' | 'applied' | 'interview' | 'rejected' | 'dismissed';
+export type JobStatus = 'new' | 'saved' | 'applied' | 'interview' | 'offer' | 'rejected' | 'dismissed';
 
-export const JOB_STATUSES: JobStatus[] = ['new', 'saved', 'applied', 'interview', 'rejected', 'dismissed'];
+export const JOB_STATUSES: JobStatus[] = ['new', 'saved', 'applied', 'interview', 'offer', 'rejected', 'dismissed'];
 
 export interface Session {
   code: string;

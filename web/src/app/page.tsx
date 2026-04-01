@@ -27,9 +27,11 @@ export default function HomePage() {
               className="flex items-center gap-1.5 text-sm font-medium text-slate-600 transition-colors hover:text-primary-700"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                <rect x="3" y="3" width="5" height="18" rx="1" />
+                <rect x="10" y="8" width="5" height="13" rx="1" />
+                <rect x="17" y="5" width="5" height="16" rx="1" />
               </svg>
-              Saved
+              Tracker
             </Link>
             <a
               href="https://github.com"

@@ -3,8 +3,8 @@ import { SavedJobsClient } from '@/components/saved/SavedJobsClient';
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Saved Jobs — JobHunter',
-  description: 'Your bookmarked job listings across all sessions.',
+  title: 'Application Tracker — JobHunter',
+  description: 'Track your job applications from saved to offer.',
 };
 
 export default async function SavedJobsPage() {
@@ -16,14 +16,16 @@ export default async function SavedJobsPage() {
         <div className="max-w-md text-center animate-fade-in">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary-100">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-600">
-              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+              <rect x="3" y="3" width="5" height="18" rx="1" />
+              <rect x="10" y="8" width="5" height="13" rx="1" />
+              <rect x="17" y="5" width="5" height="16" rx="1" />
             </svg>
           </div>
           <h1 className="mt-6 font-display text-2xl font-bold text-primary-950">
-            Saved Jobs
+            Application Tracker
           </h1>
           <p className="mt-3 text-slate-500">
-            Sign in to save jobs across sessions and access them anytime.
+            Sign in to track your job applications from saved to offer.
           </p>
           <Link
             href="/auth/signin"

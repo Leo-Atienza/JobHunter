@@ -41,6 +41,7 @@ const statusLabels: Record<JobStatus, string> = {
   saved: 'Saved',
   applied: 'Applied',
   interview: 'Interview',
+  offer: 'Offer',
   rejected: 'Rejected',
   dismissed: 'Dismissed',
 };
