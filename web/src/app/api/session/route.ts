@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       : String(error);
     console.error('Session creation error [FULL]:', errMsg);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', debug: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
