@@ -18,17 +18,17 @@ export async function checkRateLimit(
      VALUES ($1, 1, NOW())
      ON CONFLICT (key) DO UPDATE SET
        count = CASE
-         WHEN rate_limits.window_start + ($3 || ' seconds')::INTERVAL < NOW()
+         WHEN rate_limits.window_start + ($2 || ' seconds')::INTERVAL < NOW()
          THEN 1
          ELSE rate_limits.count + 1
        END,
        window_start = CASE
-         WHEN rate_limits.window_start + ($3 || ' seconds')::INTERVAL < NOW()
+         WHEN rate_limits.window_start + ($2 || ' seconds')::INTERVAL < NOW()
          THEN NOW()
          ELSE rate_limits.window_start
        END
      RETURNING count`,
-    [key, maxRequests, windowSeconds.toString()]
+    [key, windowSeconds.toString()]
   );
 
   return result[0].count <= maxRequests;
