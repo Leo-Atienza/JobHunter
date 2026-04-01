@@ -22,6 +22,7 @@ interface ParsedJob {
   experience_level?: string | null;
   description?: string | null;
   posted_date?: string | null;
+  dream_score?: number | null;
 }
 
 /**
@@ -138,6 +139,7 @@ For the "url" field: if there is a link to a specific job detail page, provide t
 
 Source URL: ${sourceUrl}
 Keywords being searched: ${params.keywords.join(', ')}
+${params.dream_job ? `\nCandidate's dream job: "${params.dream_job}"\nFor each job, also include "dream_score": 0-100 indicating how well it matches this dream job description. 85-100 = excellent match, 50-84 = partial, 0-49 = poor match.` : ''}
 
 ---
 ${truncatedMarkdown}`;
@@ -190,6 +192,9 @@ ${truncatedMarkdown}`;
       posted_date: parseDate(entry.posted_date),
       job_type: entry.job_type ? normalizeJobType(entry.job_type) : undefined,
       experience_level: entry.experience_level?.trim() || undefined,
+      dream_score: typeof entry.dream_score === 'number'
+        ? Math.min(100, Math.max(0, Math.round(entry.dream_score)))
+        : undefined,
     });
   }
 

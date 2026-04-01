@@ -41,6 +41,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
   const [freshnessFilter, setFreshnessFilter] = useState<string | null>(null);
   const [hideGhosts, setHideGhosts] = useState(false);
   const [companyFilter, setCompanyFilter] = useState<string | null>(null);
+  const [locationFilter, setLocationFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>(() => {
     if (typeof window === 'undefined') return 'table';
@@ -182,6 +183,25 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
       .filter((job) => {
         if (!companyFilter) return true;
         return job.company?.toLowerCase().includes(companyFilter.toLowerCase()) ?? false;
+      })
+      .filter((job) => {
+        if (!locationFilter) return true;
+        const loc = job.location?.toLowerCase() ?? '';
+        if (locationFilter === 'remote') {
+          return /remote|work from home|wfh|anywhere|worldwide/i.test(loc);
+        }
+        if (locationFilter === 'near' && session?.location) {
+          const city = session.location.split(',')[0].trim().toLowerCase();
+          return loc.includes(city);
+        }
+        if (locationFilter === 'other') {
+          const isRemote = /remote|work from home|wfh|anywhere|worldwide/i.test(loc);
+          const isNear = session?.location
+            ? loc.includes(session.location.split(',')[0].trim().toLowerCase())
+            : false;
+          return !isRemote && !isNear;
+        }
+        return true;
       })
       .filter((job) => {
         if (!searchQuery) return true;
@@ -334,7 +354,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
             ))}
           </div>
         ) : !hasJobs ? (
-          <ScrapeProgress code={code} sessionSources={session?.sources ?? null} firecrawlUrls={session?.firecrawl_urls} />
+          <ScrapeProgress code={code} sessionSources={session?.sources ?? null} firecrawlUrls={session?.firecrawl_urls} dreamJob={session?.dream_job} />
         ) : (
           <>
             {/* Filters and search */}
@@ -361,6 +381,9 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 onFreshnessChange={(v) => { setFreshnessFilter(v); resetPage(); }}
                 onHideGhostsChange={(v) => { setHideGhosts(v); resetPage(); }}
                 onCompanyChange={(v) => { setCompanyFilter(v); resetPage(); }}
+                locationFilter={locationFilter}
+                sessionLocation={session?.location ?? null}
+                onLocationChange={(v) => { setLocationFilter(v); resetPage(); }}
                 stats={stats ?? null}
               />
               <SearchBar value={searchQuery} onChange={(v) => { setSearchQuery(v); resetPage(); }} />

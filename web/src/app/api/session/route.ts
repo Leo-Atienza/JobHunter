@@ -6,6 +6,7 @@ import type { CreateSessionRequest } from '@/lib/types';
 import { JOB_SOURCES } from '@/lib/types';
 import { auth } from '@/lib/auth';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { inferCountryFromLocation } from '@/lib/country-filter';
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,7 +40,10 @@ export async function POST(request: NextRequest) {
     const companies = body.companies?.length
       ? body.companies.slice(0, 20).map((c) => sanitize(c, 100))
       : null;
-    const country = body.country ? sanitize(body.country, 10) : null;
+    const country = body.country
+      ? sanitize(body.country, 10)
+      : (location ? inferCountryFromLocation(location) : null);
+    const dreamJob = body.dream_job ? sanitize(body.dream_job, 2000) : null;
     const firecrawlUrls = body.firecrawl_urls?.length
       ? body.firecrawl_urls
           .slice(0, 10)
@@ -65,10 +69,10 @@ export async function POST(request: NextRequest) {
           ? "NOW() + INTERVAL '10 years'"
           : "NOW() + INTERVAL '48 hours'";
         const result = await sql(
-          `INSERT INTO sessions (code, keywords, location, sources, remote, companies, country, user_id, firecrawl_urls, expires_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, ${expiryExpr})
+          `INSERT INTO sessions (code, keywords, location, sources, remote, companies, country, user_id, firecrawl_urls, dream_job, expires_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, ${expiryExpr})
            RETURNING code, expires_at`,
-          [code, keywords, location, sources, remote, companies, country, userId, firecrawlUrls]
+          [code, keywords, location, sources, remote, companies, country, userId, firecrawlUrls, dreamJob]
         );
         if (result.length > 0) {
           inserted = true;

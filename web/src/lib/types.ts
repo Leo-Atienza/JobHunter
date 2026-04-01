@@ -17,6 +17,8 @@ export interface Job {
   skills: string | null;
   benefits: string | null;
   relevance_score: number;
+  /** AI dream job match score (0-100) */
+  dream_score: number;
   country: string | null;
   /** FK to the original job this is a cross-source duplicate of */
   duplicate_of: number | null;
@@ -48,6 +50,7 @@ export interface Session {
   country: string | null;
   user_id: string | null;
   firecrawl_urls: string[] | null;
+  dream_job: string | null;
 }
 
 export interface JobStats {
@@ -75,6 +78,7 @@ export interface JobInput {
   skills?: string;
   benefits?: string;
   relevance_score?: number;
+  dream_score?: number;
   country?: string;
 }
 
@@ -86,6 +90,7 @@ export interface CreateSessionRequest {
   companies?: string[];
   country?: string;
   firecrawl_urls?: string[];
+  dream_job?: string;
 }
 
 export interface CreateSessionResponse {

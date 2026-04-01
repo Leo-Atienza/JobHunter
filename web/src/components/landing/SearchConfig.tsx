@@ -1,11 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { JOB_SOURCES } from '@/lib/types';
 import type { CreateSessionRequest, CreateSessionResponse } from '@/lib/types';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { JOB_TITLES, COMPANIES, LOCATIONS } from '@/lib/autocomplete-data';
 import { SOURCE_LABELS_EXTENDED as SOURCE_LABELS } from '@/lib/utils';
+import { inferCountryFromLocation, getCountryLabel } from '@/lib/country-filter';
+
+const COUNTRY_FLAGS: Record<string, string> = {
+  ca: '\u{1F1E8}\u{1F1E6}',
+  us: '\u{1F1FA}\u{1F1F8}',
+  uk: '\u{1F1EC}\u{1F1E7}',
+  au: '\u{1F1E6}\u{1F1FA}',
+  de: '\u{1F1E9}\u{1F1EA}',
+  fr: '\u{1F1EB}\u{1F1F7}',
+  in: '\u{1F1EE}\u{1F1F3}',
+};
 
 interface SearchConfigProps {
   onSessionCreated: (code: string, expiresAt: string) => void;
@@ -13,14 +24,21 @@ interface SearchConfigProps {
 
 export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
   const [keywords, setKeywords] = useState('');
+  const [dreamJob, setDreamJob] = useState('');
   const [location, setLocation] = useState('');
   const [selectedSources, setSelectedSources] = useState<string[]>([...JOB_SOURCES]);
   const [companies, setCompanies] = useState('');
-  const [country, setCountry] = useState('');
   const [firecrawlUrls, setFirecrawlUrls] = useState('');
   const [remote, setRemote] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Auto-detect country from location input
+  const inferredCountry = useMemo(() => inferCountryFromLocation(location), [location]);
+  const countryLabel = useMemo(
+    () => (inferredCountry ? getCountryLabel(inferredCountry) : null),
+    [inferredCountry],
+  );
 
   function toggleSource(source: string) {
     setSelectedSources((prev) =>
@@ -59,8 +77,9 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
         sources: selectedSources.length < JOB_SOURCES.length ? selectedSources : undefined,
         remote: remote || undefined,
         companies: parsedCompanies.length > 0 ? parsedCompanies : undefined,
-        country: country || undefined,
+        country: inferredCountry ?? undefined,
         firecrawl_urls: parsedUrls.length > 0 ? parsedUrls : undefined,
+        dream_job: dreamJob.trim() || undefined,
       };
 
       const res = await fetch('/api/session', {
@@ -124,37 +143,47 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
           multiValue
         />
 
-        {/* Location */}
-        <AutocompleteInput
-          id="location"
-          value={location}
-          onChange={setLocation}
-          suggestions={LOCATIONS}
-          placeholder="e.g. Toronto, Canada"
-          label="Location"
-        />
-
-        {/* Country */}
+        {/* Dream Job Description */}
         <div>
-          <label htmlFor="country" className="block text-sm font-semibold text-slate-700">
-            Country
+          <label htmlFor="dream-job" className="block text-sm font-semibold text-slate-700">
+            Describe Your Dream Job
+            <span className="ml-2 inline-flex items-center rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-purple-600">
+              AI Powered
+            </span>
           </label>
-          <select
-            id="country"
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 bg-white focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-          >
-            <option value="">Any Country</option>
-            <option value="ca">Canada</option>
-            <option value="us">United States</option>
-            <option value="uk">United Kingdom</option>
-            <option value="au">Australia</option>
-            <option value="de">Germany</option>
-            <option value="fr">France</option>
-            <option value="in">India</option>
-          </select>
-          <p className="mt-1 text-xs text-slate-400">Strictly filter results to this country</p>
+          <textarea
+            id="dream-job"
+            value={dreamJob}
+            onChange={(e) => setDreamJob(e.target.value)}
+            rows={3}
+            maxLength={2000}
+            placeholder="e.g. I want a remote senior frontend role at a startup building developer tools, using React and TypeScript, with good work-life balance and competitive pay..."
+            className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 bg-white placeholder:text-slate-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 resize-none transition-colors"
+          />
+          <p className="mt-1 text-xs text-slate-400">
+            AI will score every job against this description. More detail = better matches.
+          </p>
+        </div>
+
+        {/* Location */}
+        <div>
+          <AutocompleteInput
+            id="location"
+            value={location}
+            onChange={setLocation}
+            suggestions={LOCATIONS}
+            placeholder="e.g. Toronto, Canada"
+            label="Location"
+          />
+          {inferredCountry && countryLabel && (
+            <div className="mt-1.5 flex items-center gap-1.5 animate-fade-in">
+              <span className="inline-flex items-center gap-1 rounded-full bg-accent-50 px-2.5 py-0.5 text-xs font-medium text-accent-700 ring-1 ring-inset ring-accent-200">
+                <span>{COUNTRY_FLAGS[inferredCountry] ?? ''}</span>
+                Detected: {countryLabel}
+              </span>
+              <span className="text-[11px] text-slate-400">Jobs will be filtered to this country</span>
+            </div>
+          )}
         </div>
 
         {/* Target Companies */}

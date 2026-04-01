@@ -17,6 +17,8 @@ interface FiltersProps {
   hideGhosts: boolean;
   companyFilter: string | null;
   sessionCompanies: string[] | null;
+  locationFilter: string | null;
+  sessionLocation: string | null;
   onSourceChange: (source: string | null) => void;
   onStatusChange: (status: string | null) => void;
   onRemoteChange: (value: boolean) => void;
@@ -27,6 +29,7 @@ interface FiltersProps {
   onFreshnessChange: (val: string | null) => void;
   onHideGhostsChange: (val: boolean) => void;
   onCompanyChange: (val: string | null) => void;
+  onLocationChange: (val: string | null) => void;
   stats: JobStats | null;
 }
 
@@ -54,6 +57,8 @@ export function Filters({
   hideGhosts,
   companyFilter,
   sessionCompanies,
+  locationFilter,
+  sessionLocation,
   onSourceChange,
   onStatusChange,
   onRemoteChange,
@@ -64,6 +69,7 @@ export function Filters({
   onFreshnessChange,
   onHideGhostsChange,
   onCompanyChange,
+  onLocationChange,
   stats,
 }: FiltersProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -80,6 +86,7 @@ export function Filters({
     freshnessFilter,
     hideGhosts,
     companyFilter,
+    locationFilter,
   ].filter(Boolean).length;
 
   const clearAll = () => {
@@ -93,6 +100,7 @@ export function Filters({
     onFreshnessChange(null);
     onHideGhostsChange(false);
     onCompanyChange(null);
+    onLocationChange(null);
   };
 
   const filterContent = (
@@ -135,6 +143,31 @@ export function Filters({
           );
         })}
       </div>
+
+      {/* Location filter pills */}
+      {sessionLocation && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
+          <span className="mr-1 shrink-0 text-xs font-medium uppercase tracking-wider text-slate-400">Location:</span>
+          {(['near', 'remote', 'other'] as const).map((opt) => (
+            <button
+              key={opt}
+              onClick={() => onLocationChange(locationFilter === opt ? null : opt)}
+              className={cn(
+                'shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-all whitespace-nowrap',
+                locationFilter === opt
+                  ? 'bg-primary-950 text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              )}
+            >
+              {opt === 'near'
+                ? `Near ${sessionLocation.split(',')[0].trim()}`
+                : opt === 'remote'
+                  ? 'Remote'
+                  : 'Other'}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Row 2: dropdowns + toggles */}
       <div className="flex flex-wrap items-center gap-3">

@@ -34,6 +34,7 @@ export async function GET(
       companies: session.companies,
       country: session.country,
       firecrawl_urls: session.firecrawl_urls,
+      dream_job: session.dream_job,
     });
   } catch (error) {
     console.error('Session GET error:', error);

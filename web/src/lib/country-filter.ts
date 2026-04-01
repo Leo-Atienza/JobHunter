@@ -2,6 +2,8 @@
 
 interface CountryDef {
   names: string[];
+  /** Full country name for display (e.g. "Canada") */
+  label: string;
   /** Positive match — location strings that indicate this country */
   pattern: RegExp;
 }
@@ -17,6 +19,7 @@ interface CountryDef {
 const COUNTRY_MAP: Record<string, CountryDef> = {
   ca: {
     names: ['canada'],
+    label: 'Canada',
     pattern: new RegExp([
       '\\bcanada\\b',
       // Unambiguous Canadian cities
@@ -36,6 +39,7 @@ const COUNTRY_MAP: Record<string, CountryDef> = {
   },
   us: {
     names: ['united states', 'usa', 'u.s.'],
+    label: 'United States',
     pattern: new RegExp([
       '\\bunited states\\b', '\\busa\\b', '\\bu\\.s\\.\\b',
       // Major unambiguous US cities
@@ -60,22 +64,27 @@ const COUNTRY_MAP: Record<string, CountryDef> = {
   },
   uk: {
     names: ['united kingdom', 'uk', 'england', 'britain'],
+    label: 'United Kingdom',
     pattern: /\bunited kingdom\b|\bengland\b|\bbritain\b|\blondon,?\s*(?:uk|england|united kingdom)\b|\bmanchester\b|\bbirmingham,?\s*(?:uk|england)\b|\bleeds\b|\bbristol\b|\bedinburgh\b|\bglasgow\b|\bliverpool\b|\bcambridge,?\s*(?:uk|england)\b|\boxford,?\s*(?:uk|england)\b/i,
   },
   au: {
     names: ['australia'],
+    label: 'Australia',
     pattern: /\baustralia\b|\bsydney\b|\bmelbourne\b|\bbrisbane\b|\bperth,?\s*(?:au|australia)\b|\badelaide\b|\bcanberra\b|,\s*(?:nsw|vic|qld)\b/i,
   },
   de: {
     names: ['germany', 'deutschland'],
+    label: 'Germany',
     pattern: /\bgermany\b|\bdeutschland\b|\bberlin\b|\bmunich\b|\bmünchen\b|\bfrankfurt\b|\bhamburg\b|\bstuttgart\b|\bdüsseldorf\b|\bcologne\b|\bköln\b/i,
   },
   fr: {
     names: ['france'],
+    label: 'France',
     pattern: /\bfrance\b|\bparis\b|\blyon\b|\bmarseille\b|\btoulouse\b|\bnantes\b|\bstrasbourg\b|\bbordeaux\b/i,
   },
   in: {
     names: ['india'],
+    label: 'India',
     pattern: /\bindia\b|\bbangalore\b|\bbengaluru\b|\bmumbai\b|\bdelhi\b|\bnew delhi\b|\bhyderabad\b|\bchennai\b|\bpune\b|\bkolkata\b|\bgurgaon\b|\bgurugram\b|\bnoida\b/i,
   },
 };
@@ -91,6 +100,7 @@ function normalizeLoc(loc: string): string {
  * Check if a location string mentions a country OTHER than the target.
  * Used to reject "Berlin (Remote)" when user wants Canada.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function mentionsOtherCountry(loc: string, sessionCountry: string): boolean {
   const normalized = normalizeLoc(loc);
   for (const [code, def] of Object.entries(COUNTRY_MAP)) {
@@ -155,4 +165,26 @@ export function matchesCountry(
   }
 
   return false;
+}
+
+/**
+ * Infer a country code from a freetext location string.
+ * Returns the first matching country code (e.g. "ca", "us") or null.
+ * Pure function — safe for client-side use.
+ */
+export function inferCountryFromLocation(location: string): string | null {
+  if (!location?.trim()) return null;
+  const normalized = normalizeLoc(location);
+  for (const [code, def] of Object.entries(COUNTRY_MAP)) {
+    if (def.pattern.test(normalized)) return code;
+  }
+  return null;
+}
+
+/**
+ * Get the display label for a country code (e.g. "ca" → "Canada").
+ * Returns null if the code is unknown.
+ */
+export function getCountryLabel(code: string): string | null {
+  return COUNTRY_MAP[code.toLowerCase()]?.label ?? null;
 }

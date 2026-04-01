@@ -8,6 +8,7 @@ interface ScrapeProgressProps {
   code: string;
   sessionSources: string[] | null;
   firecrawlUrls?: string[] | null;
+  dreamJob?: string | null;
 }
 
 interface SourceStatus {
@@ -26,9 +27,12 @@ function getDomain(url: string): string {
   }
 }
 
-export function ScrapeProgress({ code, sessionSources, firecrawlUrls }: ScrapeProgressProps) {
+export function ScrapeProgress({ code, sessionSources, firecrawlUrls, dreamJob }: ScrapeProgressProps) {
   const [statuses, setStatuses] = useState<Record<string, SourceStatus>>({});
+  const [dreamScoring, setDreamScoring] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
+  const [dreamScored, setDreamScored] = useState(0);
   const startedRef = useRef(false);
+  const dreamStartedRef = useRef(false);
 
   // Determine which sources to scrape server-side
   const serverSources = (sessionSources ?? SERVER_SCRAPER_NAMES)
@@ -81,8 +85,34 @@ export function ScrapeProgress({ code, sessionSources, firecrawlUrls }: ScrapePr
   const totalDone = entries.filter(([, s]) => s.state === 'done' || s.state === 'error' || s.state === 'skipped').length;
   const totalServer = serverSources.length;
   const totalInserted = entries.reduce((acc, [, s]) => acc + (s.inserted ?? 0), 0);
-  const allDone = totalDone >= entries.length && entries.length > 0;
+  const allScrapersDone = totalDone >= entries.length && entries.length > 0;
 
+  // Auto-trigger dream scoring after all scrapers complete
+  useEffect(() => {
+    if (!allScrapersDone || !dreamJob?.trim() || dreamStartedRef.current || totalInserted === 0) return;
+    dreamStartedRef.current = true;
+    setDreamScoring('running');
+
+    fetch('/api/jobs/dream-score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_code: code }),
+    })
+      .then((res) => res.json())
+      .then((data: { scored?: number; error?: string }) => {
+        if (data.error) {
+          setDreamScoring('error');
+        } else {
+          setDreamScored(data.scored ?? 0);
+          setDreamScoring('done');
+        }
+      })
+      .catch(() => {
+        setDreamScoring('error');
+      });
+  }, [allScrapersDone, dreamJob, code, totalInserted]);
+
+  const allDone = allScrapersDone && (dreamScoring === 'done' || dreamScoring === 'error' || !dreamJob?.trim());
 
   return (
     <div className="mt-8 animate-fade-in">
@@ -98,12 +128,16 @@ export function ScrapeProgress({ code, sessionSources, firecrawlUrls }: ScrapePr
             </div>
           )}
           <h2 className="font-display text-xl font-bold text-primary-950">
-            {allDone ? `Found ${totalInserted} jobs` : 'Searching for jobs...'}
+            {allDone ? `Found ${totalInserted} jobs` : dreamScoring === 'running' ? 'AI is matching jobs...' : 'Searching for jobs...'}
           </h2>
           <p className="mt-2 text-sm text-slate-500">
             {allDone
-              ? 'All sources have been searched. Results are shown below.'
-              : `Scanning ${totalServer} sources in parallel...`}
+              ? dreamScored > 0
+                ? `All sources searched. ${dreamScored} jobs scored against your dream role.`
+                : 'All sources have been searched. Results are shown below.'
+              : dreamScoring === 'running'
+                ? 'Scoring jobs against your dream job description...'
+                : `Scanning ${totalServer} sources in parallel...`}
           </p>
         </div>
 
@@ -162,6 +196,38 @@ export function ScrapeProgress({ code, sessionSources, firecrawlUrls }: ScrapePr
               </span>
             </div>
           ))}
+
+          {/* Dream scoring status row */}
+          {dreamJob?.trim() && (
+            <div className="flex items-center justify-between rounded-lg px-3 py-2 text-sm border-t border-slate-100 mt-2 pt-3">
+              <span className={dreamScoring === 'done' ? 'text-purple-700 font-medium' : dreamScoring === 'error' ? 'text-error-600' : 'text-slate-500'}>
+                <span className="mr-1.5">&#10024;</span>
+                Dream Job AI Matching
+              </span>
+              <span className="flex items-center gap-2">
+                {dreamScoring === 'idle' && (
+                  <span className="text-xs text-slate-400">Waiting for jobs...</span>
+                )}
+                {dreamScoring === 'running' && (
+                  <span className="flex items-center gap-1.5 text-xs text-purple-600">
+                    <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Scoring jobs...
+                  </span>
+                )}
+                {dreamScoring === 'done' && (
+                  <span className="text-xs font-medium text-purple-600">
+                    {dreamScored} jobs scored
+                  </span>
+                )}
+                {dreamScoring === 'error' && (
+                  <span className="text-xs text-error-500">Scoring failed</span>
+                )}
+              </span>
+            </div>
+          )}
         </div>
 
         {localSources.length > 0 && (

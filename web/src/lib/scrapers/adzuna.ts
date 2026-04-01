@@ -20,7 +20,10 @@ export async function scrapeAdzuna(params: ScrapeParams): Promise<ScrapeResult> 
   }
 
   const query = params.keywords.join(' ');
-  const country = params.country?.toLowerCase() || 'ca';
+  const country = params.country?.toLowerCase();
+  if (!country) {
+    return { source: 'adzuna', jobs: [], error: 'Country required for Adzuna (inferred from location)' };
+  }
   const jobs = [];
 
   for (let page = 1; page <= 2; page++) {
