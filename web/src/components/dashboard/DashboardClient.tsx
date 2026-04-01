@@ -222,7 +222,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
         const cmp = String(aVal).localeCompare(String(bVal), undefined, { numeric: true });
         return sortDirection === 'asc' ? cmp : -cmp;
       });
-  }, [primaryJobs, remoteFilter, experienceFilter, jobTypeFilter, salaryMin, salaryMax, freshnessFilter, hideGhosts, companyFilter, searchQuery, sortField, sortDirection]);
+  }, [primaryJobs, remoteFilter, experienceFilter, jobTypeFilter, salaryMin, salaryMax, freshnessFilter, hideGhosts, companyFilter, locationFilter, session, searchQuery, sortField, sortDirection]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
@@ -277,7 +277,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
   return (
     <div className="min-h-screen overflow-x-hidden bg-slate-50">
       {/* Top bar */}
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <Link href="/" className="flex shrink-0 items-center gap-2 transition-opacity hover:opacity-80">
@@ -391,12 +391,12 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
             </div>
 
             {/* Results count + view toggle */}
-            <div className="mt-4 flex items-center justify-between">
+            <div className="mt-6 flex items-center justify-between">
               <div className="text-sm text-slate-500" aria-live="polite" aria-atomic="true">
-                Showing <span className="font-semibold text-primary-800">{filteredJobs.length}</span> of{' '}
+                Showing <span className="font-bold text-primary-900">{filteredJobs.length}</span> of{' '}
                 <span className="font-semibold">{primaryJobs.length}</span> jobs
                 {filteredJobs.length !== primaryJobs.length && (
-                  <span className="text-slate-400 ml-1">(filtered)</span>
+                  <span className="ml-1 rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-semibold text-primary-600">filtered</span>
                 )}
                 {stats && stats.ghost_count > 0 && !hideGhosts && (
                   <span className="ml-2 text-error-500">{stats.ghost_count} possibly expired</span>

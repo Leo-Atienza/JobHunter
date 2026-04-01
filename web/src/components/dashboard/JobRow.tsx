@@ -55,7 +55,7 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode }: JobRowProps) 
   return (
     <>
       <tr
-        className="group cursor-pointer transition-colors hover:bg-primary-50/30"
+        className="group cursor-pointer transition-colors hover:bg-slate-50/80"
         onClick={() => setExpanded(!expanded)}
         aria-expanded={expanded}
         role="button"
@@ -159,6 +159,27 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode }: JobRowProps) 
         {/* Actions */}
         <td className="px-4 py-3">
           <div className="flex items-center gap-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const newStatus = job.status === 'saved' ? 'new' : 'saved';
+                fetch(`/api/jobs/${job.id}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json', 'X-Session-Code': sessionCode },
+                  body: JSON.stringify({ status: newStatus }),
+                }).then(() => onUpdate());
+              }}
+              className={`flex h-7 w-7 items-center justify-center rounded-lg transition-all ${
+                job.status === 'saved'
+                  ? 'bg-amber-50 text-amber-500 hover:bg-amber-100'
+                  : 'text-slate-300 hover:bg-slate-100 hover:text-amber-400'
+              }`}
+              title={job.status === 'saved' ? 'Unsave job' : 'Save job'}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill={job.status === 'saved' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+              </svg>
+            </button>
             {onJobClick && (
               <button
                 onClick={(e) => { e.stopPropagation(); onJobClick(job.id); }}

@@ -169,8 +169,11 @@ export function Filters({
         </div>
       )}
 
-      {/* Row 2: dropdowns + toggles */}
-      <div className="flex flex-wrap items-center gap-3">
+      {/* Separator */}
+      <div className="border-b border-slate-100" />
+
+      {/* Row 2: controls */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
         {/* Remote toggle */}
         <label className="flex items-center gap-2 cursor-pointer">
           <button
@@ -191,88 +194,157 @@ export function Filters({
           <span className="text-xs font-medium text-slate-600">Remote only</span>
         </label>
 
-        {/* Status filter */}
-        <div className="flex items-center gap-1.5">
-          <span className="mr-1 text-xs font-medium uppercase tracking-wider text-slate-400">Status:</span>
-          <select
-            value={statusFilter ?? ''}
-            onChange={(e) => onStatusChange(e.target.value || null)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 outline-none transition-colors focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
-          >
-            <option value="">All statuses</option>
-            {JOB_STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {statusLabels[status]} ({stats?.by_status[status] ?? 0})
-              </option>
-            ))}
-          </select>
+        {/* Status filter — pill group */}
+        <div className="flex items-center gap-1">
+          <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Status:</span>
+          <div className="flex items-center gap-0.5 rounded-lg bg-slate-100/60 p-0.5">
+            <button
+              onClick={() => onStatusChange(null)}
+              className={cn(
+                'rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all',
+                !statusFilter ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              )}
+            >
+              All
+            </button>
+            {JOB_STATUSES.map((status) => {
+              const count = stats?.by_status[status] ?? 0;
+              if (count === 0 && statusFilter !== status) return null;
+              return (
+                <button
+                  key={status}
+                  onClick={() => onStatusChange(statusFilter === status ? null : status)}
+                  className={cn(
+                    'rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all whitespace-nowrap',
+                    statusFilter === status
+                      ? 'bg-white text-primary-800 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  )}
+                >
+                  {statusLabels[status]}
+                  {count > 0 && <span className="ml-0.5 opacity-50">{count}</span>}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Experience level filter */}
-        <div className="flex items-center gap-1.5">
-          <span className="mr-1 text-xs font-medium uppercase tracking-wider text-slate-400">Level:</span>
-          <select
-            value={experienceFilter ?? ''}
-            onChange={(e) => onExperienceChange(e.target.value || null)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 outline-none transition-colors focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
-          >
-            <option value="">Any level</option>
+        {/* Experience level — pill group */}
+        <div className="flex items-center gap-1">
+          <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Level:</span>
+          <div className="flex items-center gap-0.5 rounded-lg bg-slate-100/60 p-0.5">
+            <button
+              onClick={() => onExperienceChange(null)}
+              className={cn(
+                'rounded-md px-2 py-1 text-[11px] font-semibold transition-all',
+                !experienceFilter ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              )}
+            >
+              Any
+            </button>
             {EXPERIENCE_LEVELS.map((level) => (
-              <option key={level} value={level}>{level}</option>
+              <button
+                key={level}
+                onClick={() => onExperienceChange(experienceFilter === level ? null : level)}
+                className={cn(
+                  'rounded-md px-2 py-1 text-[11px] font-semibold transition-all',
+                  experienceFilter === level
+                    ? 'bg-white text-primary-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                )}
+              >
+                {level}
+              </button>
             ))}
-          </select>
+          </div>
         </div>
 
-        {/* Job type filter */}
-        <div className="flex items-center gap-1.5">
-          <span className="mr-1 text-xs font-medium uppercase tracking-wider text-slate-400">Type:</span>
-          <select
-            value={jobTypeFilter ?? ''}
-            onChange={(e) => onJobTypeChange(e.target.value || null)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 outline-none transition-colors focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
-          >
-            <option value="">Any type</option>
+        {/* Job type — pill group */}
+        <div className="flex items-center gap-1">
+          <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Type:</span>
+          <div className="flex items-center gap-0.5 rounded-lg bg-slate-100/60 p-0.5">
+            <button
+              onClick={() => onJobTypeChange(null)}
+              className={cn(
+                'rounded-md px-2 py-1 text-[11px] font-semibold transition-all',
+                !jobTypeFilter ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              )}
+            >
+              Any
+            </button>
             {JOB_TYPES.map((type) => (
-              <option key={type} value={type}>{type}</option>
+              <button
+                key={type}
+                onClick={() => onJobTypeChange(jobTypeFilter === type ? null : type)}
+                className={cn(
+                  'rounded-md px-2 py-1 text-[11px] font-semibold transition-all whitespace-nowrap',
+                  jobTypeFilter === type
+                    ? 'bg-white text-primary-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                )}
+              >
+                {type}
+              </button>
             ))}
-          </select>
+          </div>
         </div>
+      </div>
 
+      {/* Row 3: salary, freshness, ghost toggle, company */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
         {/* Salary range filter */}
         <div className="flex items-center gap-1.5">
-          <span className="mr-1 text-xs font-medium uppercase tracking-wider text-slate-400">Salary:</span>
-          <input
-            type="number"
-            placeholder="Min"
-            value={salaryMin}
-            onChange={(e) => onSalaryMinChange(e.target.value)}
-            className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
-          />
-          <span className="text-xs text-slate-400">-</span>
-          <input
-            type="number"
-            placeholder="Max"
-            value={salaryMax}
-            onChange={(e) => onSalaryMaxChange(e.target.value)}
-            className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
-          />
+          <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Salary:</span>
+          <div className="flex items-center gap-1 rounded-lg bg-slate-100/60 p-0.5">
+            <div className="relative">
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">$</span>
+              <input
+                type="number"
+                placeholder="Min"
+                value={salaryMin}
+                onChange={(e) => onSalaryMinChange(e.target.value)}
+                className="w-20 rounded-md border-0 bg-white py-1 pl-5 pr-1.5 text-xs text-slate-700 shadow-sm outline-none focus:ring-2 focus:ring-primary-200"
+              />
+            </div>
+            <span className="text-[10px] text-slate-400">to</span>
+            <div className="relative">
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">$</span>
+              <input
+                type="number"
+                placeholder="Max"
+                value={salaryMax}
+                onChange={(e) => onSalaryMaxChange(e.target.value)}
+                className="w-20 rounded-md border-0 bg-white py-1 pl-5 pr-1.5 text-xs text-slate-700 shadow-sm outline-none focus:ring-2 focus:ring-primary-200"
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Freshness filter */}
-        <div className="flex items-center gap-1.5">
-          <span className="mr-1 text-xs font-medium uppercase tracking-wider text-slate-400">Posted:</span>
-          <select
-            value={freshnessFilter ?? ''}
-            onChange={(e) => onFreshnessChange(e.target.value || null)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 outline-none transition-colors focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
-          >
-            <option value="">Any time</option>
-            <option value="1">Last 24 hours</option>
-            <option value="3">Last 3 days</option>
-            <option value="7">Last 7 days</option>
-            <option value="14">Last 14 days</option>
-            <option value="30">Last 30 days</option>
-          </select>
+        {/* Freshness filter — pill group */}
+        <div className="flex items-center gap-1">
+          <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Posted:</span>
+          <div className="flex items-center gap-0.5 rounded-lg bg-slate-100/60 p-0.5">
+            {[
+              { value: null, label: 'Any time' },
+              { value: '1', label: '24h' },
+              { value: '7', label: '7d' },
+              { value: '14', label: '14d' },
+              { value: '30', label: '30d' },
+            ].map((opt) => (
+              <button
+                key={opt.label}
+                onClick={() => onFreshnessChange(freshnessFilter === opt.value ? null : opt.value)}
+                className={cn(
+                  'rounded-md px-2 py-1 text-[11px] font-semibold transition-all whitespace-nowrap',
+                  freshnessFilter === opt.value
+                    ? 'bg-white text-primary-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Hide ghost jobs toggle */}
@@ -300,17 +372,32 @@ export function Filters({
         {/* Company filter (from session) */}
         {sessionCompanies && sessionCompanies.length > 0 && (
           <div className="flex items-center gap-1.5">
-            <span className="mr-1 text-xs font-medium uppercase tracking-wider text-slate-400">Company:</span>
-            <select
-              value={companyFilter ?? ''}
-              onChange={(e) => onCompanyChange(e.target.value || null)}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 outline-none transition-colors focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
-            >
-              <option value="">All companies</option>
+            <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Company:</span>
+            <div className="flex items-center gap-0.5 rounded-lg bg-slate-100/60 p-0.5">
+              <button
+                onClick={() => onCompanyChange(null)}
+                className={cn(
+                  'rounded-md px-2 py-1 text-[11px] font-semibold transition-all',
+                  !companyFilter ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                )}
+              >
+                All
+              </button>
               {sessionCompanies.map((c) => (
-                <option key={c} value={c}>{c}</option>
+                <button
+                  key={c}
+                  onClick={() => onCompanyChange(companyFilter === c ? null : c)}
+                  className={cn(
+                    'rounded-md px-2 py-1 text-[11px] font-semibold transition-all capitalize',
+                    companyFilter === c
+                      ? 'bg-white text-primary-800 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  )}
+                >
+                  {c}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
         )}
 
@@ -318,13 +405,13 @@ export function Filters({
         {activeFilterCount > 0 && (
           <button
             onClick={clearAll}
-            className="inline-flex items-center gap-1 rounded-full bg-error-100 px-3 py-1 text-xs font-medium text-error-600 transition-colors hover:bg-error-200"
+            className="inline-flex items-center gap-1 rounded-full bg-error-50 px-3 py-1 text-xs font-semibold text-error-600 transition-all hover:bg-error-100"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
-            Clear filters
+            Clear all
           </button>
         )}
       </div>

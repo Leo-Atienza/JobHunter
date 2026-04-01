@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Hero } from '@/components/landing/Hero';
 import { HowItWorks } from '@/components/landing/HowItWorks';
 
@@ -21,6 +22,15 @@ export default function HomePage() {
             </span>
           </div>
           <div className="flex items-center gap-4">
+            <Link
+              href="/saved"
+              className="flex items-center gap-1.5 text-sm font-medium text-slate-600 transition-colors hover:text-primary-700"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+              </svg>
+              Saved
+            </Link>
             <a
               href="https://github.com"
               target="_blank"

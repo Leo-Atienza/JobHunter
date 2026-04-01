@@ -1,11 +1,46 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { Job } from '@/lib/types';
 import { StatusSelect } from './StatusSelect';
 import { AISummaryBlock } from './AISummaryBlock';
 import { useAISummary } from '@/hooks/useAISummary';
 import { getSourceColor, getSourceDisplayName, formatDate } from '@/lib/utils';
+
+function BookmarkButton({ jobId, isSaved, sessionCode, onUpdate }: { jobId: number; isSaved: boolean; sessionCode: string; onUpdate: () => void }) {
+  const [saving, setSaving] = useState(false);
+
+  const toggle = useCallback(async () => {
+    setSaving(true);
+    try {
+      await fetch(`/api/jobs/${jobId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'X-Session-Code': sessionCode },
+        body: JSON.stringify({ status: isSaved ? 'new' : 'saved' }),
+      });
+      onUpdate();
+    } finally {
+      setSaving(false);
+    }
+  }, [jobId, isSaved, sessionCode, onUpdate]);
+
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); toggle(); }}
+      disabled={saving}
+      className={`group/bk flex h-7 w-7 items-center justify-center rounded-lg transition-all ${
+        isSaved
+          ? 'bg-amber-50 text-amber-500 hover:bg-amber-100'
+          : 'text-slate-300 hover:bg-slate-100 hover:text-amber-400'
+      }`}
+      title={isSaved ? 'Unsave job' : 'Save job'}
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill={isSaved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+      </svg>
+    </button>
+  );
+}
 
 interface JobCardProps {
   job: Job;
@@ -23,7 +58,7 @@ export function JobCard({ job, onUpdate, onJobClick, sessionCode }: JobCardProps
   const sourceColors = getSourceColor(job.source);
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md hover:border-slate-300">
+    <div className="group/card relative rounded-xl border border-slate-200/80 bg-white shadow-sm transition-all duration-200 hover:shadow-lg hover:shadow-primary-950/[0.04] hover:border-primary-200/60 hover:-translate-y-0.5">
       <div className="p-4">
         {/* Header: source + status */}
         <div className="flex items-center justify-between mb-3">
@@ -42,13 +77,14 @@ export function JobCard({ job, onUpdate, onJobClick, sessionCode }: JobCardProps
               </span>
             )}
           </div>
-          <div onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <BookmarkButton jobId={job.id} isSaved={job.status === 'saved'} sessionCode={sessionCode} onUpdate={onUpdate} />
             <StatusSelect jobId={job.id} currentStatus={job.status} onUpdate={onUpdate} sessionCode={sessionCode} />
           </div>
         </div>
 
         {/* Title */}
-        <h3 className="text-sm font-bold text-primary-950 leading-snug line-clamp-2">
+        <h3 className="text-[15px] font-bold text-primary-950 leading-snug line-clamp-2">
           <a
             href={job.url}
             target="_blank"
@@ -90,14 +126,26 @@ export function JobCard({ job, onUpdate, onJobClick, sessionCode }: JobCardProps
 
         {/* Tags row */}
         {(job.job_type || job.experience_level || job.relevance_score > 0) && (
-          <div className="mt-2 flex flex-wrap gap-1">
+          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
             {job.relevance_score > 0 && (
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                job.relevance_score >= 80 ? 'bg-green-50 text-green-700' :
-                job.relevance_score >= 50 ? 'bg-amber-50 text-amber-700' :
-                'bg-orange-50 text-orange-700'
-              }`}>
-                {job.relevance_score}% match
+              <span className="inline-flex items-center gap-1.5">
+                <span className={`text-[10px] font-bold ${
+                  job.relevance_score >= 80 ? 'text-emerald-600' :
+                  job.relevance_score >= 50 ? 'text-amber-600' :
+                  'text-orange-500'
+                }`}>
+                  {job.relevance_score}%
+                </span>
+                <span className="h-1.5 w-14 overflow-hidden rounded-full bg-slate-100">
+                  <span
+                    className={`block h-full rounded-full transition-all duration-500 ${
+                      job.relevance_score >= 80 ? 'bg-emerald-500' :
+                      job.relevance_score >= 50 ? 'bg-amber-500' :
+                      'bg-orange-400'
+                    }`}
+                    style={{ width: `${job.relevance_score}%` }}
+                  />
+                </span>
               </span>
             )}
             {job.job_type && (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { JOB_SOURCES } from '@/lib/types';
 import type { CreateSessionRequest, CreateSessionResponse } from '@/lib/types';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
@@ -44,6 +44,45 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
   // Auto-detect country from location input
   const inferredCountry = inferCountryFromLocation(location);
   const countryLabel = inferredCountry ? getCountryLabel(inferredCountry) : null;
+
+  // Career page discovery state
+  const [discoveredCareers, setDiscoveredCareers] = useState<Record<string, { url: string | null; loading: boolean; source: string | null }>>({});
+
+  const discoverCareers = useCallback(async (companyName: string) => {
+    const key = companyName.toLowerCase().trim();
+    if (!key || key.length < 2) return;
+
+    setDiscoveredCareers((prev) => ({ ...prev, [key]: { url: null, loading: true, source: null } }));
+    try {
+      const res = await fetch('/api/discover-careers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company: companyName.trim() }),
+      });
+      if (res.ok) {
+        const data = await res.json() as { url: string | null; source: string | null };
+        setDiscoveredCareers((prev) => ({ ...prev, [key]: { url: data.url, loading: false, source: data.source } }));
+      } else {
+        setDiscoveredCareers((prev) => ({ ...prev, [key]: { url: null, loading: false, source: null } }));
+      }
+    } catch {
+      setDiscoveredCareers((prev) => ({ ...prev, [key]: { url: null, loading: false, source: null } }));
+    }
+  }, []);
+
+  // Debounced career discovery when companies change
+  useEffect(() => {
+    const parsed = companies.split(',').map((c) => c.trim()).filter((c) => c.length >= 2);
+    const timer = setTimeout(() => {
+      for (const company of parsed) {
+        const key = company.toLowerCase();
+        if (!discoveredCareers[key]) {
+          discoverCareers(company);
+        }
+      }
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [companies, discoveredCareers, discoverCareers]);
 
   function toggleSource(source: string) {
     setSelectedSources((prev) =>
@@ -199,16 +238,56 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
         </div>
 
         {/* Target Companies */}
-        <AutocompleteInput
-          id="companies"
-          value={companies}
-          onChange={setCompanies}
-          suggestions={COMPANIES}
-          placeholder="e.g. Google, Shopify, Microsoft"
-          label="Target Companies"
-          hint="Leave empty to search all companies. Separate with commas."
-          multiValue
-        />
+        <div>
+          <AutocompleteInput
+            id="companies"
+            value={companies}
+            onChange={setCompanies}
+            suggestions={COMPANIES}
+            placeholder="e.g. Google, Shopify, Microsoft"
+            label="Target Companies"
+            hint="Leave empty to search all companies. Separate with commas."
+            multiValue
+          />
+          {/* Career page discovery badges */}
+          {Object.keys(discoveredCareers).length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5 animate-fade-in">
+              {Object.entries(discoveredCareers).map(([key, state]) => (
+                <span key={key} className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-all">
+                  {state.loading ? (
+                    <>
+                      <span className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-primary-400 border-t-transparent" />
+                      <span className="text-slate-500 capitalize">{key}</span>
+                    </>
+                  ) : state.url ? (
+                    <>
+                      <svg className="h-3 w-3 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                      <a
+                        href={state.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-emerald-700 hover:underline capitalize"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {key} careers
+                      </a>
+                      <svg className="h-3 w-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                      </svg>
+                    </>
+                  ) : (
+                    <>
+                      <span className="h-1.5 w-1.5 rounded-full bg-slate-300" />
+                      <span className="text-slate-400 capitalize">{key}</span>
+                    </>
+                  )}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Resume Upload (optional) */}
         <div>

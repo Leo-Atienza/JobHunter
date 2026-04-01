@@ -95,7 +95,7 @@ export function JobTable({ jobs, sortField, sortDirection, onSort, onJobUpdate, 
           </thead>
           <tbody className="divide-y divide-slate-100">
             {jobs.map((job) => (
-              <JobRow key={job.id} job={job} onUpdate={onJobUpdate} onJobClick={onJobClick} sessionCode={sessionCode} />
+              <JobRow key={job.id} job={job} onUpdate={onJobUpdate} onJobClick={onJobClick} sessionCode={sessionCode || job.session_code} />
             ))}
           </tbody>
         </table>
