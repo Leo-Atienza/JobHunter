@@ -33,8 +33,7 @@ export async function GET(
       remote: session.remote,
       companies: session.companies,
       country: session.country,
-      firecrawl_urls: session.firecrawl_urls,
-      dream_job: session.dream_job,
+      resume_skills: session.resume_skills,
     });
   } catch (error) {
     console.error('Session GET error:', error);

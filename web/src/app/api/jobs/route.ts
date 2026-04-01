@@ -90,34 +90,42 @@ export async function POST(request: NextRequest) {
 
     // Rate limit counter was already incremented by checkRateLimit
 
-    // Auto-score newly inserted jobs if user has a resume profile
+    // Auto-score newly inserted jobs against resume profile
     if (inserted > 0) {
       try {
         const [sessionRow] = await sql(
-          'SELECT user_id FROM sessions WHERE code = $1',
+          'SELECT user_id, resume_skills AS session_resume FROM sessions WHERE code = $1',
           [session_code],
         );
-        if (sessionRow?.user_id) {
+
+        // Fallback chain: session.resume_skills → user.resume_skills
+        let profile: ResumeProfile | null =
+          (sessionRow?.session_resume as ResumeProfile | null) ?? null;
+
+        if (!profile && sessionRow?.user_id) {
           const [userRow] = await sql(
             'SELECT resume_skills FROM users WHERE id = $1 AND resume_skills IS NOT NULL',
             [sessionRow.user_id],
           );
           if (userRow?.resume_skills) {
-            const profile = userRow.resume_skills as ResumeProfile;
-            const unscoredJobs = await sql(
-              'SELECT id, title, skills, description, experience_level FROM jobs WHERE session_code = $1 AND relevance_score = 0 AND duplicate_of IS NULL',
-              [session_code],
-            );
-            for (const job of unscoredJobs) {
-              const score = computeMatchScore(profile, {
-                title: job.title,
-                skills: job.skills,
-                description: job.description,
-                experience_level: job.experience_level,
-              });
-              if (score > 0) {
-                await sql('UPDATE jobs SET relevance_score = $1 WHERE id = $2', [score, job.id]);
-              }
+            profile = userRow.resume_skills as ResumeProfile;
+          }
+        }
+
+        if (profile) {
+          const unscoredJobs = await sql(
+            'SELECT id, title, skills, description, experience_level FROM jobs WHERE session_code = $1 AND relevance_score = 0 AND duplicate_of IS NULL',
+            [session_code],
+          );
+          for (const job of unscoredJobs) {
+            const score = computeMatchScore(profile, {
+              title: job.title,
+              skills: job.skills,
+              description: job.description,
+              experience_level: job.experience_level,
+            });
+            if (score > 0) {
+              await sql('UPDATE jobs SET relevance_score = $1 WHERE id = $2', [score, job.id]);
             }
           }
         }

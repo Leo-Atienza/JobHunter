@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useRef } from 'react';
 import { JOB_SOURCES } from '@/lib/types';
 import type { CreateSessionRequest, CreateSessionResponse } from '@/lib/types';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
@@ -22,23 +22,28 @@ interface SearchConfigProps {
   onSessionCreated: (code: string, expiresAt: string) => void;
 }
 
+type ResumeState = 'idle' | 'extracting' | 'done' | 'error';
+
 export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
   const [keywords, setKeywords] = useState('');
-  const [dreamJob, setDreamJob] = useState('');
   const [location, setLocation] = useState('');
   const [selectedSources, setSelectedSources] = useState<string[]>([...JOB_SOURCES]);
   const [companies, setCompanies] = useState('');
-  const [firecrawlUrls, setFirecrawlUrls] = useState('');
   const [remote, setRemote] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Resume upload state
+  const [resumeState, setResumeState] = useState<ResumeState>('idle');
+  const [resumeText, setResumeText] = useState<string | null>(null);
+  const [resumeFileName, setResumeFileName] = useState<string | null>(null);
+  const [resumeError, setResumeError] = useState<string | null>(null);
+  const [resumeDragOver, setResumeDragOver] = useState(false);
+  const resumeInputRef = useRef<HTMLInputElement>(null);
+
   // Auto-detect country from location input
-  const inferredCountry = useMemo(() => inferCountryFromLocation(location), [location]);
-  const countryLabel = useMemo(
-    () => (inferredCountry ? getCountryLabel(inferredCountry) : null),
-    [inferredCountry],
-  );
+  const inferredCountry = inferCountryFromLocation(location);
+  const countryLabel = inferredCountry ? getCountryLabel(inferredCountry) : null;
 
   function toggleSource(source: string) {
     setSelectedSources((prev) =>
@@ -54,6 +59,41 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
     }
   }
 
+  async function handleResumeFile(file: File) {
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      setResumeState('error');
+      setResumeError('Only PDF files are supported');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setResumeState('error');
+      setResumeError('File too large (max 5MB)');
+      return;
+    }
+
+    setResumeState('extracting');
+    setResumeError(null);
+
+    try {
+      const { extractTextFromPdf } = await import('@/lib/pdf-extract');
+      const text = await extractTextFromPdf(file);
+      setResumeText(text);
+      setResumeFileName(file.name);
+      setResumeState('done');
+    } catch (err) {
+      setResumeState('error');
+      setResumeError(err instanceof Error ? err.message : 'Failed to read PDF');
+    }
+  }
+
+  function clearResume() {
+    setResumeState('idle');
+    setResumeText(null);
+    setResumeFileName(null);
+    setResumeError(null);
+    if (resumeInputRef.current) resumeInputRef.current.value = '';
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!keywords.trim()) {
@@ -66,11 +106,6 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
 
     try {
       const parsedCompanies = companies.split(',').map((c) => c.trim()).filter(Boolean);
-      const parsedUrls = firecrawlUrls
-        .split(/[\n,]/)
-        .map((u) => u.trim())
-        .filter((u) => u.startsWith('http://') || u.startsWith('https://'))
-        .slice(0, 10);
       const body: CreateSessionRequest = {
         keywords: keywords.split(',').map((k) => k.trim()).filter(Boolean),
         location: location.trim() || undefined,
@@ -78,8 +113,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
         remote: remote || undefined,
         companies: parsedCompanies.length > 0 ? parsedCompanies : undefined,
         country: inferredCountry ?? undefined,
-        firecrawl_urls: parsedUrls.length > 0 ? parsedUrls : undefined,
-        dream_job: dreamJob.trim() || undefined,
+        resume_text: resumeText ?? undefined,
       };
 
       const res = await fetch('/api/session', {
@@ -143,28 +177,6 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
           multiValue
         />
 
-        {/* Dream Job Description */}
-        <div>
-          <label htmlFor="dream-job" className="block text-sm font-semibold text-slate-700">
-            Describe Your Dream Job
-            <span className="ml-2 inline-flex items-center rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-purple-600">
-              AI Powered
-            </span>
-          </label>
-          <textarea
-            id="dream-job"
-            value={dreamJob}
-            onChange={(e) => setDreamJob(e.target.value)}
-            rows={3}
-            maxLength={2000}
-            placeholder="e.g. I want a remote senior frontend role at a startup building developer tools, using React and TypeScript, with good work-life balance and competitive pay..."
-            className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 bg-white placeholder:text-slate-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 resize-none transition-colors"
-          />
-          <p className="mt-1 text-xs text-slate-400">
-            AI will score every job against this description. More detail = better matches.
-          </p>
-        </div>
-
         {/* Location */}
         <div>
           <AutocompleteInput
@@ -198,42 +210,115 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
           multiValue
         />
 
-        {/* Career Page URLs (Firecrawl) */}
+        {/* Resume Upload (optional) */}
         <div>
-          <label htmlFor="firecrawl-urls" className="block text-sm font-semibold text-slate-700">
-            Career Page URLs
-          </label>
-          <textarea
-            id="firecrawl-urls"
-            value={firecrawlUrls}
-            onChange={(e) => {
-              setFirecrawlUrls(e.target.value);
-              // Auto-select firecrawl source when URLs are entered
-              const hasUrls = e.target.value.trim().length > 0;
-              setSelectedSources((prev) =>
-                hasUrls && !prev.includes('firecrawl')
-                  ? [...prev, 'firecrawl']
-                  : !hasUrls
-                    ? prev.filter((s) => s !== 'firecrawl')
-                    : prev
-              );
-            }}
-            rows={3}
-            placeholder={"https://stripe.com/jobs\nhttps://shopify.com/careers\nhttps://company.com/jobs"}
-            aria-describedby="firecrawl-hint"
-            className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 bg-white placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none transition-colors"
-          />
-          <div className="mt-1.5 flex items-center justify-between">
-            <p id="firecrawl-hint" className="text-xs text-slate-400">
-              Paste career page URLs (one per line, max 10). Scraped with Firecrawl AI.
-            </p>
-            <span
-              className="text-xs font-medium tabular-nums text-slate-400 transition-colors"
-              aria-live="polite"
-            >
-              {firecrawlUrls.split(/[\n,]/).map((u) => u.trim()).filter((u) => u.startsWith('http')).length}/10
+          <label className="block text-sm font-semibold text-slate-700">
+            Upload Resume
+            <span className="ml-2 inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600">
+              Optional
             </span>
-          </div>
+          </label>
+
+          {resumeState === 'idle' && (
+            <div
+              onDragOver={(e) => { e.preventDefault(); setResumeDragOver(true); }}
+              onDragLeave={() => setResumeDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setResumeDragOver(false);
+                const file = e.dataTransfer.files[0];
+                if (file) handleResumeFile(file);
+              }}
+              onClick={() => resumeInputRef.current?.click()}
+              className={`mt-1.5 cursor-pointer rounded-lg border-2 border-dashed p-3 transition-colors ${
+                resumeDragOver
+                  ? 'border-primary-400 bg-primary-50/50'
+                  : 'border-slate-200 bg-slate-50/30 hover:border-slate-300 hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-500">
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-600">
+                    Drop your resume PDF for AI match scores
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    Parsed in your browser — never uploaded as a file
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {resumeState === 'extracting' && (
+            <div className="mt-1.5 rounded-lg border border-primary-200 bg-primary-50/50 px-3 py-2.5">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
+                <p className="text-sm font-medium text-primary-700">Extracting resume text...</p>
+              </div>
+            </div>
+          )}
+
+          {resumeState === 'done' && (
+            <div className="mt-1.5 rounded-lg border border-emerald-200 bg-emerald-50/30 px-3 py-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                  </svg>
+                  <p className="text-sm font-medium text-slate-700 truncate max-w-[260px]">
+                    {resumeFileName}
+                  </p>
+                  <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                    Ready
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={clearResume}
+                  className="rounded-lg px-2 py-1 text-xs font-medium text-red-500 hover:bg-red-50"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          )}
+
+          {resumeState === 'error' && (
+            <div className="mt-1.5 rounded-lg border border-red-200 bg-red-50/50 px-3 py-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <svg className="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                  </svg>
+                  <p className="text-xs text-red-600">{resumeError}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={clearResume}
+                  className="rounded-lg px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-100"
+                >
+                  Try again
+                </button>
+              </div>
+            </div>
+          )}
+
+          <input
+            ref={resumeInputRef}
+            type="file"
+            accept=".pdf"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleResumeFile(file);
+              if (resumeInputRef.current) resumeInputRef.current.value = '';
+            }}
+          />
         </div>
 
         {/* Remote toggle */}
@@ -302,14 +387,11 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
                   {(source === 'adzuna' || source === 'jooble') && (
                     <span className="ml-1 text-xs text-slate-400" title={source === 'adzuna' ? 'Requires free API key from developer.adzuna.com' : 'Requires free API key from jooble.org/api/about'}>*</span>
                   )}
-                  {source === 'firecrawl' && (
-                    <span className="ml-1 text-xs text-slate-400" title="Scrapes any career page URL using AI — add URLs above to activate">**</span>
-                  )}
                 </span>
               </label>
             ))}
           </div>
-          <p className="mt-1.5 text-xs text-slate-400">* Requires free API key. ** Activates when Career Page URLs are provided above.</p>
+          <p className="mt-1.5 text-xs text-slate-400">* Requires free API key</p>
         </div>
 
         {error && (
@@ -327,7 +409,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              Generating Session...
+              {resumeText ? 'Analyzing Resume & Creating Session...' : 'Generating Session...'}
             </span>
           ) : (
             'Search Jobs'

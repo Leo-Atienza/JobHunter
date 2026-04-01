@@ -7,9 +7,7 @@ export interface ScrapeParams {
   location: string;
   remote: boolean;
   country?: string;
-  /** Natural language dream job description for AI scoring */
-  dream_job?: string;
-  /** Optional config passed from session (e.g. API keys from env) */
+  /** Optional config passed from session (e.g. company lists for ATS scrapers) */
   config?: Record<string, unknown>;
 }
 

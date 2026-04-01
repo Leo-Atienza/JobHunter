@@ -114,16 +114,7 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode }: JobRowProps) 
         {/* Relevance */}
         <td className="hidden lg:table-cell px-4 py-3">
           <div className="flex flex-col gap-1">
-            {job.dream_score > 0 && (
-              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
-                job.dream_score >= 80 ? 'bg-purple-100 text-purple-700' :
-                job.dream_score >= 50 ? 'bg-purple-50 text-purple-600' :
-                'bg-slate-100 text-slate-500'
-              }`}>
-                {job.dream_score}%
-              </span>
-            )}
-            {job.relevance_score > 0 && !job.dream_score && (
+            {job.relevance_score > 0 ? (
               <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
                 job.relevance_score >= 80 ? 'bg-green-100 text-green-700' :
                 job.relevance_score >= 50 ? 'bg-amber-100 text-amber-700' :
@@ -131,8 +122,7 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode }: JobRowProps) 
               }`}>
                 {job.relevance_score}%
               </span>
-            )}
-            {!job.relevance_score && !job.dream_score && (
+            ) : (
               <span className="text-sm text-slate-400">&mdash;</span>
             )}
           </div>
@@ -204,17 +194,8 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode }: JobRowProps) 
         <tr className="animate-slide-down">
           <td colSpan={9} className="border-b border-slate-100 bg-slate-50/50 px-4 py-5">
             {/* Job detail badges */}
-            {(job.job_type || job.experience_level || job.relevance_score > 0 || job.dream_score > 0 || job.country || job.is_ghost) && (
+            {(job.job_type || job.experience_level || job.relevance_score > 0 || job.country || job.is_ghost) && (
               <div className="mb-4 flex flex-wrap gap-2">
-                {job.dream_score > 0 && (
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                    job.dream_score >= 80 ? 'bg-purple-100 text-purple-700' :
-                    job.dream_score >= 50 ? 'bg-purple-50 text-purple-600' :
-                    'bg-slate-100 text-slate-500'
-                  }`}>
-                    Dream: {job.dream_score}%
-                  </span>
-                )}
                 {job.job_type && (
                   <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
                     {job.job_type}

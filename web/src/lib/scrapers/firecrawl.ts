@@ -7,8 +7,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const FIRECRAWL_API_KEY = process.env.FIRECRAWL_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-const BATCH_SIZE = 3;
-const MAX_URLS = 10;
+const MAX_RESULTS_PER_KEYWORD = 5;
+const MAX_KEYWORDS = 5;
 const MAX_MARKDOWN_LENGTH = 12000;
 const MIN_MARKDOWN_LENGTH = 200;
 
@@ -22,18 +22,14 @@ interface ParsedJob {
   experience_level?: string | null;
   description?: string | null;
   posted_date?: string | null;
-  dream_score?: number | null;
 }
 
 /**
- * Scrape arbitrary career page URLs using Firecrawl + Gemini parsing.
- * Uses /scrape (1 credit/page) + Gemini to extract structured job data from markdown.
+ * Search the web for jobs using Firecrawl search API + Gemini parsing.
+ * Builds search queries from keywords + location, parses results with AI.
  */
 export async function scrapeFirecrawl(params: ScrapeParams): Promise<ScrapeResult> {
-  const urls = (params.config?.firecrawl_urls as string[]) ?? [];
-
-  // Silent skip if no URLs configured (not an error — user just didn't add any)
-  if (urls.length === 0) {
+  if (params.keywords.length === 0) {
     return { source: 'firecrawl', jobs: [] };
   }
 
@@ -49,25 +45,58 @@ export async function scrapeFirecrawl(params: ScrapeParams): Promise<ScrapeResul
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
+  // Build one search query per keyword
+  const location = params.location?.trim();
+  const queries = params.keywords.slice(0, MAX_KEYWORDS).map((kw) => {
+    if (params.remote) return `${kw} remote jobs`;
+    return location ? `${kw} jobs ${location}` : `${kw} jobs`;
+  });
+
   const allJobs: JobInput[] = [];
   const errors: string[] = [];
-  const cappedUrls = urls.slice(0, MAX_URLS);
 
-  // Process URLs in batches to respect rate limits and Vercel timeout
-  for (let i = 0; i < cappedUrls.length; i += BATCH_SIZE) {
-    const batch = cappedUrls.slice(i, i + BATCH_SIZE);
-    const results = await Promise.allSettled(
-      batch.map((url) => scrapeAndParsePage(firecrawl, model, url, params))
+  // Run all searches in parallel
+  const searchResults = await Promise.allSettled(
+    queries.map((query) =>
+      firecrawl.search(query, {
+        limit: MAX_RESULTS_PER_KEYWORD,
+        scrapeOptions: { formats: ['markdown'] },
+      })
+    ),
+  );
+
+  // Parse each search result's documents
+  for (let i = 0; i < searchResults.length; i++) {
+    const result = searchResults[i];
+
+    if (result.status === 'rejected') {
+      const msg = result.reason?.message ?? 'Unknown error';
+      if (msg.includes('402') || msg.includes('payment')) {
+        errors.push('Firecrawl free credits exhausted');
+      } else {
+        errors.push(`Search "${queries[i]}": ${msg}`);
+      }
+      continue;
+    }
+
+    // v2 search returns { web?: Array<SearchResultWeb | Document> }
+    const webResults = result.value?.web ?? [];
+    if (webResults.length === 0) continue;
+
+    // Parse jobs from each document that has markdown content
+    const docResults = await Promise.allSettled(
+      webResults
+        .filter((doc) => 'markdown' in doc && (doc.markdown?.length ?? 0) >= MIN_MARKDOWN_LENGTH)
+        .map((doc) => {
+          const url = 'url' in doc ? (doc.url ?? '') : '';
+          const markdown = 'markdown' in doc ? (doc.markdown ?? '') : '';
+          return parseJobsFromMarkdown(model, markdown, url, params);
+        }),
     );
 
-    for (const result of results) {
-      if (result.status === 'fulfilled') {
-        if (result.value.error) {
-          errors.push(result.value.error);
-        }
-        allJobs.push(...result.value.jobs);
-      } else {
-        errors.push(result.reason?.message ?? 'Unknown error');
+    for (const docResult of docResults) {
+      if (docResult.status === 'fulfilled') {
+        allJobs.push(...docResult.value);
       }
     }
   }
@@ -77,38 +106,6 @@ export async function scrapeFirecrawl(params: ScrapeParams): Promise<ScrapeResul
     jobs: allJobs,
     error: errors.length > 0 && allJobs.length === 0 ? errors.join('; ') : undefined,
   };
-}
-
-/** Scrape a single page and parse jobs from its markdown content. */
-async function scrapeAndParsePage(
-  firecrawl: Firecrawl,
-  model: ReturnType<GoogleGenerativeAI['getGenerativeModel']>,
-  url: string,
-  params: ScrapeParams,
-): Promise<{ jobs: JobInput[]; error?: string }> {
-  try {
-    // Scrape the page (1 credit)
-    const scrapeResult = await firecrawl.scrape(url, {
-      formats: ['markdown'],
-    });
-
-    const markdown = scrapeResult.markdown ?? '';
-
-    if (markdown.length < MIN_MARKDOWN_LENGTH) {
-      return { jobs: [], error: `${getDomain(url)}: page too short or blocked` };
-    }
-
-    // Parse jobs from markdown using Gemini
-    const jobs = await parseJobsFromMarkdown(model, markdown, url, params);
-    return { jobs };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    // Handle specific Firecrawl errors gracefully
-    if (message.includes('402') || message.includes('payment')) {
-      return { jobs: [], error: 'Firecrawl free credits exhausted' };
-    }
-    return { jobs: [], error: `${getDomain(url)}: ${message}` };
-  }
 }
 
 /** Use Gemini to extract structured job data from page markdown. */
@@ -139,7 +136,6 @@ For the "url" field: if there is a link to a specific job detail page, provide t
 
 Source URL: ${sourceUrl}
 Keywords being searched: ${params.keywords.join(', ')}
-${params.dream_job ? `\nCandidate's dream job: "${params.dream_job}"\nFor each job, also include "dream_score": 0-100 indicating how well it matches this dream job description. 85-100 = excellent match, 50-84 = partial, 0-49 = poor match.` : ''}
 
 ---
 ${truncatedMarkdown}`;
@@ -147,7 +143,7 @@ ${truncatedMarkdown}`;
   const result = await model.generateContent(prompt);
   const responseText = result.response.text().trim();
 
-  // Strip markdown code fences if present (same pattern as resume route)
+  // Strip markdown code fences if present
   const jsonStr = responseText.replace(/^```(?:json)?\s*|\s*```$/g, '').trim();
 
   let parsed: ParsedJob[];
@@ -192,9 +188,6 @@ ${truncatedMarkdown}`;
       posted_date: parseDate(entry.posted_date),
       job_type: entry.job_type ? normalizeJobType(entry.job_type) : undefined,
       experience_level: entry.experience_level?.trim() || undefined,
-      dream_score: typeof entry.dream_score === 'number'
-        ? Math.min(100, Math.max(0, Math.round(entry.dream_score)))
-        : undefined,
     });
   }
 

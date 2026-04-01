@@ -3,25 +3,18 @@ import { auth } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import { sessionExists } from '@/lib/session';
 import { computeMatchScore } from '@/lib/match-scoring';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { extractResumeSkills } from '@/lib/resume-extract';
 import type { ResumeProfile } from '@/lib/types';
-
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 /**
  * POST /api/user/resume
- * Extract skills from resume text via Gemini, save to users table, score all jobs.
+ * Extract skills from resume text via Gemini, save profile, score all jobs.
+ * Works for both authenticated (saves to users + sessions) and anonymous (saves to sessions only).
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
-    }
-
-    if (!GEMINI_API_KEY) {
-      return NextResponse.json({ error: 'AI features not configured' }, { status: 503 });
-    }
+    const session = await auth().catch(() => null);
+    const userId = session?.user?.id ?? null;
 
     const body = (await request.json()) as {
       text?: string;
@@ -45,45 +38,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    // Truncate to 8000 chars for Gemini input budget
-    const resumeText = body.text.slice(0, 8000);
-
     // Extract skills with Gemini
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-    const prompt = `Extract structured information from this resume text. Return ONLY valid JSON with these fields:
-- "skills": string[] (technical and soft skills, lowercased, max 50 items)
-- "experience_years": number | null (estimated total years of professional experience)
-- "titles": string[] (job titles the person has held, max 10)
-- "summary": string (one-sentence professional summary)
-
-Do NOT include any markdown formatting, code blocks, or extra text. Return ONLY the JSON object.
-
-Resume text:
-${resumeText}`;
-
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text().trim();
-
-    // Parse Gemini response — strip markdown code fences if present
-    const jsonStr = responseText.replace(/^```(?:json)?\s*|\s*```$/g, '').trim();
+    const resumeText = body.text.slice(0, 8000);
     let profile: ResumeProfile;
     try {
-      const parsed = JSON.parse(jsonStr);
-      profile = {
-        skills: Array.isArray(parsed.skills)
-          ? parsed.skills.filter((s: unknown) => typeof s === 'string').slice(0, 50)
-          : [],
-        experience_years:
-          typeof parsed.experience_years === 'number' ? parsed.experience_years : null,
-        titles: Array.isArray(parsed.titles)
-          ? parsed.titles.filter((t: unknown) => typeof t === 'string').slice(0, 10)
-          : [],
-        summary: typeof parsed.summary === 'string' ? parsed.summary : '',
-      };
+      profile = await extractResumeSkills(resumeText);
     } catch {
-      console.error('Failed to parse Gemini response:', responseText.slice(0, 200));
       return NextResponse.json({ error: 'Failed to extract skills from resume' }, { status: 500 });
     }
 
@@ -94,13 +54,22 @@ ${resumeText}`;
       );
     }
 
-    // Save to users table
     const sql = getDb();
+
+    // Save to user table if authenticated
+    if (userId) {
+      await sql(
+        `UPDATE users
+         SET resume_skills = $1, resume_filename = $2, resume_updated_at = NOW()
+         WHERE id = $3`,
+        [JSON.stringify(profile), body.filename ?? null, userId],
+      );
+    }
+
+    // Always save to session for immediate scoring
     await sql(
-      `UPDATE users
-       SET resume_skills = $1, resume_filename = $2, resume_updated_at = NOW()
-       WHERE id = $3`,
-      [JSON.stringify(profile), body.filename ?? null, session.user.id],
+      'UPDATE sessions SET resume_skills = $1 WHERE code = $2',
+      [JSON.stringify(profile), body.session_code],
     );
 
     // Batch-score all jobs in this session
@@ -139,7 +108,7 @@ export async function GET() {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
+      return NextResponse.json({ profile: null, filename: null, updated_at: null });
     }
 
     const sql = getDb();
@@ -169,24 +138,25 @@ export async function GET() {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
-    }
+    const session = await auth().catch(() => null);
+    const userId = session?.user?.id ?? null;
 
     const { searchParams } = new URL(request.url);
     const sessionCode = searchParams.get('session');
 
     const sql = getDb();
 
-    // Clear resume from user
-    await sql(
-      'UPDATE users SET resume_skills = NULL, resume_filename = NULL, resume_updated_at = NULL WHERE id = $1',
-      [session.user.id],
-    );
+    // Clear resume from user if authenticated
+    if (userId) {
+      await sql(
+        'UPDATE users SET resume_skills = NULL, resume_filename = NULL, resume_updated_at = NULL WHERE id = $1',
+        [userId],
+      );
+    }
 
-    // Reset scores for the current session if provided
+    // Clear from session and reset scores
     if (sessionCode) {
+      await sql('UPDATE sessions SET resume_skills = NULL WHERE code = $1', [sessionCode]);
       await sql('UPDATE jobs SET relevance_score = 0 WHERE session_code = $1', [sessionCode]);
     }
 

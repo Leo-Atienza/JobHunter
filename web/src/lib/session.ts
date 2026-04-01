@@ -1,4 +1,5 @@
 import { getDb } from './db';
+import type { ResumeProfile } from './types';
 
 const CHARSET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const CODE_LENGTH = 4;
@@ -39,12 +40,11 @@ export async function getSession(code: string): Promise<{
   companies: string[] | null;
   country: string | null;
   user_id: string | null;
-  firecrawl_urls: string[] | null;
-  dream_job: string | null;
+  resume_skills: ResumeProfile | null;
 } | null> {
   const sql = getDb();
   const rows = await sql(
-    'SELECT code, created_at, expires_at, keywords, location, sources, remote, companies, country, user_id, firecrawl_urls, dream_job FROM sessions WHERE code = $1 AND (expires_at > NOW() OR user_id IS NOT NULL)',
+    'SELECT code, created_at, expires_at, keywords, location, sources, remote, companies, country, user_id, resume_skills FROM sessions WHERE code = $1 AND (expires_at > NOW() OR user_id IS NOT NULL)',
     [code]
   );
   if (rows.length === 0) return null;
@@ -59,7 +59,6 @@ export async function getSession(code: string): Promise<{
     companies: string[] | null;
     country: string | null;
     user_id: string | null;
-    firecrawl_urls: string[] | null;
-    dream_job: string | null;
+    resume_skills: ResumeProfile | null;
   };
 }

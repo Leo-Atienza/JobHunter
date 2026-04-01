@@ -343,6 +343,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
             sessionCode={code}
             onScored={handleJobUpdate}
             isSignedIn={!!authSession?.user?.id}
+            sessionResumeProfile={session?.resume_skills ?? null}
           />
         </div>
 
@@ -354,7 +355,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
             ))}
           </div>
         ) : !hasJobs ? (
-          <ScrapeProgress code={code} sessionSources={session?.sources ?? null} firecrawlUrls={session?.firecrawl_urls} dreamJob={session?.dream_job} />
+          <ScrapeProgress code={code} sessionSources={session?.sources ?? null} />
         ) : (
           <>
             {/* Filters and search */}

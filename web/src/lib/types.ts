@@ -49,8 +49,7 @@ export interface Session {
   companies: string[] | null;
   country: string | null;
   user_id: string | null;
-  firecrawl_urls: string[] | null;
-  dream_job: string | null;
+  resume_skills: ResumeProfile | null;
 }
 
 export interface JobStats {
@@ -78,7 +77,6 @@ export interface JobInput {
   skills?: string;
   benefits?: string;
   relevance_score?: number;
-  dream_score?: number;
   country?: string;
 }
 
@@ -89,8 +87,7 @@ export interface CreateSessionRequest {
   remote?: boolean;
   companies?: string[];
   country?: string;
-  firecrawl_urls?: string[];
-  dream_job?: string;
+  resume_text?: string;
 }
 
 export interface CreateSessionResponse {

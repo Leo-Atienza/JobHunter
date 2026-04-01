@@ -4,10 +4,11 @@ import { getSession } from '@/lib/session';
 import { sanitize } from '@/lib/utils';
 import { SERVER_SCRAPERS } from '@/lib/scrapers';
 import type { ScrapeParams } from '@/lib/scrapers/types';
-import type { JobInput } from '@/lib/types';
+import type { JobInput, ResumeProfile } from '@/lib/types';
 import { parseSalary } from '@/lib/salary-parser';
 import { matchesCountry } from '@/lib/country-filter';
 import { extractSkills, extractBenefits } from '@/lib/skills-extractor';
+import { computeMatchScore } from '@/lib/match-scoring';
 
 export const maxDuration = 60; // Vercel Pro; free tier caps at 10s
 
@@ -46,10 +47,6 @@ export async function POST(
       location: session.location ?? '',
       remote: session.remote ?? false,
       country: session.country ?? undefined,
-      dream_job: session.dream_job ?? undefined,
-      config: {
-        firecrawl_urls: session.firecrawl_urls ?? [],
-      },
     };
 
     // Run the scraper with timing
@@ -78,6 +75,46 @@ export async function POST(
 
     // Insert jobs into DB
     const { inserted, duplicates } = await insertJobs(body.session_code, filteredJobs);
+
+    // Auto-score newly inserted jobs against resume profile
+    if (inserted > 0) {
+      try {
+        // Fallback chain: session.resume_skills → user.resume_skills
+        let resumeProfile: ResumeProfile | null =
+          (session.resume_skills as ResumeProfile | null) ?? null;
+
+        if (!resumeProfile && session.user_id) {
+          const [userRow] = await sql(
+            'SELECT resume_skills FROM users WHERE id = $1 AND resume_skills IS NOT NULL',
+            [session.user_id],
+          );
+          if (userRow?.resume_skills) {
+            resumeProfile = userRow.resume_skills as ResumeProfile;
+          }
+        }
+
+        if (resumeProfile) {
+          const unscoredJobs = await sql(
+            'SELECT id, title, skills, description, experience_level FROM jobs WHERE session_code = $1 AND relevance_score = 0 AND duplicate_of IS NULL',
+            [body.session_code],
+          );
+          for (const job of unscoredJobs) {
+            const score = computeMatchScore(resumeProfile, {
+              title: job.title,
+              skills: job.skills,
+              description: job.description,
+              experience_level: job.experience_level,
+            });
+            if (score > 0) {
+              await sql('UPDATE jobs SET relevance_score = $1 WHERE id = $2', [score, job.id]);
+            }
+          }
+        }
+      } catch (err) {
+        // Non-critical — don't fail the scrape response
+        console.error('Auto-score error:', err);
+      }
+    }
 
     // Log success
     await logScrapeRun(sql, body.session_code, source, 'success', result.jobs.length, inserted, duplicates, null, durationMs);
@@ -141,9 +178,6 @@ async function insertJobs(
     const relevance_score = typeof job.relevance_score === 'number'
       ? Math.min(Math.max(Math.round(job.relevance_score), 0), 100)
       : 0;
-    const dream_score = typeof job.dream_score === 'number'
-      ? Math.min(Math.max(Math.round(job.dream_score), 0), 100)
-      : 0;
     const country = job.country ? sanitize(job.country, 100) : null;
 
     // Parse salary into min/max
@@ -155,11 +189,11 @@ async function insertJobs(
 
     try {
       const result = await sql(
-        `INSERT INTO jobs (session_code, title, company, location, url, source, salary, description, posted_date, job_type, experience_level, skills, benefits, relevance_score, dream_score, country, salary_min, salary_max, duplicate_of)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+        `INSERT INTO jobs (session_code, title, company, location, url, source, salary, description, posted_date, job_type, experience_level, skills, benefits, relevance_score, country, salary_min, salary_max, duplicate_of)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
          ON CONFLICT (session_code, url) DO NOTHING
          RETURNING id`,
-        [sessionCode, title, company, location, url, source, salary, description, posted_date, job_type, experience_level, skills, benefits, relevance_score, dream_score, country, salaryMin, salaryMax, duplicateOfId],
+        [sessionCode, title, company, location, url, source, salary, description, posted_date, job_type, experience_level, skills, benefits, relevance_score, country, salaryMin, salaryMax, duplicateOfId],
       );
       if (result.length > 0) {
         inserted++;

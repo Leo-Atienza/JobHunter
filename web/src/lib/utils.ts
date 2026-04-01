@@ -121,7 +121,7 @@ const SOURCE_DISPLAY: Record<string, string> = {
   jooble: 'Jooble',
   jobicy: 'Jobicy',
   devitjobs: 'DevITjobs',
-  firecrawl: 'Firecrawl',
+  firecrawl: 'Web Search',
 };
 
 /** Extended labels with contextual hints (for source selection UI). */
@@ -142,7 +142,7 @@ export const SOURCE_LABELS_EXTENDED: Record<string, string> = {
   jooble: 'Jooble',
   jobicy: 'Jobicy (Remote)',
   devitjobs: 'DevITjobs',
-  firecrawl: 'Firecrawl (Custom Pages)',
+  firecrawl: 'Web Search (Firecrawl)',
 };
 
 export function getSourceDisplayName(source: string): string {

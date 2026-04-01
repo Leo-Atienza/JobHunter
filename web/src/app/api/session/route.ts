@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { generateCode } from '@/lib/session';
 import { sanitize } from '@/lib/utils';
-import type { CreateSessionRequest } from '@/lib/types';
+import type { CreateSessionRequest, ResumeProfile } from '@/lib/types';
 import { JOB_SOURCES } from '@/lib/types';
 import { auth } from '@/lib/auth';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { inferCountryFromLocation } from '@/lib/country-filter';
+import { extractResumeSkills } from '@/lib/resume-extract';
 
 export async function POST(request: NextRequest) {
   try {
@@ -48,13 +49,19 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       console.error('Country inference failed:', e);
     }
-    const dreamJob = body.dream_job ? sanitize(body.dream_job, 2000) : null;
-    const firecrawlUrls = body.firecrawl_urls?.length
-      ? body.firecrawl_urls
-          .slice(0, 10)
-          .map((u) => sanitize(u, 2000))
-          .filter((u) => u.startsWith('http://') || u.startsWith('https://'))
-      : null;
+
+    // Process resume text if provided (extract skills via Gemini)
+    const resumeText = body.resume_text?.trim() ?? null;
+    let resumeSkills: ResumeProfile | null = null;
+    if (resumeText && resumeText.length >= 100) {
+      try {
+        const profile = await extractResumeSkills(resumeText.slice(0, 8000));
+        if (profile.skills.length > 0) resumeSkills = profile;
+      } catch (e) {
+        // Non-fatal — session is created without resume skills
+        console.error('Resume extraction failed (non-fatal):', e instanceof Error ? e.message : e);
+      }
+    }
 
     // Check if user is authenticated — attach user_id for persistent sessions
     let userId: string | null = null;
@@ -79,10 +86,10 @@ export async function POST(request: NextRequest) {
           ? "NOW() + INTERVAL '10 years'"
           : "NOW() + INTERVAL '48 hours'";
         const result = await sql(
-          `INSERT INTO sessions (code, keywords, location, sources, remote, companies, country, user_id, firecrawl_urls, dream_job, expires_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, ${expiryExpr})
+          `INSERT INTO sessions (code, keywords, location, sources, remote, companies, country, user_id, resume_skills, expires_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, ${expiryExpr})
            RETURNING code, expires_at`,
-          [code, keywords, location, sources, remote, companies, country, userId, firecrawlUrls, dreamJob]
+          [code, keywords, location, sources, remote, companies, country, userId, resumeSkills ? JSON.stringify(resumeSkills) : null]
         );
         if (result.length > 0) {
           inserted = true;

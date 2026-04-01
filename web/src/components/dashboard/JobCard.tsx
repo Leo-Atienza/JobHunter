@@ -89,17 +89,8 @@ export function JobCard({ job, onUpdate, onJobClick, sessionCode }: JobCardProps
         </div>
 
         {/* Tags row */}
-        {(job.job_type || job.experience_level || job.relevance_score > 0 || job.dream_score > 0) && (
+        {(job.job_type || job.experience_level || job.relevance_score > 0) && (
           <div className="mt-2 flex flex-wrap gap-1">
-            {job.dream_score > 0 && (
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                job.dream_score >= 80 ? 'bg-purple-100 text-purple-700' :
-                job.dream_score >= 50 ? 'bg-purple-50 text-purple-600' :
-                'bg-slate-100 text-slate-500'
-              }`}>
-                Dream: {job.dream_score}%
-              </span>
-            )}
             {job.relevance_score > 0 && (
               <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                 job.relevance_score >= 80 ? 'bg-green-50 text-green-700' :
