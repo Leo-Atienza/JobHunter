@@ -8,6 +8,13 @@ import { auth } from '@/lib/auth';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { inferCountryFromLocation } from '@/lib/country-filter';
 
+/** Convert a JS string array to a Postgres array literal: {val1,val2} */
+function toPgArray(arr: string[] | null): string | null {
+  if (!arr || arr.length === 0) return null;
+  const escaped = arr.map((s) => `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`);
+  return `{${escaped.join(',')}}`;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const forwarded = request.headers.get('x-forwarded-for');
@@ -83,7 +90,7 @@ export async function POST(request: NextRequest) {
           `INSERT INTO sessions (code, keywords, location, sources, remote, companies, country, user_id, firecrawl_urls, dream_job, expires_at)
            VALUES ($1, $2::TEXT[], $3, $4::TEXT[], $5, $6::TEXT[], $7, $8, $9::TEXT[], $10, ${expiryExpr})
            RETURNING code, expires_at`,
-          [code, keywords, location, sources, remote, companies, country, userId, firecrawlUrls, dreamJob]
+          [code, toPgArray(keywords), location, toPgArray(sources), remote, toPgArray(companies), country, userId, toPgArray(firecrawlUrls), dreamJob]
         );
         if (result.length > 0) {
           inserted = true;
