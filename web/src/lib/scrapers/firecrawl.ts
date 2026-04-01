@@ -1,6 +1,6 @@
 import type { ScrapeParams, ScrapeResult } from './types';
 import type { JobInput } from '@/lib/types';
-import { matchesKeywords, normalizeJobType, parseDate } from './utils';
+import { normalizeJobType, parseDate } from './utils';
 import Firecrawl from '@mendable/firecrawl-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
@@ -65,6 +65,9 @@ export async function scrapeFirecrawl(params: ScrapeParams): Promise<ScrapeResul
     ),
   );
 
+  let totalWebResults = 0;
+  let totalWithMarkdown = 0;
+
   // Parse each search result's documents
   for (let i = 0; i < searchResults.length; i++) {
     const result = searchResults[i];
@@ -79,19 +82,30 @@ export async function scrapeFirecrawl(params: ScrapeParams): Promise<ScrapeResul
       continue;
     }
 
-    // v2 search returns { web?: Array<SearchResultWeb | Document> }
-    const webResults = result.value?.web ?? [];
-    if (webResults.length === 0) continue;
+    // SDK v4+ returns { data: [...] }, older versions used { web: [...] }
+    const raw = result.value as Record<string, unknown> | undefined;
+    const webResults: unknown[] =
+      (raw?.data as unknown[]) ?? (raw?.web as unknown[]) ?? (Array.isArray(raw) ? raw : []);
+    totalWebResults += webResults.length;
+    if (webResults.length === 0) {
+      console.warn(`Firecrawl: query "${queries[i]}" returned 0 web results. Response keys: ${raw ? Object.keys(raw).join(',') : 'null'}`);
+      continue;
+    }
 
     // Parse jobs from each document that has markdown content
+    const docsWithMarkdown = webResults.filter((doc: unknown) => {
+      const d = doc as Record<string, unknown>;
+      return typeof d.markdown === 'string' && (d.markdown as string).length >= MIN_MARKDOWN_LENGTH;
+    });
+    totalWithMarkdown += docsWithMarkdown.length;
+
     const docResults = await Promise.allSettled(
-      webResults
-        .filter((doc) => 'markdown' in doc && (doc.markdown?.length ?? 0) >= MIN_MARKDOWN_LENGTH)
-        .map((doc) => {
-          const url = 'url' in doc ? (doc.url ?? '') : '';
-          const markdown = 'markdown' in doc ? (doc.markdown ?? '') : '';
-          return parseJobsFromMarkdown(model, markdown, url, params);
-        }),
+      docsWithMarkdown.map((doc: unknown) => {
+        const d = doc as Record<string, unknown>;
+        const url = typeof d.url === 'string' ? d.url : '';
+        const markdown = typeof d.markdown === 'string' ? d.markdown : '';
+        return parseJobsFromMarkdown(model, markdown, url, params);
+      }),
     );
 
     for (const docResult of docResults) {
@@ -101,10 +115,19 @@ export async function scrapeFirecrawl(params: ScrapeParams): Promise<ScrapeResul
     }
   }
 
+  // Diagnostic info when no jobs found
+  const diagnostic = allJobs.length === 0
+    ? ` (${queries.length} queries, ${totalWebResults} web results, ${totalWithMarkdown} with markdown)`
+    : '';
+
   return {
     source: 'firecrawl',
     jobs: allJobs,
-    error: errors.length > 0 && allJobs.length === 0 ? errors.join('; ') : undefined,
+    error: errors.length > 0 && allJobs.length === 0
+      ? errors.join('; ') + diagnostic
+      : allJobs.length === 0 && totalWebResults === 0
+        ? `No web results found${diagnostic}`
+        : undefined,
   };
 }
 
@@ -151,8 +174,20 @@ ${truncatedMarkdown}`;
     const raw = JSON.parse(jsonStr);
     parsed = Array.isArray(raw) ? raw : [];
   } catch {
-    console.error('Firecrawl: failed to parse Gemini response for', getDomain(sourceUrl));
-    return [];
+    // Try to extract JSON array from response text as a fallback
+    const arrayMatch = jsonStr.match(/\[[\s\S]*\]/);
+    if (arrayMatch) {
+      try {
+        const fallback = JSON.parse(arrayMatch[0]);
+        parsed = Array.isArray(fallback) ? fallback : [];
+      } catch {
+        console.error('Firecrawl: failed to parse Gemini response for', getDomain(sourceUrl), '| First 200 chars:', responseText.slice(0, 200));
+        return [];
+      }
+    } else {
+      console.error('Firecrawl: failed to parse Gemini response for', getDomain(sourceUrl), '| First 200 chars:', responseText.slice(0, 200));
+      return [];
+    }
   }
 
   const jobs: JobInput[] = [];
@@ -162,15 +197,9 @@ ${truncatedMarkdown}`;
     const title = entry.title?.trim();
     if (!title) continue;
 
-    // Build a searchable string for keyword matching
-    const searchable = [title, entry.description, entry.location, entry.company]
-      .filter(Boolean)
-      .join(' ');
-
-    // Only include jobs that match the search keywords
-    if (params.keywords.length > 0 && !matchesKeywords(searchable, params.keywords)) {
-      continue;
-    }
+    // Skip keyword re-filtering — the Firecrawl search query already constrains
+    // relevance, and Gemini was instructed to extract jobs matching the keywords.
+    // Double-filtering silently drops valid results with slightly different titles.
 
     // Resolve job URL — use provided URL, fallback to source page with fragment
     const jobUrl = entry.url && (entry.url.startsWith('http://') || entry.url.startsWith('https://'))

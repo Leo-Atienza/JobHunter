@@ -100,23 +100,26 @@ export async function discoverViaFirecrawl(company: string): Promise<string | nu
       limit: 3,
     });
 
-    // v2 SDK returns { web?: Array<SearchResultWeb | Document> }
-    const webResults = response?.web ?? [];
+    // SDK v4+ returns { data: [...] }, older versions used { web: [...] }
+    const raw = response as Record<string, unknown> | undefined;
+    const webResults: unknown[] =
+      (raw?.data as unknown[]) ?? (raw?.web as unknown[]) ?? (Array.isArray(raw) ? raw : []);
     if (webResults.length === 0) return null;
 
     // Look for results whose URL contains career-related keywords
     const careerPatterns = /careers|jobs|join|hiring|opportunities|work-with|openings/i;
 
     for (const result of webResults) {
-      const url = 'url' in result ? result.url : undefined;
+      const r = result as Record<string, unknown>;
+      const url = typeof r.url === 'string' ? r.url : undefined;
       if (url && careerPatterns.test(url)) {
         return url;
       }
     }
 
     // If no career-specific URL found, return the first result URL
-    const first = webResults[0];
-    const firstUrl = 'url' in first ? first.url : undefined;
+    const first = webResults[0] as Record<string, unknown>;
+    const firstUrl = typeof first.url === 'string' ? first.url : undefined;
     return firstUrl ?? null;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
