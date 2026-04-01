@@ -40,9 +40,14 @@ export async function POST(request: NextRequest) {
     const companies = body.companies?.length
       ? body.companies.slice(0, 20).map((c) => sanitize(c, 100))
       : null;
-    const country = body.country
-      ? sanitize(body.country, 10)
-      : (location ? inferCountryFromLocation(location) : null);
+    let country: string | null = null;
+    try {
+      country = body.country
+        ? sanitize(body.country, 10)
+        : (location ? inferCountryFromLocation(location) : null);
+    } catch (e) {
+      console.error('Country inference failed:', e);
+    }
     const dreamJob = body.dream_job ? sanitize(body.dream_job, 2000) : null;
     const firecrawlUrls = body.firecrawl_urls?.length
       ? body.firecrawl_urls
@@ -52,8 +57,14 @@ export async function POST(request: NextRequest) {
       : null;
 
     // Check if user is authenticated — attach user_id for persistent sessions
-    const session = await auth();
-    const userId = session?.user?.id ?? null;
+    let userId: string | null = null;
+    try {
+      const session = await auth();
+      userId = session?.user?.id ?? null;
+    } catch (e) {
+      console.error('Auth check failed (non-fatal):', e instanceof Error ? e.message : e);
+      // Continue without auth — anonymous session
+    }
 
     const sql = getDb();
     let inserted = false;
@@ -95,7 +106,10 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   } catch (error) {
-    console.error('Session creation error:', error);
+    const errMsg = error instanceof Error
+      ? `${error.message}\n${error.stack}`
+      : String(error);
+    console.error('Session creation error [FULL]:', errMsg);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
