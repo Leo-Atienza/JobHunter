@@ -7,6 +7,7 @@ import { getSourceDisplayName } from '@/lib/utils';
 interface ScrapeProgressProps {
   code: string;
   sessionSources: string[] | null;
+  firecrawlUrls?: string[] | null;
 }
 
 interface SourceStatus {
@@ -16,7 +17,16 @@ interface SourceStatus {
   error?: string;
 }
 
-export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
+/** Extract domain from URL for display. */
+function getDomain(url: string): string {
+  try {
+    return new URL(url).hostname.replace('www.', '');
+  } catch {
+    return url.slice(0, 30);
+  }
+}
+
+export function ScrapeProgress({ code, sessionSources, firecrawlUrls }: ScrapeProgressProps) {
   const [statuses, setStatuses] = useState<Record<string, SourceStatus>>({});
   const startedRef = useRef(false);
 
@@ -117,6 +127,11 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
             >
               <span className={status.state === 'done' ? 'text-slate-700' : status.state === 'error' ? 'text-error-600' : 'text-slate-500'}>
                 {getSourceDisplayName(source)}
+                {source === 'firecrawl' && firecrawlUrls && firecrawlUrls.length > 0 && (
+                  <span className="ml-1.5 text-[10px] font-normal text-slate-400">
+                    ({firecrawlUrls.map(getDomain).slice(0, 3).join(', ')}{firecrawlUrls.length > 3 ? ` +${firecrawlUrls.length - 3}` : ''})
+                  </span>
+                )}
               </span>
               <span className="flex items-center gap-2">
                 {status.state === 'pending' && (
@@ -128,19 +143,21 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    Searching...
+                    {source === 'firecrawl' ? 'Scraping pages...' : 'Searching...'}
                   </span>
                 )}
                 {status.state === 'done' && (
                   <span className="text-xs font-medium text-success-600">
-                    {status.inserted ?? 0} jobs
+                    {status.inserted ?? 0} jobs{source === 'firecrawl' && firecrawlUrls ? ` from ${firecrawlUrls.length} page${firecrawlUrls.length === 1 ? '' : 's'}` : ''}
                   </span>
                 )}
                 {status.state === 'error' && (
                   <span className="text-xs text-error-500">{status.error ?? 'Failed'}</span>
                 )}
                 {status.state === 'skipped' && (
-                  <span className="text-xs text-slate-400">Local only</span>
+                  <span className="text-xs text-slate-400">
+                    {source === 'firecrawl' ? 'No URLs configured' : 'Local only'}
+                  </span>
                 )}
               </span>
             </div>

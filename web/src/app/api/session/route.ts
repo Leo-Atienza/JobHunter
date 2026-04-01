@@ -40,6 +40,12 @@ export async function POST(request: NextRequest) {
       ? body.companies.slice(0, 20).map((c) => sanitize(c, 100))
       : null;
     const country = body.country ? sanitize(body.country, 10) : null;
+    const firecrawlUrls = body.firecrawl_urls?.length
+      ? body.firecrawl_urls
+          .slice(0, 10)
+          .map((u) => sanitize(u, 2000))
+          .filter((u) => u.startsWith('http://') || u.startsWith('https://'))
+      : null;
 
     // Check if user is authenticated — attach user_id for persistent sessions
     const session = await auth();
@@ -59,10 +65,10 @@ export async function POST(request: NextRequest) {
           ? "NOW() + INTERVAL '10 years'"
           : "NOW() + INTERVAL '48 hours'";
         const result = await sql(
-          `INSERT INTO sessions (code, keywords, location, sources, remote, companies, country, user_id, expires_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, ${expiryExpr})
+          `INSERT INTO sessions (code, keywords, location, sources, remote, companies, country, user_id, firecrawl_urls, expires_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, ${expiryExpr})
            RETURNING code, expires_at`,
-          [code, keywords, location, sources, remote, companies, country, userId]
+          [code, keywords, location, sources, remote, companies, country, userId, firecrawlUrls]
         );
         if (result.length > 0) {
           inserted = true;

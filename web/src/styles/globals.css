@@ -139,6 +139,11 @@ dialog::backdrop {
   backdrop-filter: blur(4px);
 }
 
+/* Firecrawl source badge — subtle rose gradient */
+.source-firecrawl {
+  background: linear-gradient(135deg, #ffe4e6, #fecdd3);
+}
+
 /* View Transition: modal slide */
 ::view-transition-old(job-modal-panel),
 ::view-transition-new(job-modal-panel) {

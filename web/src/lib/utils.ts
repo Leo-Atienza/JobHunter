@@ -97,6 +97,7 @@ export function getSourceColor(source: string): { bg: string; text: string } {
     workday: { bg: 'bg-amber-100', text: 'text-amber-800' },
     jooble: { bg: 'bg-violet-100', text: 'text-violet-800' },
     'linkedin-public': { bg: 'bg-blue-100', text: 'text-blue-800' },
+    firecrawl: { bg: 'bg-rose-100', text: 'text-rose-800' },
   };
   return colors[source.toLowerCase()] ?? { bg: 'bg-slate-100', text: 'text-slate-800' };
 }
@@ -120,6 +121,7 @@ const SOURCE_DISPLAY: Record<string, string> = {
   jooble: 'Jooble',
   jobicy: 'Jobicy',
   devitjobs: 'DevITjobs',
+  firecrawl: 'Firecrawl',
 };
 
 /** Extended labels with contextual hints (for source selection UI). */
@@ -140,6 +142,7 @@ export const SOURCE_LABELS_EXTENDED: Record<string, string> = {
   jooble: 'Jooble',
   jobicy: 'Jobicy (Remote)',
   devitjobs: 'DevITjobs',
+  firecrawl: 'Firecrawl (Custom Pages)',
 };
 
 export function getSourceDisplayName(source: string): string {

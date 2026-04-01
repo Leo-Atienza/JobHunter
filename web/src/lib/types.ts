@@ -47,6 +47,7 @@ export interface Session {
   companies: string[] | null;
   country: string | null;
   user_id: string | null;
+  firecrawl_urls: string[] | null;
 }
 
 export interface JobStats {
@@ -84,6 +85,7 @@ export interface CreateSessionRequest {
   remote?: boolean;
   companies?: string[];
   country?: string;
+  firecrawl_urls?: string[];
 }
 
 export interface CreateSessionResponse {
@@ -103,5 +105,5 @@ export interface ResumeProfile {
   summary: string;
 }
 
-export const JOB_SOURCES = ['linkedin', 'linkedin-public', 'indeed', 'glassdoor', 'rapidapi', 'jobbank', 'remotive', 'adzuna', 'himalayas', 'themuse', 'arbeitnow', 'lever', 'greenhouse', 'workday', 'jooble', 'jobicy', 'devitjobs'] as const;
+export const JOB_SOURCES = ['linkedin', 'linkedin-public', 'indeed', 'glassdoor', 'rapidapi', 'jobbank', 'remotive', 'adzuna', 'himalayas', 'themuse', 'arbeitnow', 'lever', 'greenhouse', 'workday', 'jooble', 'jobicy', 'devitjobs', 'firecrawl'] as const;
 export type JobSource = (typeof JOB_SOURCES)[number];

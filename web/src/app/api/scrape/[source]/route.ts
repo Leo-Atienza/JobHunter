@@ -46,6 +46,9 @@ export async function POST(
       location: session.location ?? '',
       remote: session.remote ?? false,
       country: session.country ?? undefined,
+      config: {
+        firecrawl_urls: session.firecrawl_urls ?? [],
+      },
     };
 
     // Run the scraper with timing

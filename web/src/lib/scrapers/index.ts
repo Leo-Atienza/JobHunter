@@ -13,6 +13,7 @@ import { scrapeWorkday } from './workday';
 import { scrapeAdzuna } from './adzuna';
 import { scrapeJooble } from './jooble';
 import { scrapeLinkedInPublic } from './linkedin-public';
+import { scrapeFirecrawl } from './firecrawl';
 
 /** All server-side scrapers keyed by source name. */
 export const SERVER_SCRAPERS: Record<string, ScraperFn> = {
@@ -28,6 +29,7 @@ export const SERVER_SCRAPERS: Record<string, ScraperFn> = {
   adzuna: scrapeAdzuna,
   jooble: scrapeJooble,
   'linkedin-public': scrapeLinkedInPublic,
+  firecrawl: scrapeFirecrawl,
 };
 
 /** Sources that can run server-side (no browser needed). */

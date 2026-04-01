@@ -334,7 +334,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
             ))}
           </div>
         ) : !hasJobs ? (
-          <ScrapeProgress code={code} sessionSources={session?.sources ?? null} />
+          <ScrapeProgress code={code} sessionSources={session?.sources ?? null} firecrawlUrls={session?.firecrawl_urls} />
         ) : (
           <>
             {/* Filters and search */}

@@ -17,6 +17,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
   const [selectedSources, setSelectedSources] = useState<string[]>([...JOB_SOURCES]);
   const [companies, setCompanies] = useState('');
   const [country, setCountry] = useState('');
+  const [firecrawlUrls, setFirecrawlUrls] = useState('');
   const [remote, setRemote] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +48,11 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
 
     try {
       const parsedCompanies = companies.split(',').map((c) => c.trim()).filter(Boolean);
+      const parsedUrls = firecrawlUrls
+        .split(/[\n,]/)
+        .map((u) => u.trim())
+        .filter((u) => u.startsWith('http://') || u.startsWith('https://'))
+        .slice(0, 10);
       const body: CreateSessionRequest = {
         keywords: keywords.split(',').map((k) => k.trim()).filter(Boolean),
         location: location.trim() || undefined,
@@ -54,6 +60,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
         remote: remote || undefined,
         companies: parsedCompanies.length > 0 ? parsedCompanies : undefined,
         country: country || undefined,
+        firecrawl_urls: parsedUrls.length > 0 ? parsedUrls : undefined,
       };
 
       const res = await fetch('/api/session', {
@@ -162,6 +169,44 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
           multiValue
         />
 
+        {/* Career Page URLs (Firecrawl) */}
+        <div>
+          <label htmlFor="firecrawl-urls" className="block text-sm font-semibold text-slate-700">
+            Career Page URLs
+          </label>
+          <textarea
+            id="firecrawl-urls"
+            value={firecrawlUrls}
+            onChange={(e) => {
+              setFirecrawlUrls(e.target.value);
+              // Auto-select firecrawl source when URLs are entered
+              const hasUrls = e.target.value.trim().length > 0;
+              setSelectedSources((prev) =>
+                hasUrls && !prev.includes('firecrawl')
+                  ? [...prev, 'firecrawl']
+                  : !hasUrls
+                    ? prev.filter((s) => s !== 'firecrawl')
+                    : prev
+              );
+            }}
+            rows={3}
+            placeholder={"https://stripe.com/jobs\nhttps://shopify.com/careers\nhttps://company.com/jobs"}
+            aria-describedby="firecrawl-hint"
+            className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 bg-white placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none transition-colors"
+          />
+          <div className="mt-1.5 flex items-center justify-between">
+            <p id="firecrawl-hint" className="text-xs text-slate-400">
+              Paste career page URLs (one per line, max 10). Scraped with Firecrawl AI.
+            </p>
+            <span
+              className="text-xs font-medium tabular-nums text-slate-400 transition-colors"
+              aria-live="polite"
+            >
+              {firecrawlUrls.split(/[\n,]/).map((u) => u.trim()).filter((u) => u.startsWith('http')).length}/10
+            </span>
+          </div>
+        </div>
+
         {/* Remote toggle */}
         <label className="flex items-center gap-3 cursor-pointer">
           <button
@@ -228,11 +273,14 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
                   {(source === 'adzuna' || source === 'jooble') && (
                     <span className="ml-1 text-xs text-slate-400" title={source === 'adzuna' ? 'Requires free API key from developer.adzuna.com' : 'Requires free API key from jooble.org/api/about'}>*</span>
                   )}
+                  {source === 'firecrawl' && (
+                    <span className="ml-1 text-xs text-slate-400" title="Scrapes any career page URL using AI — add URLs above to activate">**</span>
+                  )}
                 </span>
               </label>
             ))}
           </div>
-          <p className="mt-1.5 text-xs text-slate-400">* Adzuna and Jooble require free API keys (developer.adzuna.com / jooble.org/api/about)</p>
+          <p className="mt-1.5 text-xs text-slate-400">* Requires free API key. ** Activates when Career Page URLs are provided above.</p>
         </div>
 
         {error && (
