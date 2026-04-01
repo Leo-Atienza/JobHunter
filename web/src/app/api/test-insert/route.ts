@@ -1,49 +1,52 @@
 import { NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
+import { auth } from '@/lib/auth';
+import { checkRateLimit } from '@/lib/rate-limit';
+import { inferCountryFromLocation } from '@/lib/country-filter';
 
 export async function GET() {
+  const results: Record<string, unknown> = {};
+
   try {
-    const sql = neon(process.env.DATABASE_URL!);
-
-    // Test 1: simple query
-    const t1 = await sql('SELECT 1 as ok');
-
-    // Test 2: 9-param INSERT
-    let t2result = 'skipped';
+    // Test auth import
     try {
-      const r = await sql(
-        `INSERT INTO sessions (code, keywords, location, sources, remote, companies, country, user_id, firecrawl_urls, expires_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW() + INTERVAL '1 minute')
-         RETURNING code`,
-        ['JH-DBG1', ['test'], 'Toronto', ['indeed'], false, null, 'ca', null, null]
-      );
-      t2result = JSON.stringify(r);
-      await sql('DELETE FROM sessions WHERE code = $1', ['JH-DBG1']);
+      const session = await auth();
+      results.auth = session?.user?.id ?? 'no-user';
     } catch (e) {
-      t2result = `ERROR: ${e instanceof Error ? e.message : String(e)}`;
+      results.auth = `ERROR: ${e instanceof Error ? e.message : String(e)}`;
     }
 
-    // Test 3: 10-param INSERT
-    let t3result = 'skipped';
+    // Test rate limit
+    try {
+      const ok = await checkRateLimit('test:debug', 100, 60000);
+      results.rateLimit = ok;
+    } catch (e) {
+      results.rateLimit = `ERROR: ${e instanceof Error ? e.message : String(e)}`;
+    }
+
+    // Test country inference
+    try {
+      results.countryInfer = inferCountryFromLocation('Toronto, Canada');
+    } catch (e) {
+      results.countryInfer = `ERROR: ${e instanceof Error ? e.message : String(e)}`;
+    }
+
+    // Test INSERT with all the same imports loaded
+    const sql = neon(process.env.DATABASE_URL!);
     try {
       const r = await sql(
         `INSERT INTO sessions (code, keywords, location, sources, remote, companies, country, user_id, firecrawl_urls, dream_job, expires_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW() + INTERVAL '1 minute')
          RETURNING code`,
-        ['JH-DBG2', ['test'], 'Toronto', ['indeed'], false, null, 'ca', null, null, 'dream']
+        ['JH-DBG3', ['test'], 'Toronto', ['indeed'], false, null, 'ca', null, null, 'dream text']
       );
-      t3result = JSON.stringify(r);
-      await sql('DELETE FROM sessions WHERE code = $1', ['JH-DBG2']);
+      results.insert = r[0]?.code ?? 'no-code';
+      await sql('DELETE FROM sessions WHERE code = $1', ['JH-DBG3']);
     } catch (e) {
-      t3result = `ERROR: ${e instanceof Error ? e.message : String(e)}`;
+      results.insert = `ERROR: ${e instanceof Error ? e.message : String(e)}`;
     }
 
-    return NextResponse.json({
-      test1_simple: t1[0]?.ok,
-      test2_9params: t2result,
-      test3_10params: t3result,
-      driver_version: '0.10.4',
-    });
+    return NextResponse.json(results);
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
