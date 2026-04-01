@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
           : "NOW() + INTERVAL '48 hours'";
         const result = await sql(
           `INSERT INTO sessions (code, keywords, location, sources, remote, companies, country, user_id, firecrawl_urls, dream_job, expires_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, ${expiryExpr})
+           VALUES ($1, $2::TEXT[], $3, $4::TEXT[], $5, $6::TEXT[], $7, $8, $9::TEXT[], $10, ${expiryExpr})
            RETURNING code, expires_at`,
           [code, keywords, location, sources, remote, companies, country, userId, firecrawlUrls, dreamJob]
         );
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       : String(error);
     console.error('Session creation error [FULL]:', errMsg);
     return NextResponse.json(
-      { error: 'Internal server error', debug: error instanceof Error ? error.message : String(error) },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
