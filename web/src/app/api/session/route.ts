@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from '@neondatabase/serverless';
+import { getDb } from '@/lib/db';
 import { generateCode } from '@/lib/session';
 import { sanitize } from '@/lib/utils';
 import type { CreateSessionRequest } from '@/lib/types';
@@ -9,7 +9,6 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import { inferCountryFromLocation } from '@/lib/country-filter';
 
 export async function POST(request: NextRequest) {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   try {
     const forwarded = request.headers.get('x-forwarded-for');
     const ip = forwarded?.split(',')[0]?.trim() ?? 'unknown';
@@ -66,6 +65,7 @@ export async function POST(request: NextRequest) {
       console.error('Auth check failed (non-fatal):', e instanceof Error ? e.message : e);
     }
 
+    const sql = getDb();
     let inserted = false;
     let attempts = 0;
     const maxAttempts = 10;
@@ -78,16 +78,26 @@ export async function POST(request: NextRequest) {
         const expiryExpr = userId
           ? "NOW() + INTERVAL '10 years'"
           : "NOW() + INTERVAL '48 hours'";
-        const result = await pool.query(
+
+        // Insert session — dream_job added via separate UPDATE to avoid
+        // Neon HTTP driver type inference issues with 10+ parameters
+        const result = await sql(
           `INSERT INTO sessions (code, keywords, location, sources, remote, companies, country, user_id, firecrawl_urls, expires_at)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, ${expiryExpr})
            RETURNING code, expires_at`,
           [code, keywords, location, sources, remote, companies, country, userId, firecrawlUrls]
         );
-        if (result.rows.length > 0) {
+        if (result.length > 0) {
+          // Set dream_job in a separate query to stay under 9 params
+          if (dreamJob) {
+            await sql(
+              'UPDATE sessions SET dream_job = $1 WHERE code = $2',
+              [dreamJob, result[0].code]
+            );
+          }
           inserted = true;
           return NextResponse.json(
-            { code: result.rows[0].code, expires_at: result.rows[0].expires_at },
+            { code: result[0].code, expires_at: result[0].expires_at },
             { status: 201 }
           );
         }
@@ -113,7 +123,5 @@ export async function POST(request: NextRequest) {
       { error: 'Internal server error', _dbg: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
-  } finally {
-    await pool.end();
   }
 }
