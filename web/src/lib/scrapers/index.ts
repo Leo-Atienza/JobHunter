@@ -3,7 +3,6 @@
 import type { ScraperFn } from './types';
 import { scrapeRemotive } from './remotive';
 import { scrapeHimalayas } from './himalayas';
-import { scrapeArbeitnow } from './arbeitnow';
 import { scrapeJobicy } from './jobicy';
 import { scrapeDevitjobs } from './devitjobs';
 import { scrapeThemuse } from './themuse';
@@ -19,7 +18,6 @@ import { scrapeFirecrawl } from './firecrawl';
 export const SERVER_SCRAPERS: Record<string, ScraperFn> = {
   remotive: scrapeRemotive,
   himalayas: scrapeHimalayas,
-  arbeitnow: scrapeArbeitnow,
   jobicy: scrapeJobicy,
   devitjobs: scrapeDevitjobs,
   themuse: scrapeThemuse,
