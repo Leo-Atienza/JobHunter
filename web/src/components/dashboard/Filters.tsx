@@ -170,11 +170,11 @@ export function Filters({
         </div>
       )}
 
-      {/* Separator */}
-      <div className="border-b border-slate-100" />
+      {/* Divider */}
+      <hr className="border-slate-100/80" />
 
       {/* Row 2: controls */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         {/* Remote toggle */}
         <label className="flex items-center gap-2 cursor-pointer">
           <button
@@ -292,7 +292,7 @@ export function Filters({
       </div>
 
       {/* Row 3: salary, freshness, ghost toggle, company */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         {/* Salary range filter */}
         <div className="flex items-center gap-1.5">
           <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Salary:</span>
@@ -456,7 +456,7 @@ export function Filters({
       </div>
 
       {/* Desktop: always visible */}
-      <div className="hidden sm:flex sm:flex-col sm:gap-3">
+      <div className="hidden sm:flex sm:flex-col gap-2.5 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
         {filterContent}
       </div>
     </div>

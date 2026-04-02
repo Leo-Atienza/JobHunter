@@ -42,7 +42,7 @@ export function StatsBar({ stats }: StatsBarProps) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 lg:grid-cols-5">
       {/* Total jobs */}
-      <div className="group relative overflow-hidden rounded-xl border border-slate-200/80 bg-gradient-to-br from-white to-primary-50/40 p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+      <div className="stagger-1 group relative overflow-hidden rounded-xl border border-slate-200/80 bg-gradient-to-br from-white to-primary-50/40 p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
         <div className="absolute top-3 right-3 text-primary-200/60">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
@@ -59,14 +59,14 @@ export function StatsBar({ stats }: StatsBarProps) {
       </div>
 
       {/* By source */}
-      <div className="group relative overflow-hidden rounded-xl border border-slate-200/80 bg-gradient-to-br from-white to-blue-50/30 p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+      <div className="stagger-2 group relative overflow-hidden rounded-xl border border-slate-200/80 bg-gradient-to-br from-white to-blue-50/30 p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
         <div className="absolute top-3 right-3 text-blue-200/60">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" />
           </svg>
         </div>
         <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">By Source</p>
-        <div className="mt-2 sm:mt-3 flex flex-wrap gap-1">
+        <div className="mt-2 sm:mt-3 flex flex-wrap gap-1 max-h-20 overflow-y-auto scrollbar-none">
           {sources.length > 0 ? (
             sources.map(([source, count]) => {
               const colors = getSourceColor(source);
@@ -87,14 +87,14 @@ export function StatsBar({ stats }: StatsBarProps) {
       </div>
 
       {/* By status */}
-      <div className="group relative overflow-hidden rounded-xl border border-slate-200/80 bg-gradient-to-br from-white to-violet-50/30 p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+      <div className="stagger-3 group relative overflow-hidden rounded-xl border border-slate-200/80 bg-gradient-to-br from-white to-violet-50/30 p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
         <div className="absolute top-3 right-3 text-violet-200/60">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
           </svg>
         </div>
         <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">By Status</p>
-        <div className="mt-2 sm:mt-3 flex flex-wrap gap-1">
+        <div className="mt-2 sm:mt-3 flex flex-wrap gap-1 max-h-20 overflow-y-auto scrollbar-none">
           {statuses.length > 0 ? (
             statuses.map(([status, count]) => (
               <span
@@ -112,7 +112,7 @@ export function StatsBar({ stats }: StatsBarProps) {
       </div>
 
       {/* Salary insights */}
-      <div className="group relative overflow-hidden rounded-xl border border-slate-200/80 bg-gradient-to-br from-white to-emerald-50/40 p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+      <div className="stagger-4 group relative overflow-hidden rounded-xl border border-slate-200/80 bg-gradient-to-br from-white to-emerald-50/40 p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
         <div className="absolute top-3 right-3 text-emerald-200/60">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
@@ -137,7 +137,7 @@ export function StatsBar({ stats }: StatsBarProps) {
       </div>
 
       {/* Job quality */}
-      <div className="group relative overflow-hidden rounded-xl border border-slate-200/80 bg-gradient-to-br from-white to-amber-50/30 p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+      <div className="stagger-5 group relative overflow-hidden rounded-xl border border-slate-200/80 bg-gradient-to-br from-white to-amber-50/30 p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
         <div className="absolute top-3 right-3 text-amber-200/60">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />

@@ -16,7 +16,7 @@ import { ScrapeProgress } from './ScrapeProgress';
 import { Pagination } from './Pagination';
 import { JobDetailModal } from './JobDetailModal';
 import { CopyButton } from '@/components/ui/CopyButton';
-import { formatTimestamp } from '@/lib/utils';
+import { formatTimestamp, formatDate } from '@/lib/utils';
 import { ActionsMenu } from './ActionsMenu';
 import Link from 'next/link';
 import { UserMenu } from '@/components/auth/UserMenu';
@@ -293,21 +293,6 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
               <span className="font-mono text-xs font-semibold text-primary-800 sm:text-sm">{code}</span>
               <CopyButton text={code} />
             </div>
-            {session?.keywords && session.keywords.length > 0 && (
-              <div className="hidden sm:flex items-center gap-1.5 min-w-0">
-                <span className="text-xs text-slate-400 shrink-0">Searching:</span>
-                <div className="flex items-center gap-1 min-w-0 overflow-hidden">
-                  {session.keywords.slice(0, 3).map((kw) => (
-                    <span key={kw} className="shrink-0 rounded-md bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-inset ring-primary-200 truncate max-w-[120px]">
-                      {kw}
-                    </span>
-                  ))}
-                  {session.keywords.length > 3 && (
-                    <span className="shrink-0 text-xs text-slate-400">+{session.keywords.length - 3}</span>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
@@ -352,6 +337,63 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
       </header>
 
       <main id="main-content" className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
+        {/* Search context — what the user is looking for */}
+        <div className="mb-5">
+          {session ? (
+            <div className="animate-hero-in flex items-start gap-3 sm:gap-4">
+              <div className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 shadow-lg shadow-primary-500/20">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+              </div>
+              <div className="min-w-0 pt-0.5">
+                <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-primary-950 tracking-tight leading-tight">
+                  {session.keywords && session.keywords.length > 0
+                    ? session.keywords.join(', ')
+                    : 'Job Search'}
+                </h1>
+                <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-slate-500">
+                  {session.location && (
+                    <span className="inline-flex items-center gap-1">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                      </svg>
+                      {session.location}
+                    </span>
+                  )}
+                  {session.remote && (
+                    <span className="inline-flex items-center rounded-full bg-accent-100 px-2 py-0.5 text-xs font-medium text-accent-600">
+                      Remote
+                    </span>
+                  )}
+                  {stats && (
+                    <>
+                      <span className="hidden sm:inline text-slate-300">&middot;</span>
+                      <span>{stats.total} jobs across {Object.keys(stats.by_source).length} sources</span>
+                    </>
+                  )}
+                  {stats?.last_updated && (
+                    <>
+                      <span className="hidden sm:inline text-slate-300">&middot;</span>
+                      <span className="text-slate-400">Updated {formatDate(stats.last_updated)}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-start gap-4 animate-pulse">
+              <div className="h-12 w-12 rounded-2xl bg-slate-200" />
+              <div className="space-y-2.5 pt-1">
+                <div className="h-7 w-48 rounded-lg bg-slate-200" />
+                <div className="h-4 w-64 rounded-md bg-slate-100" />
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Stats */}
         {stats ? (
           <StatsBar stats={stats} />
@@ -385,7 +427,10 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
         ) : (
           <>
             {/* Filters and search */}
-            <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="mt-6 flex flex-col gap-3">
+              <div className="flex justify-end sm:hidden">
+                <SearchBar value={searchQuery} onChange={(v) => { setSearchQuery(v); resetPage(); }} />
+              </div>
               <Filters
                 sourceFilter={sourceFilter}
                 statusFilter={statusFilter}
@@ -413,11 +458,10 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 onLocationChange={(v) => { setLocationFilter(v); resetPage(); }}
                 stats={stats ?? null}
               />
-              <SearchBar value={searchQuery} onChange={(v) => { setSearchQuery(v); resetPage(); }} />
             </div>
 
-            {/* Results count + view toggle */}
-            <div className="mt-6 flex items-center justify-between">
+            {/* Results count + search + view toggle */}
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
               <div className="text-sm text-slate-500" aria-live="polite" aria-atomic="true">
                 Showing <span className="font-bold text-primary-900">{filteredJobs.length}</span> of{' '}
                 <span className="font-semibold">{primaryJobs.length}</span> jobs
@@ -427,6 +471,9 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 {stats && stats.ghost_count > 0 && !hideGhosts && (
                   <span className="ml-2 text-error-500">{stats.ghost_count} possibly expired</span>
                 )}
+              </div>
+              <div className="hidden sm:block">
+                <SearchBar value={searchQuery} onChange={(v) => { setSearchQuery(v); resetPage(); }} />
               </div>
               <div className="flex items-center rounded-lg border border-slate-200 bg-white p-0.5">
                 <button
