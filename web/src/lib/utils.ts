@@ -132,7 +132,7 @@ export const SOURCE_LABELS_EXTENDED: Record<string, string> = {
   devitjobs: 'DevITjobs',
   firecrawl: 'Web Search (Firecrawl)',
   remoteok: 'RemoteOK (Remote)',
-  weworkremotely: 'We Work Remotely',
+  weworkremotely: 'We Work Remotely (Remote)',
 };
 
 export function getSourceDisplayName(source: string): string {

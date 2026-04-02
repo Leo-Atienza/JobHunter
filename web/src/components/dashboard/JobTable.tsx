@@ -12,6 +12,10 @@ interface JobTableProps {
   onJobUpdate: () => void;
   onJobClick?: (jobId: number) => void;
   sessionCode: string;
+  onClearFilters?: () => void;
+  selectedIds?: Set<number>;
+  onToggleSelect?: (id: number) => void;
+  onToggleSelectAll?: () => void;
 }
 
 interface ColumnDef {
@@ -48,20 +52,32 @@ function SortIndicator({ field, sortField, sortDirection }: { field: keyof Job; 
   );
 }
 
-export function JobTable({ jobs, sortField, sortDirection, onSort, onJobUpdate, onJobClick, sessionCode }: JobTableProps) {
+export function JobTable({ jobs, sortField, sortDirection, onSort, onJobUpdate, onJobClick, sessionCode, onClearFilters, selectedIds, onToggleSelect, onToggleSelectAll }: JobTableProps) {
+  const hasSelection = selectedIds !== undefined && onToggleSelect !== undefined;
   if (jobs.length === 0) {
     return (
-      <div className="mt-8 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-16">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-300">
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.3-4.3" />
-        </svg>
-        <p className="mt-4 font-display text-lg font-semibold text-slate-400">
-          No matching jobs
+      <div className="mt-8 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-16 animate-fade-in">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+            <path d="M8 11h6" />
+          </svg>
+        </div>
+        <p className="mt-4 font-display text-lg font-bold text-slate-700">
+          No jobs match your filters
         </p>
-        <p className="mt-1 text-sm text-slate-400">
-          Try adjusting your search or filters.
+        <p className="mt-1 text-sm text-slate-500">
+          Try removing some filters or broadening your search terms
         </p>
+        {onClearFilters && (
+          <button
+            onClick={onClearFilters}
+            className="mt-4 rounded-xl bg-primary-950 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-primary-900 hover:-translate-y-0.5"
+          >
+            Clear all filters
+          </button>
+        )}
       </div>
     );
   }
@@ -72,6 +88,17 @@ export function JobTable({ jobs, sortField, sortDirection, onSort, onJobUpdate, 
         <table className="w-full">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/50">
+              {hasSelection && (
+                <th className="w-10 px-3 py-3">
+                  <input
+                    type="checkbox"
+                    checked={jobs.length > 0 && selectedIds!.size === jobs.length}
+                    onChange={() => onToggleSelectAll?.()}
+                    className="h-3.5 w-3.5 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                    aria-label="Select all"
+                  />
+                </th>
+              )}
               {columns.map((col) => (
                 <th
                   key={col.field}
@@ -95,7 +122,15 @@ export function JobTable({ jobs, sortField, sortDirection, onSort, onJobUpdate, 
           </thead>
           <tbody className="divide-y divide-slate-100">
             {jobs.map((job) => (
-              <JobRow key={job.id} job={job} onUpdate={onJobUpdate} onJobClick={onJobClick} sessionCode={sessionCode || job.session_code} />
+              <JobRow
+                key={job.id}
+                job={job}
+                onUpdate={onJobUpdate}
+                onJobClick={onJobClick}
+                sessionCode={sessionCode || job.session_code}
+                isSelected={selectedIds?.has(job.id)}
+                onToggleSelect={onToggleSelect}
+              />
             ))}
           </tbody>
         </table>

@@ -13,9 +13,11 @@ interface JobRowProps {
   onUpdate: () => void;
   onJobClick?: (jobId: number) => void;
   sessionCode: string;
+  isSelected?: boolean;
+  onToggleSelect?: (id: number) => void;
 }
 
-export function JobRow({ job, onUpdate, onJobClick, sessionCode }: JobRowProps) {
+export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onToggleSelect }: JobRowProps) {
   const [expanded, setExpanded] = useState(false);
   const [notes, setNotes] = useState(job.notes ?? '');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -55,13 +57,25 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode }: JobRowProps) 
   return (
     <>
       <tr
-        className="group cursor-pointer transition-colors hover:bg-slate-50/80"
+        className={`group cursor-pointer transition-colors ${isSelected ? 'bg-primary-50/60' : 'hover:bg-slate-50/80'}`}
         onClick={() => setExpanded(!expanded)}
         aria-expanded={expanded}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(!expanded); } }}
       >
+        {/* Checkbox */}
+        {onToggleSelect && (
+          <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              checked={!!isSelected}
+              onChange={() => onToggleSelect(job.id)}
+              className="h-3.5 w-3.5 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+              aria-label={`Select ${job.title}`}
+            />
+          </td>
+        )}
         {/* Title */}
         <td className="px-4 py-3">
           <div className="flex items-center gap-2">
@@ -213,7 +227,7 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode }: JobRowProps) 
       {/* Expanded row */}
       {expanded && (
         <tr className="animate-slide-down">
-          <td colSpan={9} className="border-b border-slate-100 bg-slate-50/50 px-4 py-5">
+          <td colSpan={onToggleSelect ? 10 : 9} className="border-b border-slate-100 bg-slate-50/50 px-4 py-5">
             {/* Job detail badges */}
             {(job.job_type || job.experience_level || job.relevance_score > 0 || job.country || job.is_ghost) && (
               <div className="mb-4 flex flex-wrap gap-2">

@@ -119,3 +119,6 @@ export interface ResumeProfile {
 
 export const JOB_SOURCES = ['jobbank', 'linkedin-public', 'remotive', 'adzuna', 'himalayas', 'lever', 'greenhouse', 'jooble', 'jobicy', 'devitjobs', 'firecrawl', 'remoteok', 'weworkremotely'] as const;
 export type JobSource = (typeof JOB_SOURCES)[number];
+
+/** Scrapers that only return remote jobs — auto-deselected when "Include remote" is OFF. */
+export const REMOTE_ONLY_SOURCES: readonly JobSource[] = ['remoteok', 'weworkremotely', 'remotive'];

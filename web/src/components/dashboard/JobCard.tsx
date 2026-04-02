@@ -6,9 +6,11 @@ import { StatusSelect } from './StatusSelect';
 import { AISummaryBlock } from './AISummaryBlock';
 import { useAISummary } from '@/hooks/useAISummary';
 import { getSourceColor, getSourceDisplayName, formatDate } from '@/lib/utils';
+import { useToast } from '@/components/ui/Toast';
 
 function BookmarkButton({ jobId, isSaved, sessionCode, onUpdate }: { jobId: number; isSaved: boolean; sessionCode: string; onUpdate: () => void }) {
   const [saving, setSaving] = useState(false);
+  const toast = useToast();
 
   const toggle = useCallback(async () => {
     setSaving(true);
@@ -19,10 +21,16 @@ function BookmarkButton({ jobId, isSaved, sessionCode, onUpdate }: { jobId: numb
         body: JSON.stringify({ status: isSaved ? 'new' : 'saved' }),
       });
       onUpdate();
+      toast({
+        message: isSaved ? 'Removed from Tracker' : 'Saved to Tracker',
+        type: 'success',
+        duration: 2500,
+        ...(!isSaved ? { action: { label: 'View', href: '/saved' } } : {}),
+      });
     } finally {
       setSaving(false);
     }
-  }, [jobId, isSaved, sessionCode, onUpdate]);
+  }, [jobId, isSaved, sessionCode, onUpdate, toast]);
 
   return (
     <button
@@ -47,9 +55,12 @@ interface JobCardProps {
   onUpdate: () => void;
   onJobClick?: (jobId: number) => void;
   sessionCode: string;
+  isFocused?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (id: number) => void;
 }
 
-export function JobCard({ job, onUpdate, onJobClick, sessionCode }: JobCardProps) {
+export function JobCard({ job, onUpdate, onJobClick, sessionCode, isFocused, isSelected, onToggleSelect }: JobCardProps) {
   const [showDetails, setShowDetails] = useState(false);
   const { summary: aiSummary, loading: summaryLoading } = useAISummary(
     job.id, job.ai_summary ?? null, !!job.description, showDetails,
@@ -58,7 +69,19 @@ export function JobCard({ job, onUpdate, onJobClick, sessionCode }: JobCardProps
   const sourceColors = getSourceColor(job.source);
 
   return (
-    <div className="group/card relative rounded-xl border border-slate-200/80 bg-white shadow-sm transition-all duration-200 hover:shadow-lg hover:shadow-primary-950/[0.04] hover:border-primary-200/60 hover:-translate-y-0.5">
+    <div className={`group/card relative rounded-xl border bg-white shadow-sm transition-all duration-200 hover:shadow-lg hover:shadow-primary-950/[0.04] hover:border-primary-200/60 hover:-translate-y-0.5 ${isFocused ? 'ring-2 ring-primary-400 border-primary-300' : isSelected ? 'ring-2 ring-primary-300 border-primary-200 bg-primary-50/30' : 'border-slate-200/80'}`}>
+      {/* Selection checkbox — visible on hover or when selected */}
+      {onToggleSelect && (
+        <div className={`absolute top-2.5 left-2.5 z-10 ${isSelected ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100'} transition-opacity`}>
+          <input
+            type="checkbox"
+            checked={!!isSelected}
+            onChange={(e) => { e.stopPropagation(); onToggleSelect(job.id); }}
+            className="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm"
+            aria-label={`Select ${job.title}`}
+          />
+        </div>
+      )}
       <div className="p-4">
         {/* Header: source + status */}
         <div className="flex items-center justify-between mb-3">

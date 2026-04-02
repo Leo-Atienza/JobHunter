@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Outfit, Plus_Jakarta_Sans } from 'next/font/google';
 import '@/styles/globals.css';
 import { SessionProvider } from '@/components/auth/SessionProvider';
+import { ToastProvider } from '@/components/ui/Toast';
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -57,7 +58,9 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </SessionProvider>
       </body>
     </html>
   );

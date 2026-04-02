@@ -26,7 +26,7 @@ const faqItems: FAQItem[] = [
   {
     question: 'Which job boards are supported?',
     answer:
-      'Currently supported: Job Bank (Canada), LinkedIn, Remotive, Adzuna, Himalayas, Lever, Greenhouse, Jooble, Jobicy, DevITjobs, and Firecrawl web search. More sources are being added — check the GitHub repo for the latest list.',
+      'Currently supported: Job Bank (Canada), LinkedIn, Remotive, Adzuna, Himalayas, Lever, Greenhouse, Jooble, Jobicy, DevITjobs, Firecrawl web search, RemoteOK, and We Work Remotely — 13 sources total. More are being added — check the GitHub repo for the latest list.',
   },
   {
     question: 'Can I self-host the entire platform?',

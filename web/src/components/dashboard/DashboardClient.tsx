@@ -22,6 +22,10 @@ import Link from 'next/link';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { ResumeUpload } from './ResumeUpload';
 import { useSession } from 'next-auth/react';
+import { useKeyboardNav } from '@/hooks/useKeyboardNav';
+import { KeyboardShortcutsOverlay } from './KeyboardShortcutsOverlay';
+import { BulkActions } from './BulkActions';
+import { useToast } from '@/components/ui/Toast';
 
 interface DashboardClientProps {
   code: string;
@@ -53,10 +57,22 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
 
   const lastTotalRef = useRef<number>(0);
   const staleCountRef = useRef<number>(0);
   const [refreshInterval, setRefreshInterval] = useState(10000);
+  const [newJobsBanner, setNewJobsBanner] = useState<number | null>(null);
   const { data: authSession } = useSession();
 
   // Build query URL
@@ -82,7 +98,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
     { revalidateOnFocus: false }
   );
 
-  // Adaptive polling — slow down when nothing changes
+  // Adaptive polling — slow down when nothing changes, show banner on new jobs
   useEffect(() => {
     if (stats) {
       if (stats.total === lastTotalRef.current) {
@@ -91,12 +107,24 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
           setRefreshInterval(60000);
         }
       } else {
+        // Show "new jobs found" banner when new jobs arrive after initial load
+        if (lastTotalRef.current > 0 && stats.total > lastTotalRef.current) {
+          const diff = stats.total - lastTotalRef.current;
+          setNewJobsBanner(diff);
+        }
         staleCountRef.current = 0;
         setRefreshInterval(10000);
       }
       lastTotalRef.current = stats.total;
     }
   }, [stats]);
+
+  // Auto-dismiss new jobs banner after 8 seconds
+  useEffect(() => {
+    if (newJobsBanner === null) return;
+    const timer = setTimeout(() => setNewJobsBanner(null), 8000);
+    return () => clearTimeout(timer);
+  }, [newJobsBanner]);
 
   const handleSort = useCallback(
     (field: keyof Job) => {
@@ -122,6 +150,22 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
 
   // Reset page when filters change
   const resetPage = useCallback(() => setCurrentPage(1), []);
+
+  const clearAllFilters = useCallback(() => {
+    setSourceFilter(null);
+    setStatusFilter(null);
+    setRemoteFilter(false);
+    setExperienceFilter(null);
+    setJobTypeFilter(null);
+    setSalaryMin('');
+    setSalaryMax('');
+    setFreshnessFilter(null);
+    setHideGhosts(false);
+    setCompanyFilter(null);
+    setLocationFilter(null);
+    setSearchQuery('');
+    setCurrentPage(1);
+  }, []);
 
   // Merge duplicates: hide duplicate rows, add "also_on" sources to primary
   const allJobs = jobs ?? [];
@@ -233,6 +277,13 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
     return filteredJobs.slice(start, start + pageSize);
   }, [filteredJobs, safePage, pageSize]);
 
+  const toggleSelectAll = useCallback(() => {
+    setSelectedIds((prev) => {
+      if (prev.size === paginatedJobs.length) return new Set();
+      return new Set(paginatedJobs.map((j) => j.id));
+    });
+  }, [paginatedJobs]);
+
   // Keep page in bounds when filters shrink result set
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
@@ -272,6 +323,36 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
     setCurrentPage(1);
   }, []);
 
+  const toast = useToast();
+
+  const handleToggleSave = useCallback(async (jobId: number) => {
+    const job = filteredJobs.find((j) => j.id === jobId);
+    if (!job) return;
+    const newStatus = job.status === 'saved' ? 'new' : 'saved';
+    await fetch(`/api/jobs/${jobId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'X-Session-Code': code },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    void mutateJobs();
+    toast({
+      message: newStatus === 'saved' ? 'Saved to Tracker' : 'Removed from Tracker',
+      type: 'success',
+      duration: 2500,
+      ...(newStatus === 'saved' ? { action: { label: 'View', href: '/saved' } } : {}),
+    });
+  }, [filteredJobs, code, mutateJobs, toast]);
+
+  const { focusedJobId, showShortcuts, setShowShortcuts } = useKeyboardNav({
+    jobs: paginatedJobs,
+    selectedJobId: selectedJobId,
+    isModalOpen: selectedJob !== null,
+    onSelectJob: () => {},
+    onOpenModal: handleJobClick,
+    onCloseModal: () => setSelectedJobId(null),
+    onToggleSave: handleToggleSave,
+  });
+
   const isLoading = jobs === undefined;
   const hasJobs = (jobs?.length ?? 0) > 0;
 
@@ -307,6 +388,11 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 <rect x="17" y="5" width="5" height="16" rx="1" />
               </svg>
               Tracker
+              {(stats?.by_status?.saved ?? 0) > 0 && (
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-purple-500 px-1.5 text-[10px] font-bold text-white tabular-nums">
+                  {stats!.by_status.saved}
+                </span>
+              )}
             </Link>
             <div className="hidden lg:block text-right">
               <p className="text-xs text-slate-400">
@@ -403,6 +489,37 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="h-24 animate-pulse rounded-xl bg-slate-200" />
             ))}
+          </div>
+        )}
+
+        {/* New jobs found banner */}
+        {newJobsBanner !== null && (
+          <div className="mt-4" style={{ animation: 'slide-in-up 0.3s ease-out' }}>
+            <div className="flex items-center justify-between rounded-xl bg-primary-950 px-4 py-3 text-sm font-medium text-white shadow-lg">
+              <div className="flex items-center gap-2">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent-500 text-[10px] font-bold">
+                  +{newJobsBanner}
+                </span>
+                <span>{newJobsBanner} new job{newJobsBanner !== 1 ? 's' : ''} found</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  className="text-xs text-white/70 hover:text-white transition-colors underline underline-offset-2"
+                >
+                  Scroll to top
+                </button>
+                <button
+                  onClick={() => setNewJobsBanner(null)}
+                  className="text-white/50 hover:text-white transition-colors"
+                  aria-label="Dismiss"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -513,14 +630,45 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 onJobUpdate={handleJobUpdate}
                 onJobClick={handleJobClick}
                 sessionCode={code}
+                onClearFilters={clearAllFilters}
+                selectedIds={selectedIds}
+                onToggleSelect={toggleSelect}
+                onToggleSelectAll={toggleSelectAll}
               />
+            ) : paginatedJobs.length === 0 ? (
+              <div className="mt-8 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-16 animate-fade-in">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.3-4.3" />
+                    <path d="M8 11h6" />
+                  </svg>
+                </div>
+                <p className="mt-4 font-display text-lg font-bold text-slate-700">No jobs match your filters</p>
+                <p className="mt-1 text-sm text-slate-500">Try removing some filters or broadening your search terms</p>
+                <button onClick={clearAllFilters} className="mt-4 rounded-xl bg-primary-950 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-primary-900 hover:-translate-y-0.5">
+                  Clear all filters
+                </button>
+              </div>
             ) : (
               <div className="mt-4 grid gap-3 grid-cols-1 min-[500px]:grid-cols-2 lg:grid-cols-3">
-                {paginatedJobs.map((job) => (
-                  <LazyJobCard key={job.id} job={job} onUpdate={handleJobUpdate} onJobClick={handleJobClick} sessionCode={code} />
+                {paginatedJobs.map((job, idx) => (
+                  <LazyJobCard key={job.id} job={job} onUpdate={handleJobUpdate} onJobClick={handleJobClick} sessionCode={code} isFocused={job.id === focusedJobId} isSelected={selectedIds.has(job.id)} onToggleSelect={toggleSelect} animationIndex={idx} />
                 ))}
               </div>
             )}
+
+            {/* Keyboard shortcut hint */}
+            <div className="mt-2 flex justify-end">
+              <button
+                onClick={() => setShowShortcuts(true)}
+                className="hidden sm:inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                title="Keyboard shortcuts (?)"
+              >
+                <kbd className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-mono font-semibold">?</kbd>
+                <span>Shortcuts</span>
+              </button>
+            </div>
 
             {/* Pagination */}
             <Pagination
@@ -546,6 +694,19 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
           hasNext={selectedIndex < filteredJobs.length - 1}
           sessionCode={code}
         />
+      )}
+
+      {/* Bulk actions bar */}
+      <BulkActions
+        selectedIds={selectedIds}
+        sessionCode={code}
+        onComplete={handleJobUpdate}
+        onClear={clearSelection}
+      />
+
+      {/* Keyboard shortcuts overlay */}
+      {showShortcuts && (
+        <KeyboardShortcutsOverlay onClose={() => setShowShortcuts(false)} />
       )}
     </div>
   );

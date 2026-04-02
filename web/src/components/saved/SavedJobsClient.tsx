@@ -222,23 +222,51 @@ export function SavedJobsClient() {
           </div>
         ) : jobs.length === 0 ? (
           <div className="mt-16 text-center animate-fade-in">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary-50">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary-400">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary-100 to-accent-100">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary-500">
                 <rect x="3" y="3" width="5" height="18" rx="1" />
                 <rect x="10" y="8" width="5" height="13" rx="1" />
                 <rect x="17" y="5" width="5" height="16" rx="1" />
               </svg>
             </div>
-            <h2 className="mt-6 font-display text-xl font-bold text-slate-800">No tracked jobs yet</h2>
-            <p className="mt-2 text-sm text-slate-500 max-w-sm mx-auto">
-              Click the bookmark icon on any job in your dashboard to start tracking your application pipeline.
+            <h2 className="mt-6 font-display text-2xl font-extrabold text-primary-950">No tracked jobs yet</h2>
+            <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+              Save jobs from any search session to build your application pipeline. Track status from saved through interview to offer.
             </p>
             <Link
               href="/"
               className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary-950 px-6 py-3 font-semibold text-white shadow-lg shadow-primary-950/20 transition-all hover:bg-primary-900 hover:-translate-y-0.5"
             >
-              Browse Sessions
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              Search for Jobs
             </Link>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400">
+              <span className="inline-flex items-center gap-1.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                </svg>
+                Bookmark jobs
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="5" height="18" rx="1" />
+                  <rect x="10" y="8" width="5" height="13" rx="1" />
+                  <rect x="17" y="5" width="5" height="16" rx="1" />
+                </svg>
+                Track status
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Export CSV
+              </span>
+            </div>
           </div>
         ) : trackerView === 'pipeline' ? (
           <PipelineView

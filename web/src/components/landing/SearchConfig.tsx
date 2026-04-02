@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { JOB_SOURCES } from '@/lib/types';
+import { JOB_SOURCES, REMOTE_ONLY_SOURCES } from '@/lib/types';
 import type { CreateSessionRequest, CreateSessionResponse } from '@/lib/types';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { MultiCityInput } from '@/components/ui/MultiCityInput';
@@ -417,7 +417,18 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
             type="button"
             role="switch"
             aria-checked={includeRemote}
-            onClick={() => setIncludeRemote(!includeRemote)}
+            onClick={() => {
+              const next = !includeRemote;
+              setIncludeRemote(next);
+              if (!next) {
+                setSelectedSources((prev) => prev.filter((s) => !(REMOTE_ONLY_SOURCES as readonly string[]).includes(s)));
+              } else {
+                setSelectedSources((prev) => {
+                  const toAdd = REMOTE_ONLY_SOURCES.filter((s) => !prev.includes(s));
+                  return [...prev, ...toAdd];
+                });
+              }
+            }}
             className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ${
               includeRemote ? 'bg-accent-500' : 'bg-slate-200'
             }`}
@@ -451,29 +462,38 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
           <div className="relative mt-2">
             <div className="max-h-[200px] overflow-y-auto rounded-lg border border-slate-100 p-1 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent]">
               <div className="grid grid-cols-2 gap-2">
-                {JOB_SOURCES.map((source) => (
+                {JOB_SOURCES.map((source) => {
+                  const isRemoteOnly = (REMOTE_ONLY_SOURCES as readonly string[]).includes(source);
+                  const isDisabled = isRemoteOnly && !includeRemote;
+                  return (
                   <label
                     key={source}
-                    className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 cursor-pointer transition-all ${
-                      selectedSources.includes(source)
-                        ? 'border-primary-300 bg-primary-50 text-primary-800'
-                        : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+                    title={isDisabled ? 'Enable "Include remote jobs" to use this source' : undefined}
+                    className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 transition-all ${
+                      isDisabled
+                        ? 'opacity-50 cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
+                        : selectedSources.includes(source)
+                          ? 'border-primary-300 bg-primary-50 text-primary-800 cursor-pointer'
+                          : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 cursor-pointer'
                     }`}
                   >
                     <input
                       type="checkbox"
                       checked={selectedSources.includes(source)}
-                      onChange={() => toggleSource(source)}
+                      onChange={() => !isDisabled && toggleSource(source)}
+                      disabled={isDisabled}
                       className="sr-only"
                     />
                     <div
                       className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
-                        selectedSources.includes(source)
-                          ? 'border-primary-500 bg-primary-500'
-                          : 'border-slate-300'
+                        isDisabled
+                          ? 'border-slate-300 bg-slate-200'
+                          : selectedSources.includes(source)
+                            ? 'border-primary-500 bg-primary-500'
+                            : 'border-slate-300'
                       }`}
                     >
-                      {selectedSources.includes(source) && (
+                      {selectedSources.includes(source) && !isDisabled && (
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="20 6 9 17 4 12" />
                         </svg>
@@ -491,7 +511,8 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
                       )}
                     </span>
                   </label>
-                ))}
+                  );
+                })}
               </div>
             </div>
             <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 rounded-b-lg bg-gradient-to-t from-white to-transparent" aria-hidden="true" />

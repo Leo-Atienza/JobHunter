@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { JobStatus } from '@/lib/types';
 import { JOB_STATUSES } from '@/lib/types';
+import { useToast } from '@/components/ui/Toast';
 
 interface StatusSelectProps {
   jobId: number;
@@ -33,6 +34,8 @@ const statusLabels: Record<JobStatus, string> = {
 
 export function StatusSelect({ jobId, currentStatus, onUpdate, sessionCode }: StatusSelectProps) {
   const [loading, setLoading] = useState(false);
+  const [flashKey, setFlashKey] = useState(0);
+  const toast = useToast();
 
   async function handleChange(newStatus: string) {
     if (newStatus === currentStatus) return;
@@ -45,6 +48,12 @@ export function StatusSelect({ jobId, currentStatus, onUpdate, sessionCode }: St
       });
       if (res.ok) {
         onUpdate();
+        setFlashKey((k) => k + 1);
+        toast({
+          message: `Status changed to ${statusLabels[newStatus as JobStatus]}`,
+          type: 'info',
+          duration: 2000,
+        });
       }
     } catch {
       // Silently fail — the UI will reflect actual state on next refresh
@@ -55,10 +64,11 @@ export function StatusSelect({ jobId, currentStatus, onUpdate, sessionCode }: St
 
   return (
     <select
+      key={flashKey}
       value={currentStatus}
       onChange={(e) => void handleChange(e.target.value)}
       disabled={loading}
-      className={`rounded-lg border px-2.5 py-1 text-xs font-semibold outline-none transition-all cursor-pointer focus:ring-2 focus:ring-primary-100 disabled:opacity-50 ${statusStyles[currentStatus]}`}
+      className={`rounded-lg border px-2.5 py-1 text-xs font-semibold outline-none transition-all cursor-pointer focus:ring-2 focus:ring-primary-100 disabled:opacity-50 animate-fade-in ${statusStyles[currentStatus]}`}
     >
       {JOB_STATUSES.map((status) => (
         <option key={status} value={status}>

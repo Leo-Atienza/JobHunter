@@ -9,13 +9,17 @@ interface LazyJobCardProps {
   onUpdate: () => void;
   onJobClick?: (jobId: number) => void;
   sessionCode: string;
+  isFocused?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (id: number) => void;
+  animationIndex?: number;
 }
 
 /**
  * Lazy-loads a JobCard using IntersectionObserver.
  * Shows a lightweight placeholder until the card scrolls into view.
  */
-export function LazyJobCard({ job, onUpdate, onJobClick, sessionCode }: LazyJobCardProps) {
+export function LazyJobCard({ job, onUpdate, onJobClick, sessionCode, isFocused, isSelected, onToggleSelect, animationIndex }: LazyJobCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -43,9 +47,14 @@ export function LazyJobCard({ job, onUpdate, onJobClick, sessionCode }: LazyJobC
     );
   }
 
+  const delay = animationIndex !== undefined ? Math.min(animationIndex * 40, 400) : 0;
+
   return (
-    <div ref={ref}>
-      <JobCard job={job} onUpdate={onUpdate} onJobClick={onJobClick} sessionCode={sessionCode} />
+    <div
+      ref={ref}
+      style={delay > 0 ? { animation: `slide-in-up 0.3s ease-out ${delay}ms both` } : undefined}
+    >
+      <JobCard job={job} onUpdate={onUpdate} onJobClick={onJobClick} sessionCode={sessionCode} isFocused={isFocused} isSelected={isSelected} onToggleSelect={onToggleSelect} />
     </div>
   );
 }

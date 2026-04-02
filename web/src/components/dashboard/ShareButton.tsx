@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useToast } from '@/components/ui/Toast';
 
 interface ShareButtonProps {
   code: string;
@@ -10,6 +11,7 @@ interface ShareButtonProps {
 
 export function ShareButton({ code, jobCount, disabled }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
+  const toast = useToast();
 
   async function handleShare() {
     if (disabled) return;
@@ -32,6 +34,7 @@ export function ShareButton({ code, jobCount, disabled }: ShareButtonProps) {
       await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      toast({ message: 'Link copied to clipboard', type: 'success', duration: 2000 });
     } catch {
       // Clipboard API unavailable
     }

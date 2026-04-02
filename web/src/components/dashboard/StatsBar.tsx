@@ -122,7 +122,7 @@ export function StatsBar({ stats }: StatsBarProps) {
         {stats.avg_salary ? (
           <>
             <p className="mt-1 sm:mt-2 font-display text-2xl sm:text-4xl font-extrabold text-emerald-600">
-              ${Math.round(stats.avg_salary / 1000)}k
+              $<AnimatedCounter value={Math.round(stats.avg_salary / 1000)} />k
             </p>
             <p className="mt-1 text-[10px] sm:text-xs text-slate-400">
               avg across {stats.with_salary_count} jobs with salary

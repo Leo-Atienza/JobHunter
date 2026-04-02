@@ -1,11 +1,15 @@
 'use client';
 
+import { useToast } from '@/components/ui/Toast';
+
 interface ExportButtonProps {
   code: string;
   disabled: boolean;
 }
 
 export function ExportButton({ code, disabled }: ExportButtonProps) {
+  const toast = useToast();
+
   return (
     <a
       href={disabled ? undefined : `/api/jobs/export?session=${code}`}
@@ -17,7 +21,8 @@ export function ExportButton({ code, disabled }: ExportButtonProps) {
           : 'bg-primary-950 text-white shadow-md shadow-primary-950/10 hover:bg-primary-900 hover:-translate-y-0.5'
       }`}
       onClick={(e) => {
-        if (disabled) e.preventDefault();
+        if (disabled) { e.preventDefault(); return; }
+        toast({ message: 'Exporting CSV...', type: 'success', duration: 2500 });
       }}
     >
       <svg
