@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { sessionExists } from '@/lib/session';
+import { sessionExists, getSession } from '@/lib/session';
 import { sanitize } from '@/lib/utils';
 import { computeMatchScore } from '@/lib/match-scoring';
+import { matchesCity } from '@/lib/city-filter';
 import type { Job, JobInput, ResumeProfile } from '@/lib/types';
 import { JOB_STATUSES } from '@/lib/types';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -148,19 +149,19 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const session = searchParams.get('session');
+    const sessionCode = searchParams.get('session');
     const source = searchParams.get('source');
     const status = searchParams.get('status');
 
-    if (!session) {
+    if (!sessionCode) {
       return NextResponse.json(
         { error: 'Missing session parameter' },
         { status: 400 }
       );
     }
 
-    const exists = await sessionExists(session);
-    if (!exists) {
+    const session = await getSession(sessionCode);
+    if (!session) {
       return NextResponse.json(
         { error: 'Session not found or expired' },
         { status: 404 }
@@ -169,7 +170,7 @@ export async function GET(request: NextRequest) {
 
     const sql = getDb();
     let query = 'SELECT * FROM jobs WHERE session_code = $1';
-    const params: (string)[] = [session];
+    const params: (string)[] = [sessionCode];
     let paramIndex = 2;
 
     if (source) {
@@ -187,7 +188,13 @@ export async function GET(request: NextRequest) {
     query += ' ORDER BY relevance_score DESC, scraped_at DESC';
 
     const rows = await sql(query, params);
-    return NextResponse.json(rows as Job[]);
+
+    // Filter by city — drop jobs outside the user's chosen city
+    const jobs = session.location
+      ? (rows as Job[]).filter((job) => matchesCity(job.location, session.location, session.remote))
+      : (rows as Job[]);
+
+    return NextResponse.json(jobs);
   } catch (error) {
     console.error('Jobs GET error:', error);
     return NextResponse.json(

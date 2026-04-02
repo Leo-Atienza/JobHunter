@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { sessionExists } from '@/lib/session';
+import { getSession } from '@/lib/session';
+import { cityFilterSQL } from '@/lib/city-filter';
 import type { JobStats } from '@/lib/types';
 
 export async function GET(request: NextRequest) {
@@ -15,8 +16,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const exists = await sessionExists(session);
-    if (!exists) {
+    const sessionData = await getSession(session);
+    if (!sessionData) {
       return NextResponse.json(
         { error: 'Session not found or expired' },
         { status: 404 }
@@ -25,31 +26,35 @@ export async function GET(request: NextRequest) {
 
     const sql = getDb();
 
+    // Build city filter clause — applies to all stats queries
+    const { clause: cityClause, params: cityParams } = cityFilterSQL(sessionData.location, 2);
+    const baseParams = [session, ...cityParams];
+
     const [totalResult, sourceResult, statusResult, lastUpdatedResult, salaryResult, ghostResult, matchResult] = await Promise.all([
-      sql('SELECT COUNT(*)::int as total FROM jobs WHERE session_code = $1', [session]),
+      sql(`SELECT COUNT(*)::int as total FROM jobs WHERE session_code = $1${cityClause}`, baseParams),
       sql(
-        'SELECT source, COUNT(*)::int as count FROM jobs WHERE session_code = $1 GROUP BY source ORDER BY count DESC',
-        [session]
+        `SELECT source, COUNT(*)::int as count FROM jobs WHERE session_code = $1${cityClause} GROUP BY source ORDER BY count DESC`,
+        baseParams,
       ),
       sql(
-        'SELECT status, COUNT(*)::int as count FROM jobs WHERE session_code = $1 GROUP BY status ORDER BY count DESC',
-        [session]
+        `SELECT status, COUNT(*)::int as count FROM jobs WHERE session_code = $1${cityClause} GROUP BY status ORDER BY count DESC`,
+        baseParams,
       ),
       sql(
-        'SELECT MAX(scraped_at) as last_updated FROM jobs WHERE session_code = $1',
-        [session]
+        `SELECT MAX(scraped_at) as last_updated FROM jobs WHERE session_code = $1${cityClause}`,
+        baseParams,
       ),
       sql(
-        'SELECT ROUND(AVG(salary_min))::int as avg_salary, COUNT(*)::int as with_salary FROM jobs WHERE session_code = $1 AND salary_min IS NOT NULL',
-        [session]
+        `SELECT ROUND(AVG(salary_min))::int as avg_salary, COUNT(*)::int as with_salary FROM jobs WHERE session_code = $1${cityClause} AND salary_min IS NOT NULL`,
+        baseParams,
       ),
       sql(
-        'SELECT COUNT(*)::int as ghost_count FROM jobs WHERE session_code = $1 AND is_ghost = true',
-        [session]
+        `SELECT COUNT(*)::int as ghost_count FROM jobs WHERE session_code = $1${cityClause} AND is_ghost = true`,
+        baseParams,
       ),
       sql(
-        'SELECT ROUND(AVG(relevance_score))::int as avg_match FROM jobs WHERE session_code = $1 AND relevance_score > 0',
-        [session]
+        `SELECT ROUND(AVG(relevance_score))::int as avg_match FROM jobs WHERE session_code = $1${cityClause} AND relevance_score > 0`,
+        baseParams,
       ),
     ]);
 

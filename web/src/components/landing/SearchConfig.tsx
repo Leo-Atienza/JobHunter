@@ -7,6 +7,7 @@ import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { JOB_TITLES, COMPANIES, LOCATIONS } from '@/lib/autocomplete-data';
 import { SOURCE_LABELS_EXTENDED as SOURCE_LABELS } from '@/lib/utils';
 import { inferCountryFromLocation, getCountryLabel } from '@/lib/country-filter';
+import { extractCity } from '@/lib/city-filter';
 import { FirecrawlCreditsBadge } from '@/components/dashboard/FirecrawlCreditsBadge';
 
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -42,9 +43,10 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
   const [resumeDragOver, setResumeDragOver] = useState(false);
   const resumeInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-detect country from location input
+  // Auto-detect country and city from location input
   const inferredCountry = inferCountryFromLocation(location);
   const countryLabel = inferredCountry ? getCountryLabel(inferredCountry) : null;
+  const inferredCity = extractCity(location);
 
   // Career page discovery state
   const [discoveredCareers, setDiscoveredCareers] = useState<Record<string, { url: string | null; loading: boolean; source: string | null }>>({});
@@ -233,7 +235,11 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
                 <span>{COUNTRY_FLAGS[inferredCountry] ?? ''}</span>
                 Detected: {countryLabel}
               </span>
-              <span className="text-[11px] text-slate-400">Jobs will be filtered to this country</span>
+              <span className="text-[11px] text-slate-400">
+                {inferredCity
+                  ? `Jobs filtered to ${inferredCity.charAt(0).toUpperCase() + inferredCity.slice(1)}, ${countryLabel}`
+                  : `Jobs will be filtered to ${countryLabel}`}
+              </span>
             </div>
           )}
         </div>

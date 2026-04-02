@@ -7,6 +7,7 @@ import type { ScrapeParams, ScrapeResult } from '@/lib/scrapers/types';
 import type { JobInput, ResumeProfile } from '@/lib/types';
 import { parseSalary } from '@/lib/salary-parser';
 import { matchesCountry } from '@/lib/country-filter';
+import { matchesCity } from '@/lib/city-filter';
 import { extractSkills, extractBenefits } from '@/lib/skills-extractor';
 import { computeMatchScore } from '@/lib/match-scoring';
 
@@ -78,9 +79,14 @@ export async function POST(
     }
 
     // Filter jobs by country if session has a country preference
-    const filteredJobs = session.country
+    const countryFiltered = session.country
       ? result.jobs.filter((job) => matchesCountry(job.location, job.country, session.country))
       : result.jobs;
+
+    // Filter jobs by city if session has a location with a recognizable city
+    const filteredJobs = session.location
+      ? countryFiltered.filter((job) => matchesCity(job.location, session.location, session.remote))
+      : countryFiltered;
 
     const filtered = result.jobs.length - filteredJobs.length;
 

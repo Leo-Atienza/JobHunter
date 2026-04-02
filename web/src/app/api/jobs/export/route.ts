@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { sessionExists } from '@/lib/session';
+import { getSession } from '@/lib/session';
+import { cityFilterSQL } from '@/lib/city-filter';
 import { generateCsv } from '@/lib/utils';
 import type { Job } from '@/lib/types';
 
@@ -16,8 +17,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const exists = await sessionExists(session);
-    if (!exists) {
+    const sessionData = await getSession(session);
+    if (!sessionData) {
       return NextResponse.json(
         { error: 'Session not found or expired' },
         { status: 404 }
@@ -25,9 +26,10 @@ export async function GET(request: NextRequest) {
     }
 
     const sql = getDb();
+    const { clause: cityClause, params: cityParams } = cityFilterSQL(sessionData.location, 2);
     const rows = await sql(
-      'SELECT title, company, location, source, salary, posted_date, status, url, notes FROM jobs WHERE session_code = $1 ORDER BY scraped_at DESC',
-      [session]
+      `SELECT title, company, location, source, salary, posted_date, status, url, notes FROM jobs WHERE session_code = $1${cityClause} ORDER BY scraped_at DESC`,
+      [session, ...cityParams],
     ) as Pick<Job, 'title' | 'company' | 'location' | 'source' | 'salary' | 'posted_date' | 'status' | 'url' | 'notes'>[];
 
     const headers = ['Title', 'Company', 'Location', 'Source', 'Salary', 'Posted Date', 'Status', 'URL', 'Notes'];
