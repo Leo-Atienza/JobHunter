@@ -82,20 +82,16 @@ export function generateCsv(
  */
 export function getSourceColor(source: string): { bg: string; text: string } {
   const colors: Record<string, { bg: string; text: string }> = {
-    linkedin: { bg: 'bg-blue-100', text: 'text-blue-800' },
-    indeed: { bg: 'bg-purple-100', text: 'text-purple-800' },
-    glassdoor: { bg: 'bg-green-100', text: 'text-green-800' },
-    rapidapi: { bg: 'bg-indigo-100', text: 'text-indigo-800' },
     jobbank: { bg: 'bg-red-100', text: 'text-red-800' },
+    'linkedin-public': { bg: 'bg-blue-100', text: 'text-blue-800' },
     remotive: { bg: 'bg-teal-100', text: 'text-teal-800' },
     adzuna: { bg: 'bg-orange-100', text: 'text-orange-800' },
     himalayas: { bg: 'bg-sky-100', text: 'text-sky-800' },
-    themuse: { bg: 'bg-pink-100', text: 'text-pink-800' },
     lever: { bg: 'bg-cyan-100', text: 'text-cyan-800' },
     greenhouse: { bg: 'bg-emerald-100', text: 'text-emerald-800' },
-    workday: { bg: 'bg-amber-100', text: 'text-amber-800' },
     jooble: { bg: 'bg-violet-100', text: 'text-violet-800' },
-    'linkedin-public': { bg: 'bg-blue-100', text: 'text-blue-800' },
+    jobicy: { bg: 'bg-lime-100', text: 'text-lime-800' },
+    devitjobs: { bg: 'bg-indigo-100', text: 'text-indigo-800' },
     firecrawl: { bg: 'bg-rose-100', text: 'text-rose-800' },
   };
   return colors[source.toLowerCase()] ?? { bg: 'bg-slate-100', text: 'text-slate-800' };
@@ -103,19 +99,13 @@ export function getSourceColor(source: string): { bg: string; text: string } {
 
 /** Human-friendly display name for a scraper source. */
 const SOURCE_DISPLAY: Record<string, string> = {
-  'linkedin-public': 'LinkedIn',
-  linkedin: 'LinkedIn',
-  indeed: 'Indeed',
-  glassdoor: 'Glassdoor',
-  rapidapi: 'RapidAPI',
   jobbank: 'Job Bank',
+  'linkedin-public': 'LinkedIn',
   remotive: 'Remotive',
   adzuna: 'Adzuna',
   himalayas: 'Himalayas',
-  themuse: 'The Muse',
   lever: 'Lever',
   greenhouse: 'Greenhouse',
-  workday: 'Workday',
   jooble: 'Jooble',
   jobicy: 'Jobicy',
   devitjobs: 'DevITjobs',
@@ -124,18 +114,13 @@ const SOURCE_DISPLAY: Record<string, string> = {
 
 /** Extended labels with contextual hints (for source selection UI). */
 export const SOURCE_LABELS_EXTENDED: Record<string, string> = {
-  linkedin: 'LinkedIn',
-  indeed: 'Indeed',
-  glassdoor: 'Glassdoor',
-  rapidapi: 'RapidAPI (Jobs Index)',
   jobbank: 'Job Bank (CA)',
+  'linkedin-public': 'LinkedIn',
   remotive: 'Remotive',
   adzuna: 'Adzuna',
   himalayas: 'Himalayas',
-  themuse: 'The Muse',
   lever: 'Lever (Company Pages)',
   greenhouse: 'Greenhouse (Company Pages)',
-  workday: 'Workday (Enterprise)',
   jooble: 'Jooble',
   jobicy: 'Jobicy (Remote)',
   devitjobs: 'DevITjobs',

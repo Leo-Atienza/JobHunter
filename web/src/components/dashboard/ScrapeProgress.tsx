@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { SERVER_SCRAPER_NAMES, LOCAL_ONLY_SOURCES } from '@/lib/scrapers';
+import { SERVER_SCRAPER_NAMES } from '@/lib/scrapers';
 import { getSourceDisplayName } from '@/lib/utils';
 
 interface ScrapeProgressProps {
@@ -10,7 +10,7 @@ interface ScrapeProgressProps {
 }
 
 interface SourceStatus {
-  state: 'pending' | 'running' | 'done' | 'error' | 'skipped';
+  state: 'pending' | 'running' | 'done' | 'error';
   inserted?: number;
   total?: number;
   error?: string;
@@ -24,9 +24,6 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
   const serverSources = (sessionSources ?? SERVER_SCRAPER_NAMES)
     .filter((s) => SERVER_SCRAPER_NAMES.includes(s));
 
-  const localSources = (sessionSources ?? [])
-    .filter((s) => (LOCAL_ONLY_SOURCES as readonly string[]).includes(s));
-
   useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
@@ -34,7 +31,6 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
     // Initialize all statuses
     const initial: Record<string, SourceStatus> = {};
     for (const s of serverSources) initial[s] = { state: 'pending' };
-    for (const s of localSources) initial[s] = { state: 'skipped' };
     setStatuses(initial);
 
     // Fire all server-side scrapers in parallel
@@ -65,10 +61,10 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
           }));
         });
     }
-  }, [code, serverSources, localSources]);
+  }, [code, serverSources]);
 
   const entries = Object.entries(statuses);
-  const totalDone = entries.filter(([, s]) => s.state === 'done' || s.state === 'error' || s.state === 'skipped').length;
+  const totalDone = entries.filter(([, s]) => s.state === 'done' || s.state === 'error').length;
   const totalServer = serverSources.length;
   const totalInserted = entries.reduce((acc, [, s]) => acc + (s.inserted ?? 0), 0);
   const allDone = totalDone >= entries.length && entries.length > 0;
@@ -138,19 +134,11 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
                 {status.state === 'error' && (
                   <span className="text-xs text-error-500">{status.error ?? 'Failed'}</span>
                 )}
-                {status.state === 'skipped' && (
-                  <span className="text-xs text-slate-400">Local only</span>
-                )}
               </span>
             </div>
           ))}
         </div>
 
-        {localSources.length > 0 && (
-          <p className="mt-4 text-xs text-slate-400 text-center">
-            {localSources.map((s) => getSourceDisplayName(s)).join(', ')} require the local scraper (Python/Docker).
-          </p>
-        )}
       </div>
     </div>
   );

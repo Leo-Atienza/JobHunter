@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   ),
   title: 'JobHunter — Your Job Search Command Center',
   description:
-    'Aggregate job listings from LinkedIn, Indeed, Glassdoor, and more into one unified dashboard. Run the scraper locally, view results in the cloud.',
+    'Aggregate job listings from Job Bank, LinkedIn, Remotive, and more into one unified dashboard. AI-powered summaries, smart deduplication, and advanced filters.',
   keywords: ['job search', 'job scraper', 'job aggregator', 'career', 'employment'],
   manifest: '/site.webmanifest',
   icons: {

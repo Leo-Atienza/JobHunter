@@ -433,43 +433,53 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
               {selectedSources.length === JOB_SOURCES.length ? 'Deselect All' : 'Select All'}
             </button>
           </div>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            {JOB_SOURCES.map((source) => (
-              <label
-                key={source}
-                className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 cursor-pointer transition-all ${
-                  selectedSources.includes(source)
-                    ? 'border-primary-300 bg-primary-50 text-primary-800'
-                    : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedSources.includes(source)}
-                  onChange={() => toggleSource(source)}
-                  className="sr-only"
-                />
-                <div
-                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
-                    selectedSources.includes(source)
-                      ? 'border-primary-500 bg-primary-500'
-                      : 'border-slate-300'
-                  }`}
-                >
-                  {selectedSources.includes(source) && (
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  )}
-                </div>
-                <span className="text-sm font-medium">
-                  {SOURCE_LABELS[source] ?? source}
-                  {(source === 'adzuna' || source === 'jooble') && (
-                    <span className="ml-1 text-xs text-slate-400" title={source === 'adzuna' ? 'Requires free API key from developer.adzuna.com' : 'Requires free API key from jooble.org/api/about'}>*</span>
-                  )}
-                </span>
-              </label>
-            ))}
+          <div className="relative mt-2">
+            <div className="max-h-[200px] overflow-y-auto rounded-lg border border-slate-100 p-1 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent]">
+              <div className="grid grid-cols-2 gap-2">
+                {JOB_SOURCES.map((source) => (
+                  <label
+                    key={source}
+                    className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 cursor-pointer transition-all ${
+                      selectedSources.includes(source)
+                        ? 'border-primary-300 bg-primary-50 text-primary-800'
+                        : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedSources.includes(source)}
+                      onChange={() => toggleSource(source)}
+                      className="sr-only"
+                    />
+                    <div
+                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                        selectedSources.includes(source)
+                          ? 'border-primary-500 bg-primary-500'
+                          : 'border-slate-300'
+                      }`}
+                    >
+                      {selectedSources.includes(source) && (
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="text-sm font-medium">
+                      {SOURCE_LABELS[source] ?? source}
+                      {(['adzuna', 'jooble', 'jobbank', 'firecrawl'].includes(source)) && (
+                        <span className="ml-1 text-xs text-slate-400" title={
+                          source === 'adzuna' ? 'Requires free API key from developer.adzuna.com'
+                            : source === 'jooble' ? 'Requires free API key from jooble.org/api/about'
+                            : source === 'jobbank' ? 'Requires free Apify token from apify.com'
+                            : 'Requires free API key from firecrawl.dev'
+                        }>*</span>
+                      )}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 rounded-b-lg bg-gradient-to-t from-white to-transparent" aria-hidden="true" />
           </div>
           <p className="mt-1.5 text-xs text-slate-400">* Requires free API key</p>
           {selectedSources.includes('firecrawl') && (

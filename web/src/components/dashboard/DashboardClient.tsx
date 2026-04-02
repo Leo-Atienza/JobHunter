@@ -293,6 +293,21 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
               <span className="font-mono text-xs font-semibold text-primary-800 sm:text-sm">{code}</span>
               <CopyButton text={code} />
             </div>
+            {session?.keywords && session.keywords.length > 0 && (
+              <div className="hidden sm:flex items-center gap-1.5 min-w-0">
+                <span className="text-xs text-slate-400 shrink-0">Searching:</span>
+                <div className="flex items-center gap-1 min-w-0 overflow-hidden">
+                  {session.keywords.slice(0, 3).map((kw) => (
+                    <span key={kw} className="shrink-0 rounded-md bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-inset ring-primary-200 truncate max-w-[120px]">
+                      {kw}
+                    </span>
+                  ))}
+                  {session.keywords.length > 3 && (
+                    <span className="shrink-0 text-xs text-slate-400">+{session.keywords.length - 3}</span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
