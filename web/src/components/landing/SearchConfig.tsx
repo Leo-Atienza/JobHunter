@@ -33,7 +33,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
   const [locations, setLocations] = useState<string[]>([]);
   const [selectedSources, setSelectedSources] = useState<string[]>([...JOB_SOURCES]);
   const [companies, setCompanies] = useState('');
-  const [remote, setRemote] = useState(false);
+  const [includeRemote, setIncludeRemote] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -155,7 +155,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
         keywords: keywords.split(',').map((k) => k.trim()).filter(Boolean),
         locations: locations.length > 0 ? locations : undefined,
         sources: selectedSources.length < JOB_SOURCES.length ? selectedSources : undefined,
-        remote: remote || undefined,
+        include_remote: includeRemote,
         companies: parsedCompanies.length > 0 ? parsedCompanies : undefined,
         country: inferredCountry ?? undefined,
         resume_text: resumeText ?? undefined,
@@ -411,24 +411,29 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
           />
         </div>
 
-        {/* Remote toggle */}
+        {/* Include remote jobs toggle */}
         <label className="flex items-center gap-3 cursor-pointer">
           <button
             type="button"
             role="switch"
-            aria-checked={remote}
-            onClick={() => setRemote(!remote)}
+            aria-checked={includeRemote}
+            onClick={() => setIncludeRemote(!includeRemote)}
             className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ${
-              remote ? 'bg-accent-500' : 'bg-slate-200'
+              includeRemote ? 'bg-accent-500' : 'bg-slate-200'
             }`}
           >
             <span
               className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ${
-                remote ? 'translate-x-5' : 'translate-x-0'
+                includeRemote ? 'translate-x-5' : 'translate-x-0'
               }`}
             />
           </button>
-          <span className="text-sm font-medium text-slate-700">Remote jobs only</span>
+          <div>
+            <span className="text-sm font-medium text-slate-700">Include remote jobs</span>
+            {!includeRemote && (
+              <p className="text-[11px] text-slate-400 animate-fade-in">Only local/hybrid jobs in your cities</p>
+            )}
+          </div>
         </label>
 
         {/* Sources */}

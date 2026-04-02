@@ -124,8 +124,9 @@ export async function POST(
       : dedupedJobs;
 
     // Filter jobs by city — match any of the session's cities
+    const includeRemote = session.include_remote !== false;
     const filteredJobs = effectiveLocations.length > 0
-      ? countryFiltered.filter((job) => matchesAnyCity(job.location, effectiveLocations, session.remote))
+      ? countryFiltered.filter((job) => matchesAnyCity(job.location, effectiveLocations, session.remote, includeRemote))
       : countryFiltered;
 
     const filtered = dedupedJobs.length - filteredJobs.length;

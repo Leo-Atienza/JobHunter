@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
       ? body.sources.filter((s) => (JOB_SOURCES as readonly string[]).includes(s))
       : null;
     const remote = body.remote === true;
+    const includeRemote = body.include_remote !== false;
     const companies = body.companies?.length
       ? body.companies.slice(0, 20).map((c) => sanitize(c, 100))
       : null;
@@ -98,10 +99,10 @@ export async function POST(request: NextRequest) {
           ? "NOW() + INTERVAL '10 years'"
           : "NOW() + INTERVAL '48 hours'";
         const result = await sql(
-          `INSERT INTO sessions (code, keywords, location, locations, sources, remote, companies, country, user_id, resume_skills, expires_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, ${expiryExpr})
+          `INSERT INTO sessions (code, keywords, location, locations, sources, remote, include_remote, companies, country, user_id, resume_skills, expires_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, ${expiryExpr})
            RETURNING code, expires_at`,
-          [code, keywords, location, locations, sources, remote, companies, country, userId, resumeSkills ? JSON.stringify(resumeSkills) : null]
+          [code, keywords, location, locations, sources, remote, includeRemote, companies, country, userId, resumeSkills ? JSON.stringify(resumeSkills) : null]
         );
         if (result.length > 0) {
           inserted = true;

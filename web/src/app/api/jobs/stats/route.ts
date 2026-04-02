@@ -28,7 +28,8 @@ export async function GET(request: NextRequest) {
 
     // Build city filter clause — applies to all stats queries (supports multi-city)
     const effectiveLocations = sessionData.locations ?? (sessionData.location ? [sessionData.location] : []);
-    const { clause: cityClause, params: cityParams } = cityFilterSQLMulti(effectiveLocations, 2);
+    const includeRemote = sessionData.include_remote !== false;
+    const { clause: cityClause, params: cityParams } = cityFilterSQLMulti(effectiveLocations, 2, includeRemote);
     const baseParams = [session, ...cityParams];
 
     const [totalResult, sourceResult, statusResult, lastUpdatedResult, salaryResult, ghostResult, matchResult] = await Promise.all([

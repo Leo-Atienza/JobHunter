@@ -50,6 +50,8 @@ export interface Session {
   locations: string[] | null;
   sources: string[] | null;
   remote: boolean;
+  /** Whether remote jobs are included in results (default true) */
+  include_remote: boolean;
   companies: string[] | null;
   country: string | null;
   user_id: string | null;
@@ -91,6 +93,8 @@ export interface CreateSessionRequest {
   locations?: string[];
   sources?: string[];
   remote?: boolean;
+  /** Whether to include remote jobs in results (default true) */
+  include_remote?: boolean;
   companies?: string[];
   country?: string;
   resume_text?: string;

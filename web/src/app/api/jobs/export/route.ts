@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getSession } from '@/lib/session';
-import { cityFilterSQL } from '@/lib/city-filter';
+import { cityFilterSQLMulti } from '@/lib/city-filter';
 import { generateCsv } from '@/lib/utils';
 import type { Job } from '@/lib/types';
 
@@ -26,7 +26,9 @@ export async function GET(request: NextRequest) {
     }
 
     const sql = getDb();
-    const { clause: cityClause, params: cityParams } = cityFilterSQL(sessionData.location, 2);
+    const effectiveLocations = sessionData.locations ?? (sessionData.location ? [sessionData.location] : []);
+    const includeRemote = sessionData.include_remote !== false;
+    const { clause: cityClause, params: cityParams } = cityFilterSQLMulti(effectiveLocations, 2, includeRemote);
     const rows = await sql(
       `SELECT title, company, location, source, salary, posted_date, status, url, notes FROM jobs WHERE session_code = $1${cityClause} ORDER BY scraped_at DESC`,
       [session, ...cityParams],

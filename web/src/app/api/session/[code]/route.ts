@@ -32,6 +32,7 @@ export async function GET(
       locations: session.locations,
       sources: session.sources,
       remote: session.remote,
+      include_remote: session.include_remote,
       companies: session.companies,
       country: session.country,
       resume_skills: session.resume_skills,

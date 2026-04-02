@@ -19,6 +19,7 @@ interface FiltersProps {
   sessionCompanies: string[] | null;
   locationFilter: string | null;
   sessionLocations: string[] | null;
+  includeRemote: boolean;
   onSourceChange: (source: string | null) => void;
   onStatusChange: (status: string | null) => void;
   onRemoteChange: (value: boolean) => void;
@@ -60,6 +61,7 @@ export function Filters({
   sessionCompanies,
   locationFilter,
   sessionLocations,
+  includeRemote,
   onSourceChange,
   onStatusChange,
   onRemoteChange,
@@ -198,25 +200,27 @@ export function Filters({
 
       {/* Row 2: controls */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        {/* Remote toggle */}
-        <label className="flex items-center gap-2 cursor-pointer">
-          <button
-            type="button"
-            role="switch"
-            aria-checked={remoteFilter}
-            onClick={() => onRemoteChange(!remoteFilter)}
-            className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ${
-              remoteFilter ? 'bg-accent-500' : 'bg-slate-200'
-            }`}
-          >
-            <span
-              className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ${
-                remoteFilter ? 'translate-x-4' : 'translate-x-0'
+        {/* Remote toggle — hidden when session excludes remote */}
+        {includeRemote && (
+          <label className="flex items-center gap-2 cursor-pointer">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={remoteFilter}
+              onClick={() => onRemoteChange(!remoteFilter)}
+              className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ${
+                remoteFilter ? 'bg-accent-500' : 'bg-slate-200'
               }`}
-            />
-          </button>
-          <span className="text-xs font-medium text-slate-600">Remote only</span>
-        </label>
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ${
+                  remoteFilter ? 'translate-x-4' : 'translate-x-0'
+                }`}
+              />
+            </button>
+            <span className="text-xs font-medium text-slate-600">Remote only</span>
+          </label>
+        )}
 
         {/* Status filter — pill group */}
         <div className="flex items-center gap-1">

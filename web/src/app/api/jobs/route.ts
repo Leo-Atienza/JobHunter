@@ -191,8 +191,9 @@ export async function GET(request: NextRequest) {
 
     // Filter by city — drop jobs outside the user's chosen cities
     const effectiveLocations = session.locations ?? (session.location ? [session.location] : []);
+    const includeRemote = session.include_remote !== false;
     const jobs = effectiveLocations.length > 0
-      ? (rows as Job[]).filter((job) => matchesAnyCity(job.location, effectiveLocations, session.remote))
+      ? (rows as Job[]).filter((job) => matchesAnyCity(job.location, effectiveLocations, session.remote, includeRemote))
       : (rows as Job[]);
 
     return NextResponse.json(jobs);

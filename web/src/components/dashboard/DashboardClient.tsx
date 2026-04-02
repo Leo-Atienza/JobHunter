@@ -456,6 +456,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 onCompanyChange={(v) => { setCompanyFilter(v); resetPage(); }}
                 locationFilter={locationFilter}
                 sessionLocations={session?.locations ?? (session?.location ? [session.location] : null)}
+                includeRemote={session?.include_remote !== false}
                 onLocationChange={(v) => { setLocationFilter(v); resetPage(); }}
                 stats={stats ?? null}
               />

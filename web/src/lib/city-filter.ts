@@ -4,11 +4,16 @@ const REMOTE_PATTERN = /\bremote\b|\bwork from home\b|\bwfh\b|\banywhere\b|\bwor
 
 /** Metro area aliases — searching "GTA" also matches Toronto, Mississauga, etc. */
 const GTA_CITIES = ['toronto', 'mississauga', 'brampton', 'vaughan', 'markham', 'richmond hill', 'oakville', 'burlington', 'oshawa', 'pickering'];
+const VANCOUVER_CITIES = ['vancouver', 'burnaby', 'surrey', 'richmond', 'coquitlam', 'langley', 'delta', 'north vancouver', 'west vancouver', 'new westminster', 'port moody', 'port coquitlam', 'maple ridge', 'white rock', 'abbotsford'];
 const METRO_ALIASES: Record<string, string[]> = {
   'gta': GTA_CITIES,
   'greater toronto': GTA_CITIES,
   'greater toronto area': GTA_CITIES,
   'toronto': ['gta', 'greater toronto', 'mississauga', 'brampton', 'vaughan', 'markham', 'richmond hill', 'oakville', 'burlington', 'oshawa', 'pickering'],
+  'lower mainland': VANCOUVER_CITIES,
+  'metro vancouver': VANCOUVER_CITIES,
+  'greater vancouver': VANCOUVER_CITIES,
+  'vancouver': ['lower mainland', 'metro vancouver', 'burnaby', 'surrey', 'richmond', 'coquitlam', 'langley', 'delta', 'north vancouver', 'west vancouver', 'new westminster', 'port moody', 'port coquitlam', 'maple ridge', 'white rock', 'abbotsford'],
 };
 
 /** Expand a city into itself + all its metro aliases. */
@@ -58,6 +63,7 @@ export function matchesCity(
   jobLocation: string | null | undefined,
   sessionLocation: string | null | undefined,
   isRemoteSearch: boolean,
+  includeRemote: boolean = true,
 ): boolean {
   if (!sessionLocation) return true;
 
@@ -69,8 +75,8 @@ export function matchesCity(
 
   const normalized = jobLocation.toLowerCase().replace(/-/g, ' ');
 
-  // Remote jobs pass through — they're available anywhere
-  if (REMOTE_PATTERN.test(normalized)) return true;
+  // Remote jobs: only pass if included
+  if (REMOTE_PATTERN.test(normalized)) return includeRemote;
 
   // If the user explicitly wants remote jobs, also keep "Hybrid" in the target city
   // but still drop jobs in other cities that aren't remote
@@ -94,6 +100,7 @@ export function matchesAnyCity(
   jobLocation: string | null | undefined,
   sessionLocations: string[],
   isRemoteSearch: boolean,
+  includeRemote: boolean = true,
 ): boolean {
   if (sessionLocations.length === 0) return true;
 
@@ -107,8 +114,8 @@ export function matchesAnyCity(
 
   const normalized = jobLocation.toLowerCase().replace(/-/g, ' ');
 
-  // Remote jobs pass through — they're available anywhere
-  if (REMOTE_PATTERN.test(normalized)) return true;
+  // Remote jobs: only pass if included
+  if (REMOTE_PATTERN.test(normalized)) return includeRemote;
 
   // Hybrid jobs: only keep if they're in one of the target cities
   if (isRemoteSearch && /\bhybrid\b/i.test(normalized)) {
@@ -124,11 +131,14 @@ const REMOTE_SQL_PATTERN = "location ~* 'remote|work from home|wfh|anywhere|worl
 function buildCityIlikeClauses(
   cityTokens: string[],
   paramIndex: number,
+  includeRemote: boolean = true,
 ): { clause: string; params: string[] } {
   if (cityTokens.length === 0) return { clause: '', params: [] };
 
   const conditions = cityTokens.map((_, i) => `location ILIKE $${paramIndex + i}`);
-  conditions.push(REMOTE_SQL_PATTERN);
+  if (includeRemote) {
+    conditions.push(REMOTE_SQL_PATTERN);
+  }
 
   return {
     clause: ` AND (${conditions.join(' OR ')})`,
@@ -146,6 +156,7 @@ function buildCityIlikeClauses(
 export function cityFilterSQL(
   sessionLocation: string | null | undefined,
   paramIndex: number,
+  includeRemote: boolean = true,
 ): { clause: string; params: string[] } {
   if (!sessionLocation) return { clause: '', params: [] };
 
@@ -153,7 +164,7 @@ export function cityFilterSQL(
   if (!city) return { clause: '', params: [] };
 
   const tokens = [...new Set(expandCity(city))];
-  return buildCityIlikeClauses(tokens, paramIndex);
+  return buildCityIlikeClauses(tokens, paramIndex, includeRemote);
 }
 
 /**
@@ -163,6 +174,7 @@ export function cityFilterSQL(
 export function cityFilterSQLMulti(
   locations: string[],
   paramIndex: number,
+  includeRemote: boolean = true,
 ): { clause: string; params: string[] } {
   if (locations.length === 0) return { clause: '', params: [] };
 
@@ -178,5 +190,5 @@ export function cityFilterSQLMulti(
 
   if (allTokens.size === 0) return { clause: '', params: [] };
 
-  return buildCityIlikeClauses([...allTokens], paramIndex);
+  return buildCityIlikeClauses([...allTokens], paramIndex, includeRemote);
 }

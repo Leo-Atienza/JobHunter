@@ -38,6 +38,7 @@ export async function getSession(code: string): Promise<{
   locations: string[] | null;
   sources: string[] | null;
   remote: boolean;
+  include_remote: boolean;
   companies: string[] | null;
   country: string | null;
   user_id: string | null;
@@ -45,7 +46,7 @@ export async function getSession(code: string): Promise<{
 } | null> {
   const sql = getDb();
   const rows = await sql(
-    'SELECT code, created_at, expires_at, keywords, location, locations, sources, remote, companies, country, user_id, resume_skills FROM sessions WHERE code = $1 AND (expires_at > NOW() OR user_id IS NOT NULL)',
+    'SELECT code, created_at, expires_at, keywords, location, locations, sources, remote, include_remote, companies, country, user_id, resume_skills FROM sessions WHERE code = $1 AND (expires_at > NOW() OR user_id IS NOT NULL)',
     [code]
   );
   if (rows.length === 0) return null;
@@ -58,6 +59,7 @@ export async function getSession(code: string): Promise<{
     locations: string[] | null;
     sources: string[] | null;
     remote: boolean;
+    include_remote: boolean | null;
     companies: string[] | null;
     country: string | null;
     user_id: string | null;
@@ -67,5 +69,6 @@ export async function getSession(code: string): Promise<{
   if (!row.locations && row.location) {
     row.locations = [row.location];
   }
-  return row;
+  // Backward compat: old sessions without include_remote default to true
+  return { ...row, include_remote: row.include_remote !== false };
 }
