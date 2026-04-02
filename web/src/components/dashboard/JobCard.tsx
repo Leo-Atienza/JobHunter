@@ -50,6 +50,41 @@ function BookmarkButton({ jobId, isSaved, sessionCode, onUpdate }: { jobId: numb
   );
 }
 
+function QuickApplyButton({ jobId, sessionCode, onUpdate }: { jobId: number; sessionCode: string; onUpdate: () => void }) {
+  const [applying, setApplying] = useState(false);
+  const toast = useToast();
+
+  const apply = useCallback(async () => {
+    setApplying(true);
+    try {
+      await fetch(`/api/jobs/${jobId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'X-Session-Code': sessionCode },
+        body: JSON.stringify({ status: 'applied' }),
+      });
+      onUpdate();
+      toast({
+        message: 'Marked as Applied',
+        type: 'success',
+        duration: 3000,
+        action: { label: 'View Tracker', href: '/saved' },
+      });
+    } finally {
+      setApplying(false);
+    }
+  }, [jobId, sessionCode, onUpdate, toast]);
+
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); apply(); }}
+      disabled={applying}
+      className="border-l border-slate-100 px-4 py-2 text-xs font-medium text-amber-600 hover:bg-amber-50 hover:text-amber-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+    >
+      {applying ? 'Applying…' : 'Quick Apply'}
+    </button>
+  );
+}
+
 interface JobCardProps {
   job: Job;
   onUpdate: () => void;
@@ -193,6 +228,9 @@ export function JobCard({ job, onUpdate, onJobClick, sessionCode, isFocused, isS
         >
           {showDetails ? 'Hide details' : 'Show details'}
         </button>
+        {job.status !== 'applied' && job.status !== 'interview' && job.status !== 'offer' && job.status !== 'rejected' && (
+          <QuickApplyButton jobId={job.id} sessionCode={sessionCode} onUpdate={onUpdate} />
+        )}
         {onJobClick && (
           <button
             onClick={() => onJobClick(job.id)}

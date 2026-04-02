@@ -35,12 +35,14 @@ export const metadata: Metadata = {
       'Aggregate job listings from multiple boards into one unified dashboard.',
     type: 'website',
     url: '/',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'JobHunter — Your Job Search Command Center' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'JobHunter — Your Job Search Command Center',
     description:
       'Aggregate job listings from multiple boards into one unified dashboard.',
+    images: ['/opengraph-image'],
   },
 };
 

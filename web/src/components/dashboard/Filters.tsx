@@ -19,6 +19,7 @@ interface FiltersProps {
   sessionCompanies: string[] | null;
   locationFilter: string | null;
   sessionLocations: string[] | null;
+  detectedCities: { cities: { name: string; count: number }[]; remoteCount: number };
   includeRemote: boolean;
   onSourceChange: (source: string | null) => void;
   onStatusChange: (status: string | null) => void;
@@ -61,6 +62,7 @@ export function Filters({
   sessionCompanies,
   locationFilter,
   sessionLocations,
+  detectedCities,
   includeRemote,
   onSourceChange,
   onStatusChange,
@@ -147,16 +149,35 @@ export function Filters({
         })}
       </div>
 
-      {/* Location filter pills — one per city + remote + other */}
-      {sessionLocations && sessionLocations.length > 0 && (
+      {/* Location filter pills — data-driven from job locations */}
+      {(detectedCities.cities.length > 0 || detectedCities.remoteCount > 0) && (
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
           <span className="mr-1 shrink-0 text-xs font-medium uppercase tracking-wider text-slate-400">Location:</span>
-          {sessionLocations.map((loc, i) => {
+          {/* Metro grouping — only if session has a city with metro aliases */}
+          {sessionLocations && sessionLocations.map((loc) => {
             const city = loc.split(',')[0].trim();
             const filterKey = `near:${city.toLowerCase()}`;
             return (
               <button
-                key={city}
+                key={`metro-${city}`}
+                onClick={() => onLocationChange(locationFilter === filterKey ? null : filterKey)}
+                className={cn(
+                  'shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-all whitespace-nowrap',
+                  locationFilter === filterKey
+                    ? 'bg-primary-950 text-white shadow-sm'
+                    : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                )}
+              >
+                All {city} area
+              </button>
+            );
+          })}
+          {/* Individual detected cities */}
+          {detectedCities.cities.map(({ name, count }) => {
+            const filterKey = `city:${name.toLowerCase()}`;
+            return (
+              <button
+                key={name}
                 onClick={() => onLocationChange(locationFilter === filterKey ? null : filterKey)}
                 className={cn(
                   'shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-all whitespace-nowrap',
@@ -164,34 +185,27 @@ export function Filters({
                     ? 'bg-primary-950 text-white shadow-sm'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 )}
-                style={{ animationDelay: `${i * 30}ms` }}
               >
-                Near {city}
+                {name}
+                <span className="ml-1 opacity-50">{count}</span>
               </button>
             );
           })}
-          <button
-            onClick={() => onLocationChange(locationFilter === 'remote' ? null : 'remote')}
-            className={cn(
-              'shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-all whitespace-nowrap',
-              locationFilter === 'remote'
-                ? 'bg-primary-950 text-white shadow-sm'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            )}
-          >
-            Remote
-          </button>
-          <button
-            onClick={() => onLocationChange(locationFilter === 'other' ? null : 'other')}
-            className={cn(
-              'shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-all whitespace-nowrap',
-              locationFilter === 'other'
-                ? 'bg-primary-950 text-white shadow-sm'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            )}
-          >
-            Other
-          </button>
+          {/* Remote */}
+          {detectedCities.remoteCount > 0 && (
+            <button
+              onClick={() => onLocationChange(locationFilter === 'remote' ? null : 'remote')}
+              className={cn(
+                'shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-all whitespace-nowrap',
+                locationFilter === 'remote'
+                  ? 'bg-primary-950 text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              )}
+            >
+              Remote
+              <span className="ml-1 opacity-50">{detectedCities.remoteCount}</span>
+            </button>
+          )}
         </div>
       )}
 
@@ -357,7 +371,6 @@ export function Filters({
               { value: '1', label: '24h' },
               { value: '7', label: '7d' },
               { value: '14', label: '14d' },
-              { value: '30', label: '30d' },
             ].map((opt) => (
               <button
                 key={opt.label}

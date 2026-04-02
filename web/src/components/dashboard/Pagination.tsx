@@ -74,24 +74,32 @@ export function Pagination({
             </svg>
           </button>
 
-          {pages.map((page, i) =>
-            page === 'ellipsis' ? (
-              <span key={`e${i}`} className="px-1 text-slate-300">...</span>
-            ) : (
-              <button
-                key={page}
-                onClick={() => onPageChange(page)}
-                className={cn(
-                  'min-w-[32px] rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors',
-                  page === currentPage
-                    ? 'bg-primary-950 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100'
-                )}
-              >
-                {page}
-              </button>
-            ),
-          )}
+          {/* Desktop: numbered pages */}
+          <div className="hidden sm:flex items-center gap-1">
+            {pages.map((page, i) =>
+              page === 'ellipsis' ? (
+                <span key={`e${i}`} className="px-1 text-slate-300">...</span>
+              ) : (
+                <button
+                  key={page}
+                  onClick={() => onPageChange(page)}
+                  className={cn(
+                    'min-w-[32px] rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors',
+                    page === currentPage
+                      ? 'bg-primary-950 text-white shadow-sm'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  )}
+                >
+                  {page}
+                </button>
+              ),
+            )}
+          </div>
+
+          {/* Mobile: compact page indicator */}
+          <span className="flex sm:hidden items-center px-3 text-xs font-medium text-slate-600 select-none">
+            {currentPage} / {totalPages}
+          </span>
 
           <button
             onClick={() => onPageChange(currentPage + 1)}

@@ -17,7 +17,7 @@ const METRO_ALIASES: Record<string, string[]> = {
 };
 
 /** Expand a city into itself + all its metro aliases. */
-function expandCity(city: string): string[] {
+export function expandCity(city: string): string[] {
   return [city, ...(METRO_ALIASES[city] ?? [])];
 }
 

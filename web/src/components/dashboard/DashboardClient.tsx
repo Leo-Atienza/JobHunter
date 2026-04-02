@@ -17,6 +17,7 @@ import { Pagination } from './Pagination';
 import { JobDetailModal } from './JobDetailModal';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { formatTimestamp, formatDate } from '@/lib/utils';
+import { extractCity, expandCity } from '@/lib/city-filter';
 import { ActionsMenu } from './ActionsMenu';
 import Link from 'next/link';
 import { UserMenu } from '@/components/auth/UserMenu';
@@ -71,6 +72,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
 
   const lastTotalRef = useRef<number>(0);
   const staleCountRef = useRef<number>(0);
+  const ghostNotifiedRef = useRef(false);
   const [refreshInterval, setRefreshInterval] = useState(10000);
   const [newJobsBanner, setNewJobsBanner] = useState<number | null>(null);
   const { data: authSession } = useSession();
@@ -186,6 +188,31 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
       }));
   }, [allJobs]);
 
+  // Detect distinct cities and provinces from job data
+  const detectedCities = useMemo(() => {
+    const REMOTE_RE = /\bremote\b|\bwork from home\b|\bwfh\b|\banywhere\b|\bworldwide\b|\bdistributed\b|\bglobal\b/i;
+    const cityMap = new Map<string, number>();
+    let remoteCount = 0;
+    for (const job of primaryJobs) {
+      const loc = job.location ?? '';
+      if (REMOTE_RE.test(loc)) { remoteCount++; continue; }
+      // Normalize separators before extracting — some locations use ";", " - ", "–"
+      const normalized = loc.replace(/\s*[;–—]\s*/g, ', ').replace(/\s+-\s+/g, ', ');
+      const city = extractCity(normalized);
+      // Skip noisy entries: too long, contain numbers, country names, or "CA-" prefixed codes
+      if (!city || city.length > 25 || city.length < 3 || /\d/.test(city) ||
+          /\bcanada\b|\bunited\b|\bstates\b/i.test(city) ||
+          /^(ca|us|uk)\b/i.test(city)) continue;
+      const display = city.replace(/\b\w/g, (c) => c.toUpperCase());
+      cityMap.set(display, (cityMap.get(display) || 0) + 1);
+    }
+    const cities = [...cityMap.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 12)
+      .map(([name, count]) => ({ name, count }));
+    return { cities, remoteCount };
+  }, [primaryJobs]);
+
   // Filter and sort jobs client-side
   const filteredJobs = useMemo(() => {
     return primaryJobs
@@ -195,7 +222,19 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
       })
       .filter((job) => {
         if (!experienceFilter) return true;
-        return job.experience_level?.toLowerCase() === experienceFilter.toLowerCase();
+        const level = job.experience_level?.toLowerCase() ?? '';
+        if (!level) return false;
+        const aliases: Record<string, string[]> = {
+          entry: ['entry', 'entry level', 'entry-level', 'junior', 'junior/entry', 'associate', 'new grad'],
+          intern: ['intern', 'internship', 'co-op', 'coop'],
+          mid: ['mid', 'mid-level', 'mid level', 'intermediate', 'regular', 'middle'],
+          senior: ['senior', 'senior level', 'sr', 'sr.', 'experienced'],
+          lead: ['lead', 'staff', 'lead/staff', 'team lead'],
+          principal: ['principal', 'distinguished', 'fellow', 'architect'],
+        };
+        const key = experienceFilter.toLowerCase();
+        const matches = aliases[key] ?? [key];
+        return matches.some((m) => level === m || level.includes(m));
       })
       .filter((job) => {
         if (!jobTypeFilter) return true;
@@ -232,19 +271,16 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
         if (!locationFilter) return true;
         const loc = job.location?.toLowerCase() ?? '';
         if (locationFilter === 'remote') {
-          return /remote|work from home|wfh|anywhere|worldwide/i.test(loc);
+          return /remote|work from home|wfh|anywhere|worldwide|distributed|global/i.test(loc);
         }
-        if (locationFilter.startsWith('near:')) {
-          const city = locationFilter.slice(5); // already lowercase
+        if (locationFilter.startsWith('city:')) {
+          const city = locationFilter.slice(5); // individual city match
           return loc.includes(city);
         }
-        if (locationFilter === 'other') {
-          const isRemote = /remote|work from home|wfh|anywhere|worldwide/i.test(loc);
-          const sessionLocs = session?.locations ?? (session?.location ? [session.location] : []);
-          const isNearAny = sessionLocs.some((l) =>
-            loc.includes(l.split(',')[0].trim().toLowerCase()),
-          );
-          return !isRemote && !isNearAny;
+        if (locationFilter.startsWith('near:')) {
+          const city = locationFilter.slice(5);
+          // Use metro alias expansion (e.g. "toronto" includes markham, mississauga, etc.)
+          return expandCity(city).some((c) => loc.includes(c));
         }
         return true;
       })
@@ -324,6 +360,17 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
   }, []);
 
   const toast = useToast();
+
+  // One-time ghost notification on initial load
+  useEffect(() => {
+    if (ghostNotifiedRef.current || !stats || hideGhosts || stats.ghost_count <= 0) return;
+    ghostNotifiedRef.current = true;
+    toast({
+      message: `${stats.ghost_count} job listing${stats.ghost_count !== 1 ? 's' : ''} may have expired`,
+      type: 'info',
+      duration: 6000,
+    });
+  }, [stats, hideGhosts, toast]);
 
   const handleToggleSave = useCallback(async (jobId: number) => {
     const job = filteredJobs.find((j) => j.id === jobId);
@@ -573,6 +620,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 onCompanyChange={(v) => { setCompanyFilter(v); resetPage(); }}
                 locationFilter={locationFilter}
                 sessionLocations={session?.locations ?? (session?.location ? [session.location] : null)}
+                detectedCities={detectedCities}
                 includeRemote={session?.include_remote !== false}
                 onLocationChange={(v) => { setLocationFilter(v); resetPage(); }}
                 stats={stats ?? null}
