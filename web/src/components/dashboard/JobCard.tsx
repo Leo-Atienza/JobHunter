@@ -7,6 +7,7 @@ import { AISummaryBlock } from './AISummaryBlock';
 import { useAISummary } from '@/hooks/useAISummary';
 import { getSourceColor, getSourceDisplayName, formatDate } from '@/lib/utils';
 import { useToast } from '@/components/ui/Toast';
+import { MatchScorePopover } from './MatchScorePopover';
 
 function BookmarkButton({ jobId, isSaved, sessionCode, onUpdate }: { jobId: number; isSaved: boolean; sessionCode: string; onUpdate: () => void }) {
   const [saving, setSaving] = useState(false);
@@ -186,25 +187,11 @@ export function JobCard({ job, onUpdate, onJobClick, sessionCode, isFocused, isS
         {(job.job_type || job.experience_level || job.relevance_score > 0) && (
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
             {job.relevance_score > 0 && (
-              <span className="inline-flex items-center gap-1.5">
-                <span className={`text-[10px] font-bold ${
-                  job.relevance_score >= 80 ? 'text-emerald-600' :
-                  job.relevance_score >= 50 ? 'text-amber-600' :
-                  'text-orange-500'
-                }`}>
-                  {job.relevance_score}%
-                </span>
-                <span className="h-1.5 w-14 overflow-hidden rounded-full bg-slate-100">
-                  <span
-                    className={`block h-full rounded-full transition-all duration-500 ${
-                      job.relevance_score >= 80 ? 'bg-emerald-500' :
-                      job.relevance_score >= 50 ? 'bg-amber-500' :
-                      'bg-orange-400'
-                    }`}
-                    style={{ width: `${job.relevance_score}%` }}
-                  />
-                </span>
-              </span>
+              <MatchScorePopover
+                score={job.relevance_score}
+                breakdown={job.score_breakdown ?? null}
+                id={`card-${job.id}`}
+              />
             )}
             {job.job_type && (
               <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-600">

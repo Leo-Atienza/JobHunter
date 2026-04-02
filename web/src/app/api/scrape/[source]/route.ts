@@ -9,7 +9,7 @@ import { parseSalary } from '@/lib/salary-parser';
 import { matchesCountry } from '@/lib/country-filter';
 import { matchesCity, matchesAnyCity } from '@/lib/city-filter';
 import { extractSkills, extractBenefits } from '@/lib/skills-extractor';
-import { computeMatchScore } from '@/lib/match-scoring';
+import { computeMatchScoreWithBreakdown } from '@/lib/match-scoring';
 
 export const maxDuration = 60; // Hobby default is 300s; 60s is plenty for any single scraper
 
@@ -157,14 +157,17 @@ export async function POST(
             [body.session_code],
           );
           for (const job of unscoredJobs) {
-            const score = computeMatchScore(resumeProfile, {
+            const breakdown = computeMatchScoreWithBreakdown(resumeProfile, {
               title: job.title,
               skills: job.skills,
               description: job.description,
               experience_level: job.experience_level,
             });
-            if (score > 0) {
-              await sql('UPDATE jobs SET relevance_score = $1 WHERE id = $2', [score, job.id]);
+            if (breakdown.total > 0) {
+              await sql(
+                'UPDATE jobs SET relevance_score = $1, score_breakdown = $2 WHERE id = $3',
+                [breakdown.total, JSON.stringify(breakdown), job.id],
+              );
             }
           }
         }

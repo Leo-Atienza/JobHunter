@@ -96,6 +96,7 @@ export function getSourceColor(source: string): { bg: string; text: string } {
     firecrawl: { bg: 'bg-rose-100', text: 'text-rose-800' },
     remoteok: { bg: 'bg-green-100', text: 'text-green-800' },
     weworkremotely: { bg: 'bg-purple-100', text: 'text-purple-800' },
+    'indeed-rss': { bg: 'bg-blue-100', text: 'text-blue-800' },
   };
   return colors[source.toLowerCase()] ?? { bg: 'bg-slate-100', text: 'text-slate-800' };
 }
@@ -116,6 +117,7 @@ const SOURCE_DISPLAY: Record<string, string> = {
   firecrawl: 'Web Search',
   remoteok: 'RemoteOK',
   weworkremotely: 'We Work Remotely',
+  'indeed-rss': 'Indeed CA',
 };
 
 /** Extended labels with contextual hints (for source selection UI). */
@@ -133,6 +135,7 @@ export const SOURCE_LABELS_EXTENDED: Record<string, string> = {
   firecrawl: 'Web Search (Firecrawl)',
   remoteok: 'RemoteOK (Remote)',
   weworkremotely: 'We Work Remotely (Remote)',
+  'indeed-rss': 'Indeed CA (RSS)',
 };
 
 export function getSourceDisplayName(source: string): string {

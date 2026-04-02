@@ -6,6 +6,7 @@ import type { Job } from '@/lib/types';
 import { StatusSelect } from './StatusSelect';
 import { getSourceColor, getSourceDisplayName, formatDate } from '@/lib/utils';
 import { formatDescription } from '@/lib/format-description';
+import { MatchScorePopover } from './MatchScorePopover';
 
 interface JobDetailModalProps {
   job: Job;
@@ -239,10 +240,11 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
                 job.relevance_score >= 50 ? 'bg-amber-50' : 'bg-orange-50'
               }`}>
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Match</p>
-                <p className={`text-sm font-bold ${
-                  job.relevance_score >= 80 ? 'text-green-700' :
-                  job.relevance_score >= 50 ? 'text-amber-700' : 'text-orange-700'
-                }`}>{job.relevance_score}%</p>
+                <MatchScorePopover
+                  score={job.relevance_score}
+                  breakdown={job.score_breakdown ?? null}
+                  id={`modal-${job.id}`}
+                />
               </div>
             )}
             <div className="rounded-lg bg-slate-50 p-3">

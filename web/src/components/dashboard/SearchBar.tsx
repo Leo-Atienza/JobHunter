@@ -48,7 +48,7 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
       </svg>
       <input
         type="text"
-        placeholder="Search jobs..."
+        placeholder="Search jobs… (use OR for multiple)"
         value={localValue}
         onChange={(e) => handleChange(e.target.value)}
         className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-700 placeholder-slate-400 outline-none transition-all focus:border-primary-400 focus:ring-2 focus:ring-primary-100"

@@ -7,6 +7,16 @@ interface JobScoreInput {
   experience_level: string | null;
 }
 
+export interface MatchBreakdown {
+  total: number;
+  skill_score: number;
+  title_score: number;
+  desc_score: number;
+  exp_score: number;
+  matched_skills: string[];
+  matched_title: string | null;
+}
+
 /**
  * Compute a 0-100 match score between a resume profile and a job.
  * Pure function — no API calls, no side effects.
@@ -18,12 +28,31 @@ interface JobScoreInput {
  *   Experience fit:      10 pts
  */
 export function computeMatchScore(resume: ResumeProfile, job: JobScoreInput): number {
-  const skillScore = scoreSkillOverlap(resume.skills, job.skills);
-  const titleScore = scoreTitleRelevance(resume.titles, job.title);
+  return computeMatchScoreWithBreakdown(resume, job).total;
+}
+
+/**
+ * Same as computeMatchScore but returns the full breakdown of how the
+ * score was computed, including which skills and titles matched.
+ */
+export function computeMatchScoreWithBreakdown(
+  resume: ResumeProfile,
+  job: JobScoreInput,
+): MatchBreakdown {
+  const skill = scoreSkillOverlap(resume.skills, job.skills);
+  const title = scoreTitleRelevance(resume.titles, job.title);
   const descScore = scoreDescriptionKeywords(resume.skills, job.description);
   const expScore = scoreExperienceFit(resume.experience_years, job.experience_level);
 
-  return Math.min(100, Math.round(skillScore + titleScore + descScore + expScore));
+  return {
+    total: Math.min(100, Math.round(skill.score + title.score + descScore + expScore)),
+    skill_score: Math.round(skill.score),
+    title_score: Math.round(title.score),
+    desc_score: Math.round(descScore),
+    exp_score: Math.round(expScore),
+    matched_skills: skill.matched,
+    matched_title: title.bestTitle,
+  };
 }
 
 /** Normalize a string for matching: lowercase, trim, collapse whitespace */
@@ -44,23 +73,26 @@ function parseSkills(raw: string): string[] {
  * Checks how many of the job's listed skills match the resume skills.
  * Uses both exact match and substring containment.
  */
-function scoreSkillOverlap(resumeSkills: string[], jobSkillsRaw: string | null): number {
-  if (!jobSkillsRaw || resumeSkills.length === 0) return 0;
+function scoreSkillOverlap(resumeSkills: string[], jobSkillsRaw: string | null): { score: number; matched: string[] } {
+  if (!jobSkillsRaw || resumeSkills.length === 0) return { score: 0, matched: [] };
 
   const jobSkills = parseSkills(jobSkillsRaw);
-  if (jobSkills.length === 0) return 0;
+  if (jobSkills.length === 0) return { score: 0, matched: [] };
 
   const resumeNorm = resumeSkills.map(norm);
 
-  let matched = 0;
+  const matchedSkills: string[] = [];
   for (const jobSkill of jobSkills) {
     const isMatch = resumeNorm.some(
       (rs) => rs === jobSkill || rs.includes(jobSkill) || jobSkill.includes(rs),
     );
-    if (isMatch) matched++;
+    if (isMatch) matchedSkills.push(jobSkill);
   }
 
-  return Math.min(50, (matched / jobSkills.length) * 50);
+  return {
+    score: Math.min(50, (matchedSkills.length / jobSkills.length) * 50),
+    matched: matchedSkills,
+  };
 }
 
 /**
@@ -68,20 +100,21 @@ function scoreSkillOverlap(resumeSkills: string[], jobSkillsRaw: string | null):
  * Fuzzy match resume job titles against the job's title.
  * Exact substring = 20, word overlap = proportional, none = 0.
  */
-function scoreTitleRelevance(resumeTitles: string[], jobTitle: string): number {
-  if (resumeTitles.length === 0) return 0;
+function scoreTitleRelevance(resumeTitles: string[], jobTitle: string): { score: number; bestTitle: string | null } {
+  if (resumeTitles.length === 0) return { score: 0, bestTitle: null };
 
   const jobNorm = norm(jobTitle);
   const jobWords = new Set(jobNorm.split(/\s+/).filter((w) => w.length > 2));
 
   let bestScore = 0;
+  let bestTitle: string | null = null;
 
   for (const title of resumeTitles) {
     const titleNorm = norm(title);
 
     // Exact substring match — full points
     if (jobNorm.includes(titleNorm) || titleNorm.includes(jobNorm)) {
-      return 20;
+      return { score: 20, bestTitle: title };
     }
 
     // Word overlap
@@ -94,10 +127,13 @@ function scoreTitleRelevance(resumeTitles: string[], jobTitle: string): number {
     }
 
     const score = (overlap / titleWords.length) * 20;
-    if (score > bestScore) bestScore = score;
+    if (score > bestScore) {
+      bestScore = score;
+      bestTitle = title;
+    }
   }
 
-  return Math.round(bestScore);
+  return { score: Math.round(bestScore), bestTitle };
 }
 
 /**

@@ -7,6 +7,7 @@ import { AISummaryBlock } from './AISummaryBlock';
 import { useAISummary } from '@/hooks/useAISummary';
 import { formatDescription } from '@/lib/format-description';
 import { getSourceColor, getSourceDisplayName, formatDate } from '@/lib/utils';
+import { MatchScorePopover } from './MatchScorePopover';
 
 interface JobRowProps {
   job: Job;
@@ -129,13 +130,11 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
         <td className="hidden lg:table-cell px-4 py-3">
           <div className="flex flex-col gap-1">
             {job.relevance_score > 0 ? (
-              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
-                job.relevance_score >= 80 ? 'bg-green-100 text-green-700' :
-                job.relevance_score >= 50 ? 'bg-amber-100 text-amber-700' :
-                'bg-orange-100 text-orange-700'
-              }`}>
-                {job.relevance_score}%
-              </span>
+              <MatchScorePopover
+                score={job.relevance_score}
+                breakdown={job.score_breakdown ?? null}
+                id={`row-${job.id}`}
+              />
             ) : (
               <span className="text-sm text-slate-400">&mdash;</span>
             )}
@@ -242,13 +241,11 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
                   </span>
                 )}
                 {job.relevance_score > 0 && (
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                    job.relevance_score >= 80 ? 'bg-green-100 text-green-700' :
-                    job.relevance_score >= 50 ? 'bg-amber-100 text-amber-700' :
-                    'bg-orange-100 text-orange-700'
-                  }`}>
-                    {job.relevance_score}% match
-                  </span>
+                  <MatchScorePopover
+                    score={job.relevance_score}
+                    breakdown={job.score_breakdown ?? null}
+                    id={`row-expanded-${job.id}`}
+                  />
                 )}
                 {job.country && (
                   <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">

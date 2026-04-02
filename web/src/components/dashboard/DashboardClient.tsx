@@ -18,6 +18,7 @@ import { JobDetailModal } from './JobDetailModal';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { formatTimestamp, formatDate } from '@/lib/utils';
 import { extractCity, expandCity } from '@/lib/city-filter';
+import { expandWithSynonyms } from '@/lib/synonyms';
 import { ActionsMenu } from './ActionsMenu';
 import Link from 'next/link';
 import { UserMenu } from '@/components/auth/UserMenu';
@@ -286,14 +287,13 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
       })
       .filter((job) => {
         if (!searchQuery) return true;
-        const q = searchQuery.toLowerCase();
-        return (
-          job.title.toLowerCase().includes(q) ||
-          (job.company?.toLowerCase().includes(q) ?? false) ||
-          (job.location?.toLowerCase().includes(q) ?? false) ||
-          (job.salary?.toLowerCase().includes(q) ?? false) ||
-          (job.description?.toLowerCase().includes(q) ?? false)
-        );
+        // Split on " OR " (case-insensitive) for multi-term search
+        const terms = searchQuery.split(/\s+OR\s+/i).map((t) => t.trim().toLowerCase()).filter(Boolean);
+        // Expand each term with synonyms
+        const expanded = terms.flatMap(expandWithSynonyms);
+        const fields = [job.title, job.company, job.location, job.salary, job.description]
+          .map((f) => (f ?? '').toLowerCase());
+        return expanded.some((term) => fields.some((field) => field.includes(term)));
       })
       .sort((a, b) => {
         const aVal = a[sortField];

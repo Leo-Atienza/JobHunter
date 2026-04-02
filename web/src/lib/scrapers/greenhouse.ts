@@ -9,8 +9,7 @@ const DEFAULT_COMPANIES = [
   'gitlab', 'grafanalabs', 'stripe', 'databricks', 'datadog',
   'webflow', 'anthropic', 'elastic', 'hootsuite', 'benevity',
   'cloudflare', 'postman', 'unity3d', 'figma', 'flipp',
-  'd2l', 'fingerprint', 'ritual', 'lattice', 'eventbase',
-  'shopify', 'freshbooks', 'benchsci',
+  'd2l', 'fingerprint', 'ritual', 'lattice',
 ];
 
 interface GreenhouseJob {

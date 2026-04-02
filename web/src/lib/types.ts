@@ -1,3 +1,5 @@
+import type { MatchBreakdown } from './match-scoring';
+
 export interface Job {
   id: number;
   session_code: string;
@@ -32,6 +34,8 @@ export interface Job {
   is_ghost: boolean;
   /** When the status was last changed */
   status_changed_at: string | null;
+  /** Match score breakdown (skill/title/desc/exp scores + matched items) */
+  score_breakdown: MatchBreakdown | null;
   /** Sources that also have this job (populated client-side from duplicates) */
   also_on?: string[];
 }
@@ -83,6 +87,7 @@ export interface JobInput {
   skills?: string;
   benefits?: string;
   relevance_score?: number;
+  score_breakdown?: MatchBreakdown;
   country?: string;
 }
 
@@ -117,7 +122,7 @@ export interface ResumeProfile {
   summary: string;
 }
 
-export const JOB_SOURCES = ['jobbank', 'linkedin-public', 'remotive', 'adzuna', 'himalayas', 'lever', 'greenhouse', 'jooble', 'jobicy', 'devitjobs', 'firecrawl', 'remoteok', 'weworkremotely'] as const;
+export const JOB_SOURCES = ['jobbank', 'linkedin-public', 'remotive', 'adzuna', 'himalayas', 'lever', 'greenhouse', 'jooble', 'jobicy', 'devitjobs', 'firecrawl', 'remoteok', 'weworkremotely', 'indeed-rss'] as const;
 export type JobSource = (typeof JOB_SOURCES)[number];
 
 /** Scrapers that only return remote jobs — auto-deselected when "Include remote" is OFF. */

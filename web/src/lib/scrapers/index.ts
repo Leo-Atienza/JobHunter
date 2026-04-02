@@ -14,6 +14,7 @@ import { scrapeFirecrawl } from './firecrawl';
 import { scrapeJobbank } from './jobbank';
 import { scrapeRemoteOK } from './remoteok';
 import { scrapeWeWorkRemotely } from './weworkremotely';
+import { scrapeIndeedRss } from './indeed-rss';
 
 /** All server-side scrapers keyed by source name. */
 export const SERVER_SCRAPERS: Record<string, ScraperFn> = {
@@ -30,6 +31,7 @@ export const SERVER_SCRAPERS: Record<string, ScraperFn> = {
   firecrawl: scrapeFirecrawl,
   remoteok: scrapeRemoteOK,
   weworkremotely: scrapeWeWorkRemotely,
+  'indeed-rss': scrapeIndeedRss,
 };
 
 /** Sources that can run server-side (no browser needed). */

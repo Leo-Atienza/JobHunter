@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import { sessionExists } from '@/lib/session';
-import { computeMatchScore } from '@/lib/match-scoring';
+import { computeMatchScoreWithBreakdown } from '@/lib/match-scoring';
 import { extractResumeSkills } from '@/lib/resume-extract';
 import type { ResumeProfile } from '@/lib/types';
 
@@ -80,15 +80,18 @@ export async function POST(request: NextRequest) {
 
     let scored = 0;
     for (const job of jobs) {
-      const score = computeMatchScore(profile, {
+      const breakdown = computeMatchScoreWithBreakdown(profile, {
         title: job.title,
         skills: job.skills,
         description: job.description,
         experience_level: job.experience_level,
       });
 
-      if (score > 0) {
-        await sql('UPDATE jobs SET relevance_score = $1 WHERE id = $2', [score, job.id]);
+      if (breakdown.total > 0) {
+        await sql(
+          'UPDATE jobs SET relevance_score = $1, score_breakdown = $2 WHERE id = $3',
+          [breakdown.total, JSON.stringify(breakdown), job.id],
+        );
         scored++;
       }
     }

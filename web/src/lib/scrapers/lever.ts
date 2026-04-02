@@ -4,10 +4,10 @@ import { fetchJson, normalizeJobType, matchesKeywords } from './utils';
 // Verified active as of April 2026.
 // Dead slugs removed: hopper, benevity, vidyard, ada-support, koho, clearco,
 // tophat, ecobee, freshbooks, tulip, dnaspaces, properly, vena-solutions,
-// certn, jobber, neo-financial, faire, snapcommerce, league, paytm-labs (all 404).
+// certn, jobber, neo-financial, faire, snapcommerce, league, paytm-labs,
+// shopify, 1password, clio (all 404 as of 2026-04-02).
 const DEFAULT_COMPANIES = [
   'plaid', 'mistral', 'wealthsimple', 'netflix',
-  'shopify', '1password', 'clio',
 ];
 
 interface LeverPosting {
