@@ -12,7 +12,8 @@ export async function GET() {
     );
 
     const runsThisMonth = (row?.runs_this_month as number) ?? 0;
-    const estimatedUsed = runsThisMonth * 25;
+    // ~5 credits per query (3 queries/run) = ~15 credits per run
+    const estimatedUsed = runsThisMonth * 15;
     const estimatedRemaining = Math.max(0, 500 - estimatedUsed);
     const percentUsed = Math.min(100, Math.round((estimatedUsed / 500) * 100));
 
