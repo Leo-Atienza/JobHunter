@@ -3,7 +3,7 @@ import { getDb } from '@/lib/db';
 import { sessionExists, getSession } from '@/lib/session';
 import { sanitize } from '@/lib/utils';
 import { computeMatchScore } from '@/lib/match-scoring';
-import { matchesCity } from '@/lib/city-filter';
+import { matchesAnyCity } from '@/lib/city-filter';
 import type { Job, JobInput, ResumeProfile } from '@/lib/types';
 import { JOB_STATUSES } from '@/lib/types';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -189,9 +189,10 @@ export async function GET(request: NextRequest) {
 
     const rows = await sql(query, params);
 
-    // Filter by city — drop jobs outside the user's chosen city
-    const jobs = session.location
-      ? (rows as Job[]).filter((job) => matchesCity(job.location, session.location, session.remote))
+    // Filter by city — drop jobs outside the user's chosen cities
+    const effectiveLocations = session.locations ?? (session.location ? [session.location] : []);
+    const jobs = effectiveLocations.length > 0
+      ? (rows as Job[]).filter((job) => matchesAnyCity(job.location, effectiveLocations, session.remote))
       : (rows as Job[]);
 
     return NextResponse.json(jobs);

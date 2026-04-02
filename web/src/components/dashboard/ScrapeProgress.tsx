@@ -132,7 +132,13 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
                   </span>
                 )}
                 {status.state === 'error' && (
-                  <span className="text-xs text-error-500">{status.error ?? 'Failed'}</span>
+                  <span className={`text-xs ${
+                    status.error?.includes('limit')
+                      ? 'font-medium text-amber-600'
+                      : 'text-error-500'
+                  }`}>
+                    {status.error?.includes('limit') ? 'Monthly limit reached' : status.error ?? 'Failed'}
+                  </span>
                 )}
               </span>
             </div>

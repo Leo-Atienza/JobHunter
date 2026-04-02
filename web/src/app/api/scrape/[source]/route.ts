@@ -7,7 +7,7 @@ import type { ScrapeParams, ScrapeResult } from '@/lib/scrapers/types';
 import type { JobInput, ResumeProfile } from '@/lib/types';
 import { parseSalary } from '@/lib/salary-parser';
 import { matchesCountry } from '@/lib/country-filter';
-import { matchesCity } from '@/lib/city-filter';
+import { matchesCity, matchesAnyCity } from '@/lib/city-filter';
 import { extractSkills, extractBenefits } from '@/lib/skills-extractor';
 import { computeMatchScore } from '@/lib/match-scoring';
 
@@ -42,53 +42,89 @@ export async function POST(
 
     const sql = getDb();
 
-    // Build scrape params from session preferences
-    const scrapeParams: ScrapeParams = {
+    // Build effective locations (backward compat: synthesize from single location)
+    const effectiveLocations = session.locations ?? (session.location ? [session.location] : []);
+
+    // Build base scrape params from session preferences
+    const baseScrapeParams: ScrapeParams = {
       keywords: session.keywords ?? [],
       location: session.location ?? '',
+      locations: effectiveLocations,
       remote: session.remote ?? false,
       country: session.country ?? undefined,
     };
 
+    // Determine which locations to fan out to for this source.
+    // Jobbank uses Apify ($0.25/run) — only scrape first location to conserve credits.
+    const fanOutLocations = effectiveLocations.length > 0
+      ? (source === 'jobbank' ? [effectiveLocations[0]] : effectiveLocations)
+      : [''];
+
     // Run the scraper with timing, guarded by route-level timeout.
-    // Safety net: if a scraper hangs, return a proper JSON error instead of
-    // letting the function run until Vercel kills it with a 504.
     const SCRAPER_TIMEOUT_MS = 55000;
     const startMs = Date.now();
-    const result = await Promise.race([
-      scraperFn(scrapeParams),
-      new Promise<ScrapeResult>((resolve) =>
+
+    // Fan-out: call scraper once per city, merge results
+    const cityResults = await Promise.race([
+      Promise.allSettled(
+        fanOutLocations.map((cityLocation) => {
+          const cityParams: ScrapeParams = { ...baseScrapeParams, location: cityLocation };
+          return scraperFn(cityParams);
+        }),
+      ),
+      new Promise<PromiseSettledResult<ScrapeResult>[]>((resolve) =>
         setTimeout(
-          () => resolve({ source, jobs: [], error: 'Scraper timed out after 55s' }),
+          () => resolve([{ status: 'rejected', reason: new Error('timeout') }]),
           SCRAPER_TIMEOUT_MS,
         ),
       ),
     ]);
     const durationMs = Date.now() - startMs;
 
-    if (result.error) {
-      // Log the error
-      await logScrapeRun(sql, body.session_code, source, 'error', 0, 0, 0, result.error, durationMs);
+    // Merge results from all cities
+    const allJobs: JobInput[] = [];
+    const errors: string[] = [];
+    for (const r of cityResults) {
+      if (r.status === 'fulfilled') {
+        if (r.value.error) errors.push(r.value.error);
+        else allJobs.push(...r.value.jobs);
+      } else {
+        errors.push(r.reason instanceof Error ? r.reason.message : 'Scraper failed');
+      }
+    }
+
+    // If all cities failed, report error
+    if (allJobs.length === 0 && errors.length > 0) {
+      const errorMsg = errors[0] === 'timeout' ? 'Scraper timed out after 55s' : errors[0];
+      await logScrapeRun(sql, body.session_code, source, 'error', 0, 0, 0, errorMsg, durationMs);
       return NextResponse.json({
         source,
         inserted: 0,
         duplicates: 0,
         total: 0,
-        error: result.error,
+        error: errorMsg,
       });
     }
 
+    // Deduplicate by URL across cities
+    const seenUrls = new Set<string>();
+    const dedupedJobs = allJobs.filter((job) => {
+      if (seenUrls.has(job.url)) return false;
+      seenUrls.add(job.url);
+      return true;
+    });
+
     // Filter jobs by country if session has a country preference
     const countryFiltered = session.country
-      ? result.jobs.filter((job) => matchesCountry(job.location, job.country, session.country))
-      : result.jobs;
+      ? dedupedJobs.filter((job) => matchesCountry(job.location, job.country, session.country))
+      : dedupedJobs;
 
-    // Filter jobs by city if session has a location with a recognizable city
-    const filteredJobs = session.location
-      ? countryFiltered.filter((job) => matchesCity(job.location, session.location, session.remote))
+    // Filter jobs by city — match any of the session's cities
+    const filteredJobs = effectiveLocations.length > 0
+      ? countryFiltered.filter((job) => matchesAnyCity(job.location, effectiveLocations, session.remote))
       : countryFiltered;
 
-    const filtered = result.jobs.length - filteredJobs.length;
+    const filtered = dedupedJobs.length - filteredJobs.length;
 
     // Insert jobs into DB
     const { inserted, duplicates } = await insertJobs(body.session_code, filteredJobs);
@@ -134,13 +170,13 @@ export async function POST(
     }
 
     // Log success
-    await logScrapeRun(sql, body.session_code, source, 'success', result.jobs.length, inserted, duplicates, null, durationMs);
+    await logScrapeRun(sql, body.session_code, source, 'success', dedupedJobs.length, inserted, duplicates, null, durationMs);
 
     return NextResponse.json({
       source,
       inserted,
       duplicates,
-      total: result.jobs.length,
+      total: dedupedJobs.length,
       filtered,
     });
   } catch (error) {

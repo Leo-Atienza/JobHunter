@@ -4,11 +4,13 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { JOB_SOURCES } from '@/lib/types';
 import type { CreateSessionRequest, CreateSessionResponse } from '@/lib/types';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
+import { MultiCityInput } from '@/components/ui/MultiCityInput';
 import { JOB_TITLES, COMPANIES, LOCATIONS } from '@/lib/autocomplete-data';
 import { SOURCE_LABELS_EXTENDED as SOURCE_LABELS } from '@/lib/utils';
 import { inferCountryFromLocation, getCountryLabel } from '@/lib/country-filter';
 import { extractCity } from '@/lib/city-filter';
 import { FirecrawlCreditsBadge } from '@/components/dashboard/FirecrawlCreditsBadge';
+import { ApifyCreditsBadge } from '@/components/dashboard/ApifyCreditsBadge';
 
 const COUNTRY_FLAGS: Record<string, string> = {
   ca: '\u{1F1E8}\u{1F1E6}',
@@ -28,7 +30,7 @@ type ResumeState = 'idle' | 'extracting' | 'done' | 'error';
 
 export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
   const [keywords, setKeywords] = useState('');
-  const [location, setLocation] = useState('');
+  const [locations, setLocations] = useState<string[]>([]);
   const [selectedSources, setSelectedSources] = useState<string[]>([...JOB_SOURCES]);
   const [companies, setCompanies] = useState('');
   const [remote, setRemote] = useState(false);
@@ -43,10 +45,11 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
   const [resumeDragOver, setResumeDragOver] = useState(false);
   const resumeInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-detect country and city from location input
-  const inferredCountry = inferCountryFromLocation(location);
+  // Auto-detect country and city from first location
+  const firstLocation = locations[0] ?? '';
+  const inferredCountry = inferCountryFromLocation(firstLocation);
   const countryLabel = inferredCountry ? getCountryLabel(inferredCountry) : null;
-  const inferredCity = extractCity(location);
+  const inferredCity = extractCity(firstLocation);
 
   // Career page discovery state
   const [discoveredCareers, setDiscoveredCareers] = useState<Record<string, { url: string | null; loading: boolean; source: string | null }>>({});
@@ -150,7 +153,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
       const parsedCompanies = companies.split(',').map((c) => c.trim()).filter(Boolean);
       const body: CreateSessionRequest = {
         keywords: keywords.split(',').map((k) => k.trim()).filter(Boolean),
-        location: location.trim() || undefined,
+        locations: locations.length > 0 ? locations : undefined,
         sources: selectedSources.length < JOB_SOURCES.length ? selectedSources : undefined,
         remote: remote || undefined,
         companies: parsedCompanies.length > 0 ? parsedCompanies : undefined,
@@ -219,15 +222,14 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
           multiValue
         />
 
-        {/* Location */}
+        {/* Location — multi-city */}
         <div>
-          <AutocompleteInput
-            id="location"
-            value={location}
-            onChange={setLocation}
+          <MultiCityInput
+            cities={locations}
+            onChange={setLocations}
             suggestions={LOCATIONS}
             placeholder="e.g. Toronto, Canada"
-            label="Location"
+            label="Locations"
           />
           {inferredCountry && countryLabel && (
             <div className="mt-1.5 flex items-center gap-1.5 animate-fade-in">
@@ -236,9 +238,11 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
                 Detected: {countryLabel}
               </span>
               <span className="text-[11px] text-slate-400">
-                {inferredCity
-                  ? `Jobs filtered to ${inferredCity.charAt(0).toUpperCase() + inferredCity.slice(1)}, ${countryLabel}`
-                  : `Jobs will be filtered to ${countryLabel}`}
+                {locations.length > 1
+                  ? `Searching ${locations.length} cities`
+                  : inferredCity
+                    ? `Jobs filtered to ${inferredCity.charAt(0).toUpperCase() + inferredCity.slice(1)}, ${countryLabel}`
+                    : `Jobs will be filtered to ${countryLabel}`}
               </span>
             </div>
           )}
@@ -492,6 +496,12 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
             <div className="mt-2 flex items-center gap-2 animate-fade-in">
               <span className="text-xs text-slate-400">Firecrawl:</span>
               <FirecrawlCreditsBadge />
+            </div>
+          )}
+          {selectedSources.includes('jobbank') && (
+            <div className="mt-2 flex items-center gap-2 animate-fade-in">
+              <span className="text-xs text-slate-400">Apify (JobBank):</span>
+              <ApifyCreditsBadge />
             </div>
           )}
         </div>

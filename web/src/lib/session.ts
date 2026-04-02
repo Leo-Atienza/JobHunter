@@ -35,6 +35,7 @@ export async function getSession(code: string): Promise<{
   expires_at: string;
   keywords: string[] | null;
   location: string | null;
+  locations: string[] | null;
   sources: string[] | null;
   remote: boolean;
   companies: string[] | null;
@@ -44,16 +45,17 @@ export async function getSession(code: string): Promise<{
 } | null> {
   const sql = getDb();
   const rows = await sql(
-    'SELECT code, created_at, expires_at, keywords, location, sources, remote, companies, country, user_id, resume_skills FROM sessions WHERE code = $1 AND (expires_at > NOW() OR user_id IS NOT NULL)',
+    'SELECT code, created_at, expires_at, keywords, location, locations, sources, remote, companies, country, user_id, resume_skills FROM sessions WHERE code = $1 AND (expires_at > NOW() OR user_id IS NOT NULL)',
     [code]
   );
   if (rows.length === 0) return null;
-  return rows[0] as {
+  const row = rows[0] as {
     code: string;
     created_at: string;
     expires_at: string;
     keywords: string[] | null;
     location: string | null;
+    locations: string[] | null;
     sources: string[] | null;
     remote: boolean;
     companies: string[] | null;
@@ -61,4 +63,9 @@ export async function getSession(code: string): Promise<{
     user_id: string | null;
     resume_skills: ResumeProfile | null;
   };
+  // Backward compat: synthesize locations from single location for old sessions
+  if (!row.locations && row.location) {
+    row.locations = [row.location];
+  }
+  return row;
 }

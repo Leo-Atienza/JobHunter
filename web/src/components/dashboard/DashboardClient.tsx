@@ -190,16 +190,17 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
         if (locationFilter === 'remote') {
           return /remote|work from home|wfh|anywhere|worldwide/i.test(loc);
         }
-        if (locationFilter === 'near' && session?.location) {
-          const city = session.location.split(',')[0].trim().toLowerCase();
+        if (locationFilter.startsWith('near:')) {
+          const city = locationFilter.slice(5); // already lowercase
           return loc.includes(city);
         }
         if (locationFilter === 'other') {
           const isRemote = /remote|work from home|wfh|anywhere|worldwide/i.test(loc);
-          const isNear = session?.location
-            ? loc.includes(session.location.split(',')[0].trim().toLowerCase())
-            : false;
-          return !isRemote && !isNear;
+          const sessionLocs = session?.locations ?? (session?.location ? [session.location] : []);
+          const isNearAny = sessionLocs.some((l) =>
+            loc.includes(l.split(',')[0].trim().toLowerCase()),
+          );
+          return !isRemote && !isNearAny;
         }
         return true;
       })
@@ -354,15 +355,15 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                     : 'Job Search'}
                 </h1>
                 <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-slate-500">
-                  {session.location && (
-                    <span className="inline-flex items-center gap-1">
+                  {(session.locations ?? (session.location ? [session.location] : [])).map((loc) => (
+                    <span key={loc} className="inline-flex items-center gap-1">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                         <circle cx="12" cy="10" r="3" />
                       </svg>
-                      {session.location}
+                      {loc}
                     </span>
-                  )}
+                  ))}
                   {session.remote && (
                     <span className="inline-flex items-center rounded-full bg-accent-100 px-2 py-0.5 text-xs font-medium text-accent-600">
                       Remote
@@ -454,7 +455,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 onHideGhostsChange={(v) => { setHideGhosts(v); resetPage(); }}
                 onCompanyChange={(v) => { setCompanyFilter(v); resetPage(); }}
                 locationFilter={locationFilter}
-                sessionLocation={session?.location ?? null}
+                sessionLocations={session?.locations ?? (session?.location ? [session.location] : null)}
                 onLocationChange={(v) => { setLocationFilter(v); resetPage(); }}
                 stats={stats ?? null}
               />

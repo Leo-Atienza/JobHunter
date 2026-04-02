@@ -29,6 +29,7 @@ export async function GET(
       expires_at: session.expires_at,
       keywords: session.keywords,
       location: session.location,
+      locations: session.locations,
       sources: session.sources,
       remote: session.remote,
       companies: session.companies,

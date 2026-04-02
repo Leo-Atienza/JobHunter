@@ -33,7 +33,12 @@ export async function POST(request: NextRequest) {
     const keywords = body.keywords?.length
       ? body.keywords.slice(0, 10).map((k) => sanitize(k, 100))
       : null;
-    const location = body.location ? sanitize(body.location, 255) : null;
+    // Multi-city: prefer locations array, fall back to single location
+    const rawLocations = body.locations?.length
+      ? body.locations.slice(0, 5).map((l) => sanitize(l, 255))
+      : (body.location ? [sanitize(body.location, 255)] : null);
+    const location = rawLocations?.[0] ?? null;
+    const locations = rawLocations;
     const sources = body.sources?.length
       ? body.sources.filter((s) => (JOB_SOURCES as readonly string[]).includes(s))
       : null;
@@ -86,10 +91,10 @@ export async function POST(request: NextRequest) {
           ? "NOW() + INTERVAL '10 years'"
           : "NOW() + INTERVAL '48 hours'";
         const result = await sql(
-          `INSERT INTO sessions (code, keywords, location, sources, remote, companies, country, user_id, resume_skills, expires_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, ${expiryExpr})
+          `INSERT INTO sessions (code, keywords, location, locations, sources, remote, companies, country, user_id, resume_skills, expires_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, ${expiryExpr})
            RETURNING code, expires_at`,
-          [code, keywords, location, sources, remote, companies, country, userId, resumeSkills ? JSON.stringify(resumeSkills) : null]
+          [code, keywords, location, locations, sources, remote, companies, country, userId, resumeSkills ? JSON.stringify(resumeSkills) : null]
         );
         if (result.length > 0) {
           inserted = true;

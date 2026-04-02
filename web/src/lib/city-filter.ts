@@ -63,6 +63,43 @@ export function matchesCity(
 }
 
 /**
+ * Check if a job's location matches ANY of the session's cities.
+ * Returns true if the job should be kept.
+ *
+ * - Remote/WFH/anywhere jobs always pass.
+ * - Jobs with no location are dropped.
+ * - Otherwise the job location must contain at least one target city name.
+ * - Empty locations array = no filter (keep all).
+ */
+export function matchesAnyCity(
+  jobLocation: string | null | undefined,
+  sessionLocations: string[],
+  isRemoteSearch: boolean,
+): boolean {
+  if (sessionLocations.length === 0) return true;
+
+  const cities = sessionLocations
+    .map((loc) => extractCity(loc))
+    .filter((c): c is string => c !== null);
+
+  if (cities.length === 0) return true; // Can't determine any city — skip filter
+
+  if (!jobLocation) return false;
+
+  const normalized = jobLocation.toLowerCase().replace(/-/g, ' ');
+
+  // Remote jobs pass through — they're available anywhere
+  if (REMOTE_PATTERN.test(normalized)) return true;
+
+  // Hybrid jobs: only keep if they're in one of the target cities
+  if (isRemoteSearch && /\bhybrid\b/i.test(normalized)) {
+    return cities.some((city) => normalized.includes(city));
+  }
+
+  return cities.some((city) => normalized.includes(city));
+}
+
+/**
  * Build a SQL WHERE clause fragment for city filtering.
  * Returns { clause, params } where clause is empty string if no filter needed.
  * The paramIndex is the next $N placeholder index to use.

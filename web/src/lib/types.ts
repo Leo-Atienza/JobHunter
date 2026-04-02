@@ -46,6 +46,8 @@ export interface Session {
   expires_at: string;
   keywords: string[] | null;
   location: string | null;
+  /** All searched cities (superset of location) */
+  locations: string[] | null;
   sources: string[] | null;
   remote: boolean;
   companies: string[] | null;
@@ -85,6 +87,8 @@ export interface JobInput {
 export interface CreateSessionRequest {
   keywords?: string[];
   location?: string;
+  /** Multi-city search — array of location strings */
+  locations?: string[];
   sources?: string[];
   remote?: boolean;
   companies?: string[];

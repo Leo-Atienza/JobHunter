@@ -1,4 +1,5 @@
 import type { ScrapeParams, ScrapeResult } from './types';
+import { getDb } from '@/lib/db';
 
 interface ApifyJobbankItem {
   url?: string;
@@ -15,6 +16,30 @@ export async function scrapeJobbank(params: ScrapeParams): Promise<ScrapeResult>
   const token = process.env.APIFY_TOKEN;
   if (!token) {
     return { source: 'jobbank', jobs: [], error: 'Apify token not configured' };
+  }
+
+  // Pre-flight: check monthly Apify usage to avoid exceeding free tier
+  try {
+    const sql = getDb();
+    const MONTHLY_LIMIT = parseInt(process.env.APIFY_MONTHLY_LIMIT ?? '16', 10);
+    const [row] = await sql(
+      `SELECT COUNT(*)::int AS runs_this_month
+       FROM scrape_logs
+       WHERE source = 'jobbank'
+         AND status = 'success'
+         AND scraped_at >= date_trunc('month', NOW())`,
+    );
+    const runsThisMonth = (row?.runs_this_month as number) ?? 0;
+    if (runsThisMonth >= MONTHLY_LIMIT) {
+      return {
+        source: 'jobbank',
+        jobs: [],
+        error: `Apify monthly limit reached (${runsThisMonth}/${MONTHLY_LIMIT} runs). Resets next month.`,
+      };
+    }
+  } catch (e) {
+    // Non-fatal — if DB check fails, proceed with scrape
+    console.warn('Apify rate limit check failed (proceeding):', e);
   }
 
   const query = params.keywords.join(' ');
