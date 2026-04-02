@@ -83,6 +83,7 @@ export function generateCsv(
 export function getSourceColor(source: string): { bg: string; text: string } {
   const colors: Record<string, { bg: string; text: string }> = {
     jobbank: { bg: 'bg-red-100', text: 'text-red-800' },
+    linkedin: { bg: 'bg-blue-100', text: 'text-blue-800' },
     'linkedin-public': { bg: 'bg-blue-100', text: 'text-blue-800' },
     remotive: { bg: 'bg-teal-100', text: 'text-teal-800' },
     adzuna: { bg: 'bg-orange-100', text: 'text-orange-800' },
@@ -100,6 +101,7 @@ export function getSourceColor(source: string): { bg: string; text: string } {
 /** Human-friendly display name for a scraper source. */
 const SOURCE_DISPLAY: Record<string, string> = {
   jobbank: 'Job Bank',
+  linkedin: 'LinkedIn',
   'linkedin-public': 'LinkedIn',
   remotive: 'Remotive',
   adzuna: 'Adzuna',
