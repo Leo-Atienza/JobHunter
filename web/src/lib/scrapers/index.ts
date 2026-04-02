@@ -15,6 +15,8 @@ import { scrapeJobbank } from './jobbank';
 import { scrapeRemoteOK } from './remoteok';
 import { scrapeWeWorkRemotely } from './weworkremotely';
 import { scrapeIndeedRss } from './indeed-rss';
+import { scrapeCareerjetRss } from './careerjet-rss';
+import { scrapeTalentRss } from './talent-rss';
 
 /** All server-side scrapers keyed by source name. */
 export const SERVER_SCRAPERS: Record<string, ScraperFn> = {
@@ -32,6 +34,8 @@ export const SERVER_SCRAPERS: Record<string, ScraperFn> = {
   remoteok: scrapeRemoteOK,
   weworkremotely: scrapeWeWorkRemotely,
   'indeed-rss': scrapeIndeedRss,
+  careerjet: scrapeCareerjetRss,
+  talent: scrapeTalentRss,
 };
 
 /** Sources that can run server-side (no browser needed). */

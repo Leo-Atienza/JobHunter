@@ -145,6 +145,22 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
           ))}
         </div>
 
+        {/* RSS reliability warning */}
+        {allDone && (() => {
+          const rssSources = ['indeed-rss', 'careerjet', 'talent'];
+          const failedRss = entries.filter(
+            ([source, s]) => rssSources.includes(source) && (s.state === 'error' || (s.state === 'done' && (s.inserted ?? 0) === 0)),
+          );
+          if (failedRss.length === 0) return null;
+          return (
+            <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+              {failedRss.length === 1
+                ? `${getSourceDisplayName(failedRss[0][0])} returned no results — this source may be temporarily unavailable.`
+                : `${failedRss.length} RSS sources returned no results — these sources may be temporarily unavailable.`}
+            </p>
+          );
+        })()}
+
       </div>
     </div>
   );

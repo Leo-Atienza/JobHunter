@@ -10,6 +10,7 @@ import { matchesCountry } from '@/lib/country-filter';
 import { matchesCity, matchesAnyCity } from '@/lib/city-filter';
 import { extractSkills, extractBenefits } from '@/lib/skills-extractor';
 import { computeMatchScoreWithBreakdown } from '@/lib/match-scoring';
+import { expandWithSynonyms } from '@/lib/synonyms';
 
 export const maxDuration = 60; // Hobby default is 300s; 60s is plenty for any single scraper
 
@@ -45,9 +46,21 @@ export async function POST(
     // Build effective locations (backward compat: synthesize from single location)
     const effectiveLocations = session.locations ?? (session.location ? [session.location] : []);
 
+    // Expand keywords with synonyms — originals first, then synonyms fill the rest.
+    // This ensures scrapers that slice(0, N) always see the user's actual keywords.
+    const rawKeywords = session.keywords ?? [];
+    const expandedSet = new Set<string>();
+    for (const kw of rawKeywords) expandedSet.add(kw.toLowerCase().trim());
+    for (const kw of rawKeywords) {
+      for (const syn of expandWithSynonyms(kw)) {
+        expandedSet.add(syn);
+      }
+    }
+    const expandedKeywords = [...expandedSet].slice(0, 20);
+
     // Build base scrape params from session preferences
     const baseScrapeParams: ScrapeParams = {
-      keywords: session.keywords ?? [],
+      keywords: expandedKeywords,
       location: session.location ?? '',
       locations: effectiveLocations,
       remote: session.remote ?? false,

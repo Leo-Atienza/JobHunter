@@ -3,6 +3,7 @@ import { Outfit, Plus_Jakarta_Sans } from 'next/font/google';
 import '@/styles/globals.css';
 import { SessionProvider } from '@/components/auth/SessionProvider';
 import { ToastProvider } from '@/components/ui/Toast';
+import { ServiceWorkerRegistrar } from '@/components/ServiceWorkerRegistrar';
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -63,6 +64,7 @@ export default function RootLayout({
         <SessionProvider>
           <ToastProvider>{children}</ToastProvider>
         </SessionProvider>
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );

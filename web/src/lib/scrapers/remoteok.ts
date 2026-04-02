@@ -33,7 +33,8 @@ function formatSalary(min?: number, max?: number): string | undefined {
  * so it is skipped. Results are filtered client-side to ensure relevance.
  */
 export async function scrapeRemoteOK(params: ScrapeParams): Promise<ScrapeResult> {
-  const query = params.keywords.join(',');
+  // RemoteOK tags= is an AND filter — limit to 3 tags to avoid 0 results
+  const query = params.keywords.slice(0, 3).join(',');
   const url = `https://remoteok.com/api?tags=${encodeURIComponent(query)}`;
 
   // RemoteOK requires a browser-like User-Agent to avoid 403 responses.
