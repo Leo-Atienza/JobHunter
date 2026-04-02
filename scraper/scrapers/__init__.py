@@ -8,7 +8,6 @@ from .remotive import RemotiveScraper
 from .adzuna import AdzunaScraper
 from .himalayas import HimalayasScraper
 from .themuse import TheMuseScraper
-from .arbeitnow import ArbeitnowScraper
 from .lever import LeverScraper
 from .greenhouse import GreenhouseScraper
 from .workday import WorkdayScraper
@@ -27,7 +26,6 @@ SCRAPERS: dict[str, type] = {
     "adzuna": AdzunaScraper,
     "himalayas": HimalayasScraper,
     "themuse": TheMuseScraper,
-    "arbeitnow": ArbeitnowScraper,
     "lever": LeverScraper,
     "greenhouse": GreenhouseScraper,
     "workday": WorkdayScraper,
@@ -47,7 +45,6 @@ __all__ = [
     "AdzunaScraper",
     "HimalayasScraper",
     "TheMuseScraper",
-    "ArbeitnowScraper",
     "LeverScraper",
     "GreenhouseScraper",
     "WorkdayScraper",
