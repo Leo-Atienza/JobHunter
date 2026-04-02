@@ -12,7 +12,7 @@ import type { JobInput } from '@/lib/types';
 import { USER_AGENT, normalizeJobType, parseDate } from './utils';
 
 const JOBS_PER_PAGE = 25;
-const MAX_PAGES = 4; // 100 jobs max
+const MAX_PAGES = 2; // 50 jobs max — enough for most searches, keeps scan fast
 
 /** Country code → LinkedIn geo ID for better location targeting. */
 const COUNTRY_GEO: Record<string, string> = {
@@ -50,7 +50,7 @@ async function fetchPage(url: string): Promise<string | null> {
         'Accept': 'text/html',
         'Accept-Language': 'en-US,en;q=0.9',
       },
-      signal: AbortSignal.timeout(20_000),
+      signal: AbortSignal.timeout(8_000),
     });
     if (!resp.ok) return null;
     return await resp.text();
@@ -138,7 +138,7 @@ export async function scrapeLinkedInPublic(params: ScrapeParams): Promise<Scrape
 
     // Small delay between pages to be respectful
     if (page < MAX_PAGES - 1) {
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise(r => setTimeout(r, 200));
     }
   }
 

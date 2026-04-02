@@ -3,14 +3,14 @@ import { getDb } from '@/lib/db';
 import { getSession } from '@/lib/session';
 import { sanitize } from '@/lib/utils';
 import { SERVER_SCRAPERS } from '@/lib/scrapers';
-import type { ScrapeParams } from '@/lib/scrapers/types';
+import type { ScrapeParams, ScrapeResult } from '@/lib/scrapers/types';
 import type { JobInput, ResumeProfile } from '@/lib/types';
 import { parseSalary } from '@/lib/salary-parser';
 import { matchesCountry } from '@/lib/country-filter';
 import { extractSkills, extractBenefits } from '@/lib/skills-extractor';
 import { computeMatchScore } from '@/lib/match-scoring';
 
-export const maxDuration = 60; // Vercel Pro; free tier caps at 10s
+export const maxDuration = 60; // Hobby default is 300s; 60s is plenty for any single scraper
 
 /**
  * POST /api/scrape/[source]
@@ -49,9 +49,20 @@ export async function POST(
       country: session.country ?? undefined,
     };
 
-    // Run the scraper with timing
+    // Run the scraper with timing, guarded by route-level timeout.
+    // Safety net: if a scraper hangs, return a proper JSON error instead of
+    // letting the function run until Vercel kills it with a 504.
+    const SCRAPER_TIMEOUT_MS = 55000;
     const startMs = Date.now();
-    const result = await scraperFn(scrapeParams);
+    const result = await Promise.race([
+      scraperFn(scrapeParams),
+      new Promise<ScrapeResult>((resolve) =>
+        setTimeout(
+          () => resolve({ source, jobs: [], error: 'Scraper timed out after 55s' }),
+          SCRAPER_TIMEOUT_MS,
+        ),
+      ),
+    ]);
     const durationMs = Date.now() - startMs;
 
     if (result.error) {
@@ -160,52 +171,64 @@ async function insertJobs(
     existingKeys.set(dedupKey(row.title as string, row.company as string | null), row.id as number);
   }
 
-  for (const job of jobs) {
-    if (!job.title || !job.url || !job.source) continue;
+  // Prepare all rows, then insert in parallel chunks for speed.
+  // On Vercel Hobby (10s limit), sequential inserts of 50+ jobs can take 5s.
+  const prepared = jobs
+    .filter((job) => job.title && job.url && job.source)
+    .map((job) => {
+      const title = sanitize(job.title, 500);
+      const company = job.company ? sanitize(job.company, 500) : null;
+      const location = job.location ? sanitize(job.location, 500) : null;
+      const url = sanitize(job.url, 2000);
+      const source = sanitize(job.source, 50);
+      const salary = job.salary ? sanitize(job.salary, 255) : null;
+      const description = job.description ? sanitize(job.description, 50000) : null;
+      const posted_date = job.posted_date ? sanitize(job.posted_date, 255) : null;
+      const job_type = job.job_type ? sanitize(job.job_type, 50) : null;
+      const experience_level = job.experience_level ? sanitize(job.experience_level, 50) : null;
+      const skills = job.skills ? sanitize(job.skills, 5000) : extractSkills(description);
+      const benefits = job.benefits ? sanitize(job.benefits, 5000) : extractBenefits(description);
+      const relevance_score = typeof job.relevance_score === 'number'
+        ? Math.min(Math.max(Math.round(job.relevance_score), 0), 100)
+        : 0;
+      const country = job.country ? sanitize(job.country, 100) : null;
+      const { min: salaryMin, max: salaryMax } = parseSalary(salary);
+      const key = dedupKey(title, company);
+      const duplicateOfId = existingKeys.get(key) ?? null;
 
-    const title = sanitize(job.title, 500);
-    const company = job.company ? sanitize(job.company, 500) : null;
-    const location = job.location ? sanitize(job.location, 500) : null;
-    const url = sanitize(job.url, 2000);
-    const source = sanitize(job.source, 50);
-    const salary = job.salary ? sanitize(job.salary, 255) : null;
-    const description = job.description ? sanitize(job.description, 50000) : null;
-    const posted_date = job.posted_date ? sanitize(job.posted_date, 255) : null;
-    const job_type = job.job_type ? sanitize(job.job_type, 50) : null;
-    const experience_level = job.experience_level ? sanitize(job.experience_level, 50) : null;
-    const skills = job.skills ? sanitize(job.skills, 5000) : extractSkills(description);
-    const benefits = job.benefits ? sanitize(job.benefits, 5000) : extractBenefits(description);
-    const relevance_score = typeof job.relevance_score === 'number'
-      ? Math.min(Math.max(Math.round(job.relevance_score), 0), 100)
-      : 0;
-    const country = job.country ? sanitize(job.country, 100) : null;
+      return { title, company, location, url, source, salary, description, posted_date, job_type, experience_level, skills, benefits, relevance_score, country, salaryMin, salaryMax, key, duplicateOfId };
+    });
 
-    // Parse salary into min/max
-    const { min: salaryMin, max: salaryMax } = parseSalary(salary);
-
-    // Check cross-source dedup (same title+company = duplicate from another source)
-    const key = dedupKey(title, company);
-    const duplicateOfId = existingKeys.get(key) ?? null;
-
-    try {
-      const result = await sql(
-        `INSERT INTO jobs (session_code, title, company, location, url, source, salary, description, posted_date, job_type, experience_level, skills, benefits, relevance_score, country, salary_min, salary_max, duplicate_of)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
-         ON CONFLICT (session_code, url) DO NOTHING
-         RETURNING id`,
-        [sessionCode, title, company, location, url, source, salary, description, posted_date, job_type, experience_level, skills, benefits, relevance_score, country, salaryMin, salaryMax, duplicateOfId],
-      );
-      if (result.length > 0) {
-        inserted++;
-        // If this is not a duplicate, register it for future dedup checks
-        if (!duplicateOfId) {
-          existingKeys.set(key, result[0].id as number);
+  // Insert in parallel chunks of 10
+  const CHUNK_SIZE = 10;
+  for (let i = 0; i < prepared.length; i += CHUNK_SIZE) {
+    const chunk = prepared.slice(i, i + CHUNK_SIZE);
+    const results = await Promise.allSettled(
+      chunk.map(async (row) => {
+        const result = await sql(
+          `INSERT INTO jobs (session_code, title, company, location, url, source, salary, description, posted_date, job_type, experience_level, skills, benefits, relevance_score, country, salary_min, salary_max, duplicate_of)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+           ON CONFLICT (session_code, url) DO NOTHING
+           RETURNING id`,
+          [sessionCode, row.title, row.company, row.location, row.url, row.source, row.salary, row.description, row.posted_date, row.job_type, row.experience_level, row.skills, row.benefits, row.relevance_score, row.country, row.salaryMin, row.salaryMax, row.duplicateOfId],
+        );
+        if (result.length > 0) {
+          if (!row.duplicateOfId) {
+            existingKeys.set(row.key, result[0].id as number);
+          }
+          return 'inserted' as const;
         }
+        return 'duplicate' as const;
+      })
+    );
+
+    for (const r of results) {
+      if (r.status === 'fulfilled') {
+        if (r.value === 'inserted') inserted++;
+        else duplicates++;
       } else {
         duplicates++;
       }
-    } catch {
-      duplicates++;
     }
   }
 

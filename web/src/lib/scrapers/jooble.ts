@@ -16,13 +16,13 @@ export async function scrapeJooble(params: ScrapeParams): Promise<ScrapeResult> 
   const query = params.keywords.join(' ');
   const jobs = [];
 
-  for (let page = 1; page <= 3; page++) {
+  for (let page = 1; page <= 2; page++) {
     try {
       const resp = await fetch(`https://jooble.org/api/${apiKey}`, {
         method: 'POST',
         headers: { 'User-Agent': USER_AGENT, 'Content-Type': 'application/json' },
         body: JSON.stringify({ keywords: query, location: params.location, page: String(page) }),
-        signal: AbortSignal.timeout(20000),
+        signal: AbortSignal.timeout(8000),
       });
       if (!resp.ok) break;
       const data = await resp.json() as { jobs?: JoobleJob[] };

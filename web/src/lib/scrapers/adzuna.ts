@@ -20,9 +20,23 @@ export async function scrapeAdzuna(params: ScrapeParams): Promise<ScrapeResult> 
   }
 
   const query = params.keywords.join(' ');
-  const country = params.country?.toLowerCase();
+
+  // Use explicit country, or infer from location string
+  let country = params.country?.toLowerCase();
   if (!country) {
-    return { source: 'adzuna', jobs: [], error: 'Country required for Adzuna (inferred from location)' };
+    const loc = (params.location || '').toLowerCase();
+    if (/\b(canada|toronto|vancouver|montreal|ottawa|calgary|edmonton|winnipeg|ontario|british columbia|alberta|quebec|kitchener|waterloo|hamilton|london on|gta)\b/.test(loc)) {
+      country = 'ca';
+    } else if (/\b(united states|usa|new york|san francisco|los angeles|chicago|seattle|austin|boston)\b/.test(loc)) {
+      country = 'us';
+    } else if (/\b(united kingdom|london|manchester|birmingham|uk|england)\b/.test(loc)) {
+      country = 'gb';
+    } else if (/\b(australia|sydney|melbourne|brisbane)\b/.test(loc)) {
+      country = 'au';
+    }
+  }
+  if (!country) {
+    return { source: 'adzuna', jobs: [], error: 'Could not determine country from location' };
   }
   const jobs = [];
 
