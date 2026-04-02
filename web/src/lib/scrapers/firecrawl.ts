@@ -79,6 +79,7 @@ export async function scrapeFirecrawl(params: ScrapeParams): Promise<ScrapeResul
   let totalWebResults = 0;
   let totalExtracted = 0;
   let totalEnriched = 0;
+  let creditsUsed = 0;
 
   for (let i = 0; i < searchResults.length; i++) {
     const result = searchResults[i];
@@ -93,10 +94,11 @@ export async function scrapeFirecrawl(params: ScrapeParams): Promise<ScrapeResul
       continue;
     }
 
-    // SDK v4 returns { web: [...] }
+    // Each fulfilled search call costs ~1 credit per result returned
     const raw = result.value as Record<string, unknown> | undefined;
     const webResults: SearchResultDoc[] =
       (raw?.data as SearchResultDoc[]) ?? (raw?.web as SearchResultDoc[]) ?? (Array.isArray(raw) ? raw as SearchResultDoc[] : []);
+    creditsUsed += webResults.length; // ~1 credit per result returned
     totalWebResults += webResults.length;
 
     if (webResults.length === 0) {
@@ -160,6 +162,7 @@ export async function scrapeFirecrawl(params: ScrapeParams): Promise<ScrapeResul
   return {
     source: 'firecrawl',
     jobs: allJobs,
+    credits_used: creditsUsed,
     error: allJobs.length === 0
       ? `No jobs extracted (${queries.length} queries, ${totalWebResults} results)${errors.length ? ': ' + errors.join('; ') : ''}`
       : undefined,

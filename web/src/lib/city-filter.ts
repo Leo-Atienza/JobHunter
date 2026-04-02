@@ -2,6 +2,25 @@
 
 const REMOTE_PATTERN = /\bremote\b|\bwork from home\b|\bwfh\b|\banywhere\b|\bworldwide\b|\bglobal\b|\bdistributed\b/i;
 
+/** Metro area aliases — searching "GTA" also matches Toronto, Mississauga, etc. */
+const GTA_CITIES = ['toronto', 'mississauga', 'brampton', 'vaughan', 'markham', 'richmond hill', 'oakville', 'burlington', 'oshawa', 'pickering'];
+const METRO_ALIASES: Record<string, string[]> = {
+  'gta': GTA_CITIES,
+  'greater toronto': GTA_CITIES,
+  'greater toronto area': GTA_CITIES,
+  'toronto': ['gta', 'greater toronto', 'mississauga', 'brampton', 'vaughan', 'markham', 'richmond hill', 'oakville', 'burlington', 'oshawa', 'pickering'],
+};
+
+/** Expand a city into itself + all its metro aliases. */
+function expandCity(city: string): string[] {
+  return [city, ...(METRO_ALIASES[city] ?? [])];
+}
+
+/** Check if a normalized job location matches any expanded city token. */
+function cityTokensMatch(normalized: string, city: string): boolean {
+  return expandCity(city).some((c) => normalized.includes(c));
+}
+
 /** Country/region names that aren't cities. */
 const NON_CITY_TERMS = new Set([
   'canada', 'united states', 'usa', 'us', 'uk', 'united kingdom',
@@ -56,10 +75,10 @@ export function matchesCity(
   // If the user explicitly wants remote jobs, also keep "Hybrid" in the target city
   // but still drop jobs in other cities that aren't remote
   if (isRemoteSearch && /\bhybrid\b/i.test(normalized)) {
-    return normalized.includes(city);
+    return cityTokensMatch(normalized, city);
   }
 
-  return normalized.includes(city);
+  return cityTokensMatch(normalized, city);
 }
 
 /**
@@ -93,14 +112,32 @@ export function matchesAnyCity(
 
   // Hybrid jobs: only keep if they're in one of the target cities
   if (isRemoteSearch && /\bhybrid\b/i.test(normalized)) {
-    return cities.some((city) => normalized.includes(city));
+    return cities.some((city) => cityTokensMatch(normalized, city));
   }
 
-  return cities.some((city) => normalized.includes(city));
+  return cities.some((city) => cityTokensMatch(normalized, city));
+}
+
+const REMOTE_SQL_PATTERN = "location ~* 'remote|work from home|wfh|anywhere|worldwide|global|distributed'";
+
+/** Build ILIKE conditions for a set of city tokens, starting at paramIndex. */
+function buildCityIlikeClauses(
+  cityTokens: string[],
+  paramIndex: number,
+): { clause: string; params: string[] } {
+  if (cityTokens.length === 0) return { clause: '', params: [] };
+
+  const conditions = cityTokens.map((_, i) => `location ILIKE $${paramIndex + i}`);
+  conditions.push(REMOTE_SQL_PATTERN);
+
+  return {
+    clause: ` AND (${conditions.join(' OR ')})`,
+    params: cityTokens.map((c) => `%${c}%`),
+  };
 }
 
 /**
- * Build a SQL WHERE clause fragment for city filtering.
+ * Build a SQL WHERE clause fragment for city filtering (single location).
  * Returns { clause, params } where clause is empty string if no filter needed.
  * The paramIndex is the next $N placeholder index to use.
  *
@@ -115,9 +152,31 @@ export function cityFilterSQL(
   const city = extractCity(sessionLocation);
   if (!city) return { clause: '', params: [] };
 
-  // Keep jobs that: contain the city name (case-insensitive), OR are remote/wfh/anywhere, OR have no location (dropped at app layer)
-  return {
-    clause: ` AND (location ILIKE $${paramIndex} OR location ~* 'remote|work from home|wfh|anywhere|worldwide|global|distributed')`,
-    params: [`%${city}%`],
-  };
+  const tokens = [...new Set(expandCity(city))];
+  return buildCityIlikeClauses(tokens, paramIndex);
+}
+
+/**
+ * Build a SQL WHERE clause fragment for multi-city filtering.
+ * Expands all locations through metro aliases, deduplicates, and builds OR'd ILIKE conditions.
+ */
+export function cityFilterSQLMulti(
+  locations: string[],
+  paramIndex: number,
+): { clause: string; params: string[] } {
+  if (locations.length === 0) return { clause: '', params: [] };
+
+  const allTokens = new Set<string>();
+  for (const loc of locations) {
+    const city = extractCity(loc);
+    if (city) {
+      for (const token of expandCity(city)) {
+        allTokens.add(token);
+      }
+    }
+  }
+
+  if (allTokens.size === 0) return { clause: '', params: [] };
+
+  return buildCityIlikeClauses([...allTokens], paramIndex);
 }

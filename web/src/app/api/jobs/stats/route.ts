@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getSession } from '@/lib/session';
-import { cityFilterSQL } from '@/lib/city-filter';
+import { cityFilterSQLMulti } from '@/lib/city-filter';
 import type { JobStats } from '@/lib/types';
 
 export async function GET(request: NextRequest) {
@@ -26,8 +26,9 @@ export async function GET(request: NextRequest) {
 
     const sql = getDb();
 
-    // Build city filter clause — applies to all stats queries
-    const { clause: cityClause, params: cityParams } = cityFilterSQL(sessionData.location, 2);
+    // Build city filter clause — applies to all stats queries (supports multi-city)
+    const effectiveLocations = sessionData.locations ?? (sessionData.location ? [sessionData.location] : []);
+    const { clause: cityClause, params: cityParams } = cityFilterSQLMulti(effectiveLocations, 2);
     const baseParams = [session, ...cityParams];
 
     const [totalResult, sourceResult, statusResult, lastUpdatedResult, salaryResult, ghostResult, matchResult] = await Promise.all([

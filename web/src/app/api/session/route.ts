@@ -48,9 +48,16 @@ export async function POST(request: NextRequest) {
       : null;
     let country: string | null = null;
     try {
-      country = body.country
-        ? sanitize(body.country, 10)
-        : (location ? inferCountryFromLocation(location) : null);
+      if (body.country) {
+        country = sanitize(body.country, 10);
+      } else if (rawLocations?.length) {
+        // Infer country per city — if all same country use it, if mixed disable filter
+        const perCityCountries = rawLocations
+          .map((l) => inferCountryFromLocation(l))
+          .filter((c): c is string => c !== null);
+        const uniqueCountries = [...new Set(perCityCountries)];
+        country = uniqueCountries.length === 1 ? uniqueCountries[0] : null;
+      }
     } catch (e) {
       console.error('Country inference failed:', e);
     }

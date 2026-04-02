@@ -17,6 +17,8 @@ export interface ScrapeResult {
   source: string;
   jobs: JobInput[];
   error?: string;
+  /** Actual API credits consumed (e.g. Firecrawl search calls). */
+  credits_used?: number;
 }
 
 export type ScraperFn = (params: ScrapeParams) => Promise<ScrapeResult>;

@@ -94,6 +94,8 @@ export function getSourceColor(source: string): { bg: string; text: string } {
     jobicy: { bg: 'bg-lime-100', text: 'text-lime-800' },
     devitjobs: { bg: 'bg-indigo-100', text: 'text-indigo-800' },
     firecrawl: { bg: 'bg-rose-100', text: 'text-rose-800' },
+    remoteok: { bg: 'bg-green-100', text: 'text-green-800' },
+    weworkremotely: { bg: 'bg-purple-100', text: 'text-purple-800' },
   };
   return colors[source.toLowerCase()] ?? { bg: 'bg-slate-100', text: 'text-slate-800' };
 }
@@ -112,6 +114,8 @@ const SOURCE_DISPLAY: Record<string, string> = {
   jobicy: 'Jobicy',
   devitjobs: 'DevITjobs',
   firecrawl: 'Web Search',
+  remoteok: 'RemoteOK',
+  weworkremotely: 'We Work Remotely',
 };
 
 /** Extended labels with contextual hints (for source selection UI). */
@@ -127,6 +131,8 @@ export const SOURCE_LABELS_EXTENDED: Record<string, string> = {
   jobicy: 'Jobicy (Remote)',
   devitjobs: 'DevITjobs',
   firecrawl: 'Web Search (Firecrawl)',
+  remoteok: 'RemoteOK (Remote)',
+  weworkremotely: 'We Work Remotely',
 };
 
 export function getSourceDisplayName(source: string): string {

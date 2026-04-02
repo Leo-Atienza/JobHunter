@@ -84,10 +84,14 @@ export async function POST(
     // Merge results from all cities
     const allJobs: JobInput[] = [];
     const errors: string[] = [];
+    let totalCreditsUsed: number | null = null;
     for (const r of cityResults) {
       if (r.status === 'fulfilled') {
         if (r.value.error) errors.push(r.value.error);
         else allJobs.push(...r.value.jobs);
+        if (r.value.credits_used != null) {
+          totalCreditsUsed = (totalCreditsUsed ?? 0) + r.value.credits_used;
+        }
       } else {
         errors.push(r.reason instanceof Error ? r.reason.message : 'Scraper failed');
       }
@@ -96,7 +100,7 @@ export async function POST(
     // If all cities failed, report error
     if (allJobs.length === 0 && errors.length > 0) {
       const errorMsg = errors[0] === 'timeout' ? 'Scraper timed out after 55s' : errors[0];
-      await logScrapeRun(sql, body.session_code, source, 'error', 0, 0, 0, errorMsg, durationMs);
+      await logScrapeRun(sql, body.session_code, source, 'error', 0, 0, 0, errorMsg, durationMs, totalCreditsUsed);
       return NextResponse.json({
         source,
         inserted: 0,
@@ -170,7 +174,7 @@ export async function POST(
     }
 
     // Log success
-    await logScrapeRun(sql, body.session_code, source, 'success', dedupedJobs.length, inserted, duplicates, null, durationMs);
+    await logScrapeRun(sql, body.session_code, source, 'success', dedupedJobs.length, inserted, duplicates, null, durationMs, totalCreditsUsed);
 
     return NextResponse.json({
       source,
@@ -288,12 +292,13 @@ async function logScrapeRun(
   duplicates: number,
   errorMessage: string | null,
   durationMs: number,
+  creditsUsed: number | null = null,
 ) {
   try {
     await sql(
-      `INSERT INTO scrape_logs (session_code, source, status, jobs_found, jobs_inserted, duplicates, error_message, duration_ms)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [sessionCode, source, status, jobsFound, jobsInserted, duplicates, errorMessage, durationMs],
+      `INSERT INTO scrape_logs (session_code, source, status, jobs_found, jobs_inserted, duplicates, error_message, duration_ms, credits_used)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [sessionCode, source, status, jobsFound, jobsInserted, duplicates, errorMessage, durationMs, creditsUsed],
     );
   } catch {
     // Non-critical — don't let logging failures break scraping

@@ -101,7 +101,7 @@ export function Hero() {
         </h1>
 
         <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-slate-600 sm:text-xl">
-          Search 11 job sources instantly — Job Bank, LinkedIn, Remotive, Greenhouse, and more.
+          Search 13 job sources instantly — Job Bank, LinkedIn, Remotive, Greenhouse, and more.
           AI-powered summaries, smart deduplication, and advanced filters. All free.
         </p>
 

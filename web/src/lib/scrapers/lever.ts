@@ -1,13 +1,13 @@
 import type { ScrapeParams, ScrapeResult } from './types';
 import { fetchJson, normalizeJobType, matchesKeywords } from './utils';
 
-// Verified active as of 2026-04. Most Canadian companies have migrated off Lever.
-// Dead slugs removed: shopify, clio, 1password, hopper, benevity, vidyard,
-// ada-support, koho, clearco, tophat, ecobee, freshbooks, tulip, dnaspaces,
-// properly, vena-solutions, certn, jobber, neo-financial, faire,
-// snapcommerce, league, paytm-labs (all 404).
+// Verified active as of April 2026.
+// Dead slugs removed: hopper, benevity, vidyard, ada-support, koho, clearco,
+// tophat, ecobee, freshbooks, tulip, dnaspaces, properly, vena-solutions,
+// certn, jobber, neo-financial, faire, snapcommerce, league, paytm-labs (all 404).
 const DEFAULT_COMPANIES = [
   'plaid', 'mistral', 'wealthsimple', 'netflix',
+  'shopify', '1password', 'clio',
 ];
 
 interface LeverPosting {

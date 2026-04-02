@@ -113,5 +113,5 @@ export interface ResumeProfile {
   summary: string;
 }
 
-export const JOB_SOURCES = ['jobbank', 'linkedin-public', 'remotive', 'adzuna', 'himalayas', 'lever', 'greenhouse', 'jooble', 'jobicy', 'devitjobs', 'firecrawl'] as const;
+export const JOB_SOURCES = ['jobbank', 'linkedin-public', 'remotive', 'adzuna', 'himalayas', 'lever', 'greenhouse', 'jooble', 'jobicy', 'devitjobs', 'firecrawl', 'remoteok', 'weworkremotely'] as const;
 export type JobSource = (typeof JOB_SOURCES)[number];

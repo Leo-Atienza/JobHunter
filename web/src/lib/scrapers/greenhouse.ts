@@ -1,15 +1,16 @@
 import type { ScrapeParams, ScrapeResult } from './types';
 import { fetchJson, stripHtml, matchesKeywords, parseDate } from './utils';
 
-// Verified active as of 2026-04 — sorted by Canada-eligible job count.
+// Verified active as of April 2026 — sorted by Canada-eligible job count.
 // Dead tokens removed: lightspeedcommerce, nuvei, coveo, dapperlabs,
 // applydigital, thinkific, trulioo, achievers, procurify, opentext,
-// sap, benchsci, ceridian (all 404).
+// sap, ceridian (all 404).
 const DEFAULT_COMPANIES = [
   'gitlab', 'grafanalabs', 'stripe', 'databricks', 'datadog',
   'webflow', 'anthropic', 'elastic', 'hootsuite', 'benevity',
   'cloudflare', 'postman', 'unity3d', 'figma', 'flipp',
   'd2l', 'fingerprint', 'ritual', 'lattice', 'eventbase',
+  'shopify', 'freshbooks', 'benchsci',
 ];
 
 interface GreenhouseJob {

@@ -12,6 +12,8 @@ import { scrapeJooble } from './jooble';
 import { scrapeLinkedInPublic } from './linkedin-public';
 import { scrapeFirecrawl } from './firecrawl';
 import { scrapeJobbank } from './jobbank';
+import { scrapeRemoteOK } from './remoteok';
+import { scrapeWeWorkRemotely } from './weworkremotely';
 
 /** All server-side scrapers keyed by source name. */
 export const SERVER_SCRAPERS: Record<string, ScraperFn> = {
@@ -26,6 +28,8 @@ export const SERVER_SCRAPERS: Record<string, ScraperFn> = {
   jooble: scrapeJooble,
   'linkedin-public': scrapeLinkedInPublic,
   firecrawl: scrapeFirecrawl,
+  remoteok: scrapeRemoteOK,
+  weworkremotely: scrapeWeWorkRemotely,
 };
 
 /** Sources that can run server-side (no browser needed). */
