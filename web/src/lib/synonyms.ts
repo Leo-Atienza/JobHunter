@@ -54,7 +54,28 @@ const SYNONYMS: Record<string, string[]> = {
   'solutions architect': ['technical architect', 'enterprise architect'],
   'technical writer': ['documentation specialist', 'content developer'],
   'business systems analyst': ['systems analyst', 'bsa', 'requirements analyst'],
-  'erp consultant': ['sap consultant', 'oracle consultant', 'dynamics consultant'],
+  'erp consultant': ['sap consultant', 'oracle consultant', 'dynamics consultant', 'erp developer', 'erp analyst'],
+  'salesforce': ['sfdc', 'salesforce administrator', 'salesforce developer', 'salesforce consultant'],
+  'crm': ['customer relationship management', 'hubspot', 'dynamics 365'],
+  'release manager': ['release engineer', 'build engineer', 'deployment engineer'],
+  'it auditor': ['it compliance', 'it governance', 'grc analyst'],
+  'change manager': ['change management', 'organizational change'],
+
+  // Marketing Technology
+  'marketing analyst': ['growth analyst', 'digital marketing analyst', 'marketing data analyst'],
+  'seo specialist': ['seo analyst', 'search engine optimization', 'seo manager'],
+  'marketing automation': ['marketo', 'pardot', 'eloqua', 'mailchimp developer'],
+  'digital marketing': ['performance marketing', 'growth marketing', 'demand generation'],
+  'content strategist': ['content manager', 'content marketing manager'],
+
+  // ERP & Enterprise
+  'sap': ['sap basis', 'sap abap', 'sap hana', 'sap fico', 'sap mm', 'sap sd'],
+  'oracle': ['oracle dba', 'oracle cloud', 'oracle ebs', 'pl/sql'],
+  'workday': ['workday consultant', 'workday integrations', 'workday hcm'],
+
+  // Compliance & GRC
+  'compliance analyst': ['compliance officer', 'regulatory analyst', 'risk analyst'],
+  'privacy engineer': ['data privacy', 'gdpr specialist', 'privacy analyst'],
 
   // Languages & Frameworks
   'javascript': ['js', 'node.js', 'nodejs'],
@@ -62,23 +83,39 @@ const SYNONYMS: Record<string, string[]> = {
   'python': ['django', 'flask', 'fastapi'],
   'java': ['spring', 'spring boot'],
   'c#': ['csharp', '.net', 'dotnet', 'asp.net'],
+  'c++': ['cpp', 'cplusplus'],
   'ruby': ['rails', 'ruby on rails'],
   'go': ['golang'],
   'rust': ['rustlang'],
   'php': ['laravel', 'symfony'],
+  'swift': ['swiftui', 'swift developer'],
+  'kotlin': ['kotlin developer', 'jetpack compose'],
+  'scala': ['akka', 'spark developer'],
+  'react': ['reactjs', 'react.js', 'next.js', 'nextjs'],
+  'angular': ['angularjs', 'angular developer'],
+  'vue': ['vuejs', 'vue.js', 'nuxt', 'nuxtjs'],
 
   // Infrastructure & Tools
   'kubernetes': ['k8s'],
   'docker': ['containerization', 'containers'],
-  'terraform': ['infrastructure as code', 'iac'],
+  'terraform': ['infrastructure as code', 'iac', 'opentofu'],
+  'ansible': ['configuration management', 'puppet', 'chef'],
   'postgresql': ['postgres', 'psql'],
   'mysql': ['mariadb'],
-  'mongodb': ['mongo'],
+  'mongodb': ['mongo', 'nosql'],
+  'redis': ['caching', 'in-memory database'],
+  'elasticsearch': ['elastic', 'elk stack', 'opensearch'],
+  'kafka': ['event streaming', 'message queue', 'rabbitmq'],
   'aws': ['amazon web services'],
   'azure': ['microsoft azure'],
   'gcp': ['google cloud', 'google cloud platform'],
   'servicenow': ['snow', 'itsm platform'],
   'jira': ['atlassian', 'confluence'],
+  'git': ['github', 'gitlab', 'bitbucket', 'version control'],
+  'ci/cd': ['jenkins', 'github actions', 'gitlab ci', 'circleci', 'continuous integration'],
+  'grafana': ['prometheus', 'datadog', 'monitoring', 'observability'],
+  'splunk': ['log management', 'siem', 'log analysis'],
+  'power bi': ['tableau', 'looker', 'data visualization'],
 };
 
 /**

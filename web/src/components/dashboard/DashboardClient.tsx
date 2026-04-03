@@ -23,6 +23,7 @@ import { ActionsMenu } from './ActionsMenu';
 import Link from 'next/link';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { ResumeUpload } from './ResumeUpload';
+import { BackfillButton } from './BackfillButton';
 import { useSession } from 'next-auth/react';
 import { useKeyboardNav } from '@/hooks/useKeyboardNav';
 import { KeyboardShortcutsOverlay } from './KeyboardShortcutsOverlay';
@@ -579,6 +580,11 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
             sessionResumeProfile={session?.resume_skills ?? null}
           />
         </div>
+
+        {/* Backfill scores for older unscored jobs */}
+        {hasJobs && session?.resume_skills && (
+          <BackfillButton sessionCode={code} onComplete={handleJobUpdate} />
+        )}
 
         {isLoading ? (
           /* Loading skeleton */

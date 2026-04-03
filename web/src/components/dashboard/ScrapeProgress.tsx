@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { SERVER_SCRAPER_NAMES } from '@/lib/scrapers';
 import { getSourceDisplayName } from '@/lib/utils';
 
@@ -20,9 +20,11 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
   const [statuses, setStatuses] = useState<Record<string, SourceStatus>>({});
   const startedRef = useRef(false);
 
-  // Determine which sources to scrape server-side
-  const serverSources = (sessionSources ?? SERVER_SCRAPER_NAMES)
-    .filter((s) => SERVER_SCRAPER_NAMES.includes(s));
+  // Determine which sources to scrape server-side (stable ref)
+  const serverSources = useMemo(
+    () => (sessionSources ?? SERVER_SCRAPER_NAMES).filter((s) => SERVER_SCRAPER_NAMES.includes(s)),
+    [sessionSources],
+  );
 
   useEffect(() => {
     if (startedRef.current) return;

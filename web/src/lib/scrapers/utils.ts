@@ -3,9 +3,39 @@
 export const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36';
 
-/** Strip HTML tags from a string. */
+/** Strip HTML tags and decode common entities. */
 export function stripHtml(html: string): string {
-  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  return html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Extract the text content of a plain XML tag. */
+export function extractTag(xml: string, tag: string): string | null {
+  const m = xml.match(new RegExp(`<${tag}>([^<]*)</${tag}>`, 'i'));
+  return m ? m[1].trim() : null;
+}
+
+/** Extract CDATA content from an XML tag. */
+export function extractCdata(xml: string, tag: string): string | null {
+  const m = xml.match(new RegExp(`<${tag}>\\s*<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>`, 'i'));
+  return m ? m[1].trim() : null;
+}
+
+/** Safely parse a date string to YYYY-MM-DD, returning undefined on failure. */
+export function safeParseDate(raw: string): string | undefined {
+  try {
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return undefined;
+    return d.toISOString().split('T')[0];
+  } catch {
+    return undefined;
+  }
 }
 
 /** Fetch JSON with timeout and error handling. Returns null on failure. */

@@ -184,7 +184,7 @@ export function JobCard({ job, onUpdate, onJobClick, sessionCode, isFocused, isS
         </div>
 
         {/* Tags row */}
-        {(job.job_type || job.experience_level || job.relevance_score > 0) && (
+        {(job.job_type || job.experience_level || job.relevance_score > 0 || job.dream_score > 0) && (
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
             {job.relevance_score > 0 && (
               <MatchScorePopover
@@ -192,6 +192,20 @@ export function JobCard({ job, onUpdate, onJobClick, sessionCode, isFocused, isS
                 breakdown={job.score_breakdown ?? null}
                 id={`card-${job.id}`}
               />
+            )}
+            {job.dream_score > 0 && (
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                  job.dream_score >= 80
+                    ? 'bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 ring-1 ring-amber-200'
+                    : job.dream_score >= 50
+                      ? 'bg-amber-50 text-amber-600'
+                      : 'bg-slate-100 text-slate-500'
+                }`}
+                title={`Dream fit: ${job.dream_score}%`}
+              >
+                {job.dream_score >= 80 ? 'Dream Fit' : `Dream ${job.dream_score}%`}
+              </span>
             )}
             {job.job_type && (
               <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-600">

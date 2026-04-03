@@ -228,7 +228,7 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
         <tr className="animate-slide-down">
           <td colSpan={onToggleSelect ? 10 : 9} className="border-b border-slate-100 bg-slate-50/50 px-4 py-5">
             {/* Job detail badges */}
-            {(job.job_type || job.experience_level || job.relevance_score > 0 || job.country || job.is_ghost) && (
+            {(job.job_type || job.experience_level || job.relevance_score > 0 || job.dream_score > 0 || job.country || job.is_ghost) && (
               <div className="mb-4 flex flex-wrap gap-2">
                 {job.job_type && (
                   <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
@@ -246,6 +246,20 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
                     breakdown={job.score_breakdown ?? null}
                     id={`row-expanded-${job.id}`}
                   />
+                )}
+                {job.dream_score > 0 && (
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                      job.dream_score >= 80
+                        ? 'bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 ring-1 ring-amber-200'
+                        : job.dream_score >= 50
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-slate-100 text-slate-600'
+                    }`}
+                    title={`Dream fit: ${job.dream_score}%`}
+                  >
+                    {job.dream_score >= 80 ? 'Dream Fit' : `Dream ${job.dream_score}%`}
+                  </span>
                 )}
                 {job.country && (
                   <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
