@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useToast } from '@/components/ui/Toast';
+import { RefreshCw } from 'lucide-react';
 
 interface BackfillButtonProps {
   sessionCode: string;
@@ -66,20 +67,12 @@ export function BackfillButton({ sessionCode, onComplete }: BackfillButtonProps)
     >
       {state === 'running' ? (
         <>
-          <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
+          <RefreshCw size={12} className="animate-spin" />
           Scoring... {progress.updated > 0 && `(${progress.updated} done, ${progress.remaining} left)`}
         </>
       ) : (
         <>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21.5 2v6h-6" />
-            <path d="M2.5 22v-6h6" />
-            <path d="M2.5 11.5a10 10 0 0 1 18.8-4.3" />
-            <path d="M21.5 12.5a10 10 0 0 1-18.8 4.2" />
-          </svg>
+          <RefreshCw size={12} />
           Re-score older jobs
         </>
       )}

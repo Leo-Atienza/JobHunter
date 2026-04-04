@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ChevronRight } from 'lucide-react';
 import { ScraperHealthDashboard } from '@/components/health/ScraperHealthDashboard';
 
 export const metadata = {
@@ -19,19 +20,7 @@ export default function ScraperHealthPage() {
           >
             Home
           </Link>
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M9 18l6-6-6-6" />
-          </svg>
+          <ChevronRight size={14} aria-hidden="true" />
           <span className="text-slate-600 font-medium">Scraper Health</span>
         </nav>
 

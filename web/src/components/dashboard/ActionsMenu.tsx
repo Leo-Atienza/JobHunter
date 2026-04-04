@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { MoreVertical, RefreshCw, Share2, Download, Trash2 } from 'lucide-react';
 import { SERVER_SCRAPER_NAMES } from '@/lib/scrapers';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
@@ -115,11 +116,7 @@ export function ActionsMenu({ code, hasJobs, jobCount, onRescanStart, onRescanCo
         className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50"
         aria-label="Actions menu"
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="5" r="1" />
-          <circle cx="12" cy="12" r="1" />
-          <circle cx="12" cy="19" r="1" />
-        </svg>
+        <MoreVertical size={18} />
       </button>
 
       {open && (
@@ -131,12 +128,7 @@ export function ActionsMenu({ code, hasJobs, jobCount, onRescanStart, onRescanCo
               scanning ? 'text-slate-400 cursor-not-allowed' : 'text-slate-700 hover:bg-slate-50'
             }`}
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              className={scanning ? 'animate-spin' : ''}
-            >
-              <polyline points="23 4 23 10 17 10" />
-              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-            </svg>
+            <RefreshCw size={15} className={scanning ? 'animate-spin' : ''} />
             {scanning ? `Scanning ${scanDone}/${scanTotal}...` : 'Rescan'}
           </button>
           <button
@@ -146,11 +138,7 @@ export function ActionsMenu({ code, hasJobs, jobCount, onRescanStart, onRescanCo
               hasJobs ? 'text-slate-700 hover:bg-slate-50' : 'text-slate-300 cursor-not-allowed'
             }`}
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
-              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-            </svg>
+            <Share2 size={15} />
             {copied ? 'Copied!' : 'Share'}
           </button>
           <button
@@ -160,11 +148,7 @@ export function ActionsMenu({ code, hasJobs, jobCount, onRescanStart, onRescanCo
               hasJobs ? 'text-slate-700 hover:bg-slate-50' : 'text-slate-300 cursor-not-allowed'
             }`}
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
+            <Download size={15} />
             Export CSV
           </button>
           <div className="my-1 border-t border-slate-100" />
@@ -173,10 +157,7 @@ export function ActionsMenu({ code, hasJobs, jobCount, onRescanStart, onRescanCo
             disabled={deleting}
             className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-            </svg>
+            <Trash2 size={15} />
             {deleting ? 'Deleting...' : 'Delete Session'}
           </button>
         </div>

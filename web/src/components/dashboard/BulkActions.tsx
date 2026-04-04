@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useToast } from '@/components/ui/Toast';
+import { X } from 'lucide-react';
 
 interface BulkActionsProps {
   selectedIds: Set<number>;
@@ -87,9 +88,7 @@ export function BulkActions({ selectedIds, sessionCode, onComplete, onClear }: B
           className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 disabled:opacity-50"
           aria-label="Clear selection"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <X size={16} />
         </button>
       </div>
     </div>

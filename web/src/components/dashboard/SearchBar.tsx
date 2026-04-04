@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { Search, X } from 'lucide-react';
 
 interface SearchBarProps {
   value: string;
@@ -32,20 +33,7 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
 
   return (
     <div className="relative w-full sm:w-72">
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-      >
-        <circle cx="11" cy="11" r="8" />
-        <path d="m21 21-4.3-4.3" />
-      </svg>
+      <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
       <input
         type="text"
         placeholder="Search jobs… (use OR for multiple)"
@@ -59,10 +47,7 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
           className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
           aria-label="Clear search"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <X size={14} />
         </button>
       )}
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 
 interface FAQItem {
   question: string;
@@ -26,12 +27,22 @@ const faqItems: FAQItem[] = [
   {
     question: 'Which job boards are supported?',
     answer:
-      'Currently supported: Job Bank (Canada), LinkedIn, Remotive, Adzuna, Himalayas, Lever, Greenhouse, Jooble, Jobicy, DevITjobs, Firecrawl web search, RemoteOK, and We Work Remotely — 13 sources total. More are being added — check the GitHub repo for the latest list.',
+      'Currently supported: Job Bank (Canada), LinkedIn, Remotive, Adzuna, Himalayas, Lever, Greenhouse, Jooble, Jobicy, DevITjobs, Firecrawl web search, RemoteOK, We Work Remotely, Indeed (RSS), CareerJet, and Talent.com — 16 sources total. More are being added — check the GitHub repo for the latest list.',
   },
   {
     question: 'Can I self-host the entire platform?',
     answer:
       'Absolutely. The web app is a standard Next.js application that can be deployed to any platform. You just need a PostgreSQL database (we recommend Neon for serverless). Full self-hosting instructions are in the GitHub repository.',
+  },
+  {
+    question: 'How does AI resume matching work?',
+    answer:
+      'Upload your resume and our AI extracts your skills, job titles, and experience level. Each job is then scored on four dimensions: skill overlap (50 points), title relevance (20 points), description keyword match (20 points), and experience fit (10 points) — giving you a 0–100 match score so the best opportunities surface first.',
+  },
+  {
+    question: 'Can I search multiple cities at once?',
+    answer:
+      'Yes! Enter multiple cities separated by commas in the location field. Each scraper will search all your cities in parallel, and results are deduplicated across sources so you never see the same job twice.',
   },
 ];
 
@@ -52,19 +63,7 @@ function FAQAccordionItem({ item }: { item: FAQItem }) {
             isOpen ? 'rotate-180' : ''
           }`}
         >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-slate-500"
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
+          <ChevronDown size={20} className="text-slate-500" />
         </span>
       </button>
       <div

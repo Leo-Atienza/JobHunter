@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { AlertCircle, RefreshCw, Home } from 'lucide-react';
 
 interface ErrorProps {
   error: Error & { digest?: string };
@@ -17,22 +18,7 @@ export default function GlobalError({ error, reset }: ErrorProps) {
     <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-10 shadow-sm text-center">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-error-100">
-          <svg
-            width="26"
-            height="26"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-error-600"
-            aria-hidden="true"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
+          <AlertCircle size={26} className="text-error-600" aria-hidden="true" />
         </div>
 
         <h1 className="mt-6 font-display text-2xl font-bold text-primary-950">
@@ -54,20 +40,7 @@ export default function GlobalError({ error, reset }: ErrorProps) {
             onClick={reset}
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-950 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-900 hover:-translate-y-0.5"
           >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-              <path d="M3 3v5h5" />
-            </svg>
+            <RefreshCw size={15} strokeWidth={2.5} aria-hidden="true" />
             Try again
           </button>
 
@@ -75,20 +48,7 @@ export default function GlobalError({ error, reset }: ErrorProps) {
             href="/"
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 hover:-translate-y-0.5"
           >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-              <polyline points="9 22 9 12 15 12 15 22" />
-            </svg>
+            <Home size={15} strokeWidth={2.5} aria-hidden="true" />
             Back to home
           </Link>
         </div>

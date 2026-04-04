@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { X } from 'lucide-react';
 
 interface MultiCityInputProps {
   cities: string[];
@@ -176,10 +177,7 @@ export function MultiCityInput({
               className="ml-0.5 flex h-4 w-4 items-center justify-center rounded-full text-primary-600 transition-all hover:bg-primary-200 active:scale-90"
               aria-label={`Remove ${city}`}
             >
-              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+              <X size={8} strokeWidth={3} />
             </button>
           </span>
         ))}

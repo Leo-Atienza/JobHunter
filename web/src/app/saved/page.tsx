@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { SavedJobsClient } from '@/components/saved/SavedJobsClient';
 import Link from 'next/link';
+import { BarChart3 } from 'lucide-react';
 
 export const metadata = {
   title: 'Application Tracker — JobHunter',
@@ -15,11 +16,7 @@ export default async function SavedJobsPage() {
       <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
         <div className="max-w-md text-center animate-fade-in">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary-100">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-600">
-              <rect x="3" y="3" width="5" height="18" rx="1" />
-              <rect x="10" y="8" width="5" height="13" rx="1" />
-              <rect x="17" y="5" width="5" height="16" rx="1" />
-            </svg>
+            <BarChart3 size={28} className="text-primary-600" />
           </div>
           <h1 className="mt-6 font-display text-2xl font-bold text-primary-950">
             Application Tracker

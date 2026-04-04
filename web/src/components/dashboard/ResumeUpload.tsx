@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import useSWR from 'swr';
+import { AlertCircle, CheckCircle2, Upload } from 'lucide-react';
 import type { ResumeProfile } from '@/lib/types';
 
 interface ResumeUploadProps {
@@ -143,9 +144,7 @@ export function ResumeUpload({ sessionCode, onScored, isSignedIn, sessionResumeP
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-500">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-              </svg>
+              <AlertCircle size={20} />
             </div>
             <div>
               <p className="text-sm font-medium text-red-700">Upload failed</p>
@@ -174,9 +173,7 @@ export function ResumeUpload({ sessionCode, onScored, isSignedIn, sessionResumeP
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-              </svg>
+              <CheckCircle2 size={20} />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -253,9 +250,7 @@ export function ResumeUpload({ sessionCode, onScored, isSignedIn, sessionResumeP
     >
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-500">
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
-          </svg>
+          <Upload size={20} />
         </div>
         <div>
           <p className="text-sm font-medium text-slate-700">

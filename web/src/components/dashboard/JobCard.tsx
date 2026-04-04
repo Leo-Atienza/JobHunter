@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { Bookmark, MapPin } from 'lucide-react';
 import type { Job } from '@/lib/types';
 import { StatusSelect } from './StatusSelect';
 import { AISummaryBlock } from './AISummaryBlock';
@@ -44,9 +45,7 @@ function BookmarkButton({ jobId, isSaved, sessionCode, onUpdate }: { jobId: numb
       }`}
       title={isSaved ? 'Unsave job' : 'Save job'}
     >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill={isSaved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-      </svg>
+      <Bookmark size={14} fill={isSaved ? 'currentColor' : 'none'} />
     </button>
   );
 }
@@ -173,10 +172,7 @@ export function JobCard({ job, onUpdate, onJobClick, sessionCode, isFocused, isS
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
           {job.location && (
             <span className="flex items-center gap-1">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
+              <MapPin size={12} />
               <span className="truncate max-w-[140px]">{job.location}</span>
             </span>
           )}
@@ -184,7 +180,7 @@ export function JobCard({ job, onUpdate, onJobClick, sessionCode, isFocused, isS
         </div>
 
         {/* Tags row */}
-        {(job.job_type || job.experience_level || job.relevance_score > 0 || job.dream_score > 0) && (
+        {(job.job_type || job.experience_level || job.relevance_score > 0) && (
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
             {job.relevance_score > 0 && (
               <MatchScorePopover
@@ -192,20 +188,6 @@ export function JobCard({ job, onUpdate, onJobClick, sessionCode, isFocused, isS
                 breakdown={job.score_breakdown ?? null}
                 id={`card-${job.id}`}
               />
-            )}
-            {job.dream_score > 0 && (
-              <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                  job.dream_score >= 80
-                    ? 'bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 ring-1 ring-amber-200'
-                    : job.dream_score >= 50
-                      ? 'bg-amber-50 text-amber-600'
-                      : 'bg-slate-100 text-slate-500'
-                }`}
-                title={`Dream fit: ${job.dream_score}%`}
-              >
-                {job.dream_score >= 80 ? 'Dream Fit' : `Dream ${job.dream_score}%`}
-              </span>
             )}
             {job.job_type && (
               <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-600">

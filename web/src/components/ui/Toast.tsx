@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useReducer, useRef } from 'react';
+import { Check, X, Info } from 'lucide-react';
 
 interface Toast {
   id: string;
@@ -95,19 +96,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           >
             {/* Icon */}
             {t.type === 'success' && (
-              <svg className="h-4 w-4 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>
+              <Check className="h-4 w-4 shrink-0 text-emerald-500" strokeWidth={2.5} />
             )}
             {t.type === 'error' && (
-              <svg className="h-4 w-4 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X className="h-4 w-4 shrink-0 text-red-500" strokeWidth={2.5} />
             )}
             {t.type === 'info' && (
-              <svg className="h-4 w-4 shrink-0 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <Info className="h-4 w-4 shrink-0 text-primary-500" strokeWidth={2.5} />
             )}
 
             <span className="text-sm font-medium">{t.message}</span>
@@ -135,9 +130,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               className="shrink-0 rounded-md p-0.5 text-slate-400 transition-colors hover:text-slate-600"
               aria-label="Dismiss"
             >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X className="h-3.5 w-3.5" strokeWidth={2} />
             </button>
           </div>
         ))}

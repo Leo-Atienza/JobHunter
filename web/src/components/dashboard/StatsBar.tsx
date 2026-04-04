@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { ClipboardList, Globe, CheckCircle2, DollarSign, Star } from 'lucide-react';
 import type { JobStats } from '@/lib/types';
 import { getSourceColor, formatDate } from '@/lib/utils';
 
@@ -44,10 +45,7 @@ export function StatsBar({ stats }: StatsBarProps) {
       {/* Total jobs */}
       <div className="stagger-1 group relative overflow-hidden rounded-xl border border-slate-200/80 bg-gradient-to-br from-white to-primary-50/40 p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
         <div className="absolute top-3 right-3 text-primary-200/60">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-            <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-          </svg>
+          <ClipboardList size={20} />
         </div>
         <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Total Jobs</p>
         <p className="mt-1 sm:mt-2 font-display text-2xl sm:text-4xl font-extrabold text-primary-950">
@@ -61,9 +59,7 @@ export function StatsBar({ stats }: StatsBarProps) {
       {/* By source */}
       <div className="stagger-2 group relative overflow-hidden rounded-xl border border-slate-200/80 bg-gradient-to-br from-white to-blue-50/30 p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
         <div className="absolute top-3 right-3 text-blue-200/60">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" />
-          </svg>
+          <Globe size={20} />
         </div>
         <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">By Source</p>
         <div className="mt-2 sm:mt-3 flex flex-wrap gap-1 max-h-20 overflow-y-auto scrollbar-none">
@@ -89,9 +85,7 @@ export function StatsBar({ stats }: StatsBarProps) {
       {/* By status */}
       <div className="stagger-3 group relative overflow-hidden rounded-xl border border-slate-200/80 bg-gradient-to-br from-white to-violet-50/30 p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
         <div className="absolute top-3 right-3 text-violet-200/60">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
-          </svg>
+          <CheckCircle2 size={20} />
         </div>
         <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">By Status</p>
         <div className="mt-2 sm:mt-3 flex flex-wrap gap-1 max-h-20 overflow-y-auto scrollbar-none">
@@ -114,9 +108,7 @@ export function StatsBar({ stats }: StatsBarProps) {
       {/* Salary insights */}
       <div className="stagger-4 group relative overflow-hidden rounded-xl border border-slate-200/80 bg-gradient-to-br from-white to-emerald-50/40 p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
         <div className="absolute top-3 right-3 text-emerald-200/60">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-          </svg>
+          <DollarSign size={20} />
         </div>
         <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Salary Insights</p>
         {stats.avg_salary ? (
@@ -139,9 +131,7 @@ export function StatsBar({ stats }: StatsBarProps) {
       {/* Job quality */}
       <div className="stagger-5 group relative overflow-hidden rounded-xl border border-slate-200/80 bg-gradient-to-br from-white to-amber-50/30 p-4 sm:p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
         <div className="absolute top-3 right-3 text-amber-200/60">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-          </svg>
+          <Star size={20} />
         </div>
         <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Job Quality</p>
         <div className="mt-2 sm:mt-3 flex flex-wrap gap-2">

@@ -1,39 +1,26 @@
+import { Wand2, Terminal, LayoutGrid } from 'lucide-react';
+
 const steps = [
   {
     number: '01',
     title: 'Get Your Code',
     description:
       'Generate a unique session code with one click. No sign-up, no email, no hassle. Your code is your key to a 48-hour mission control session.',
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
-      </svg>
-    ),
+    icon: <Wand2 size={28} strokeWidth={1.5} />,
   },
   {
     number: '02',
     title: 'Run the Scraper',
     description:
-      'Scrapers run server-side — just click Search and results appear. Supports Job Bank (Canada), LinkedIn, Remotive, Adzuna, Himalayas, Lever, Greenhouse, Jooble, Jobicy, DevITjobs, Firecrawl, RemoteOK, and We Work Remotely.',
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="4 17 10 11 4 5" />
-        <line x1="12" y1="19" x2="20" y2="19" />
-      </svg>
-    ),
+      'Scrapers run server-side — just click Search and results appear. Supports Job Bank (Canada), LinkedIn, Remotive, Adzuna, Himalayas, Lever, Greenhouse, Jooble, Jobicy, DevITjobs, Firecrawl, RemoteOK, We Work Remotely, Indeed (RSS), CareerJet, and Talent.com — 16 sources.',
+    icon: <Terminal size={28} strokeWidth={1.5} />,
   },
   {
     number: '03',
     title: 'View Your Results',
     description:
       'Jobs appear in your dashboard in real-time. Filter by source, track application status, add notes, and export to CSV — all from one unified command center.',
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2" />
-        <path d="M3 9h18" />
-        <path d="M9 21V9" />
-      </svg>
-    ),
+    icon: <LayoutGrid size={28} strokeWidth={1.5} />,
   },
 ];
 
@@ -51,11 +38,18 @@ export function HowItWorks() {
         </div>
 
         <div className="mt-16 grid gap-8 md:grid-cols-3">
-          {steps.map((step) => (
+          {steps.map((step, idx) => (
             <div
               key={step.number}
-              className="group relative rounded-2xl border border-slate-200 bg-white p-8 shadow-sm transition-all hover:shadow-lg hover:shadow-primary-950/5 hover:-translate-y-1"
+              className={`group relative rounded-2xl border border-slate-200 bg-white p-8 shadow-sm transition-all hover:shadow-lg hover:shadow-primary-950/5 hover:-translate-y-1 animate-fade-in stagger-${idx + 1}`}
             >
+              {/* Connector line to next card (hidden on last card and mobile) */}
+              {idx < steps.length - 1 && (
+                <div className="pointer-events-none absolute -right-4 top-1/2 hidden -translate-y-1/2 items-center md:flex" aria-hidden="true">
+                  <div className="h-px w-8 bg-gradient-to-r from-slate-300 to-transparent" />
+                  <div className="ml-0.5 h-0 w-0 border-y-4 border-l-4 border-y-transparent border-l-slate-300" />
+                </div>
+              )}
               <div className="flex items-center gap-4">
                 <span className="font-display text-4xl font-extrabold text-accent-500/30">
                   {step.number}

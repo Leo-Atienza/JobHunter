@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Zap, CheckCircle2, AlertTriangle, EyeOff } from 'lucide-react';
 import { getSourceDisplayName } from '@/lib/utils';
 
 interface SourceHealth {
@@ -173,47 +174,6 @@ function SummaryCard({ label, value, color = 'primary', staggerClass, icon }: Su
 }
 
 // ---------------------------------------------------------------------------
-// SVG icon helpers — inline to avoid extra imports
-// ---------------------------------------------------------------------------
-
-function IconZap() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-    </svg>
-  );
-}
-
-function IconCheckCircle() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-      <polyline points="22 4 12 14.01 9 11.01" />
-    </svg>
-  );
-}
-
-function IconAlertTriangle() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-      <line x1="12" y1="9" x2="12" y2="13" />
-      <line x1="12" y1="17" x2="12.01" y2="17" />
-    </svg>
-  );
-}
-
-function IconEyeOff() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-      <line x1="1" y1="1" x2="23" y2="23" />
-    </svg>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Mobile source card
 // ---------------------------------------------------------------------------
 
@@ -378,28 +338,28 @@ export function ScraperHealthDashboard() {
           value={data.overall.total_runs}
           color="primary"
           staggerClass="stagger-1"
-          icon={<IconZap />}
+          icon={<Zap size={20} />}
         />
         <SummaryCard
           label="Success Rate"
           value={`${data.overall.success_rate}%`}
           color={successRateColor}
           staggerClass="stagger-2"
-          icon={<IconCheckCircle />}
+          icon={<CheckCircle2 size={20} />}
         />
         <SummaryCard
           label="Sources with Errors"
           value={sourcesWithErrors}
           color={sourcesWithErrors > 0 ? 'amber' : 'success'}
           staggerClass="stagger-3"
-          icon={<IconAlertTriangle />}
+          icon={<AlertTriangle size={20} />}
         />
         <SummaryCard
           label="Zero-Result Sources"
           value={sourcesZeroResults}
           color={sourcesZeroResults > 0 ? 'amber' : 'success'}
           staggerClass="stagger-4"
-          icon={<IconEyeOff />}
+          icon={<EyeOff size={20} />}
         />
       </div>
 

@@ -19,8 +19,6 @@ export interface Job {
   skills: string | null;
   benefits: string | null;
   relevance_score: number;
-  /** AI dream job match score (0-100) */
-  dream_score: number;
   country: string | null;
   /** FK to the original job this is a cross-source duplicate of */
   duplicate_of: number | null;

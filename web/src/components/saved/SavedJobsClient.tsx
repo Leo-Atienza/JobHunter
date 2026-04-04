@@ -3,14 +3,15 @@
 import { useState, useMemo, useCallback } from 'react';
 import useSWR from 'swr';
 import Link from 'next/link';
+import { BarChart3, Home, List, LayoutGrid, Bookmark, Search, Download } from 'lucide-react';
 import type { Job, JobStatus } from '@/lib/types';
-import { UserMenu } from '@/components/auth/UserMenu';
 import { LazyJobCard } from '@/components/dashboard/LazyJobCard';
 import { JobTable } from '@/components/dashboard/JobTable';
 import { SearchBar } from '@/components/dashboard/SearchBar';
 import { JobDetailModal } from '@/components/dashboard/JobDetailModal';
 import { PipelineView } from './PipelineView';
 import { SavedExportButton } from './SavedExportButton';
+import { SiteHeader } from '@/components/layout/SiteHeader';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -118,44 +119,26 @@ export function SavedJobsClient() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-slate-50">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-            <Link href="/" className="flex shrink-0 items-center gap-2 transition-opacity hover:opacity-80">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-950">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent-400">
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="m21 21-4.3-4.3" />
-                </svg>
-              </div>
-              <span className="hidden sm:inline font-display text-lg font-bold text-primary-950">JobHunter</span>
-            </Link>
-            <div className="flex items-center gap-1.5 rounded-lg bg-primary-50 px-2.5 py-1.5">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-600">
-                <rect x="3" y="3" width="5" height="18" rx="1" />
-                <rect x="10" y="8" width="5" height="13" rx="1" />
-                <rect x="17" y="5" width="5" height="16" rx="1" />
-              </svg>
-              <span className="font-display text-sm font-bold text-primary-800">Tracker</span>
-            </div>
+      <SiteHeader
+        left={
+          <div className="flex items-center gap-1.5 rounded-lg bg-primary-50 px-2.5 py-1.5">
+            <BarChart3 size={14} className="text-primary-600" />
+            <span className="font-display text-sm font-bold text-primary-800">Tracker</span>
           </div>
-          <div className="flex items-center gap-2">
+        }
+        right={
+          <>
             <SavedExportButton disabled={jobs.length === 0} />
             <Link
               href="/"
               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-300"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                <polyline points="9 22 9 12 15 12 15 22" />
-              </svg>
+              <Home size={14} />
               <span className="hidden sm:inline">My Sessions</span>
             </Link>
-            <UserMenu />
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
         {/* Hero + view toggle */}
@@ -188,11 +171,7 @@ export function SavedJobsClient() {
                       : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="5" height="18" rx="1" />
-                    <rect x="10" y="8" width="5" height="13" rx="1" />
-                    <rect x="17" y="5" width="5" height="16" rx="1" />
-                  </svg>
+                  <BarChart3 size={12} />
                   Pipeline
                 </button>
                 <button
@@ -203,10 +182,7 @@ export function SavedJobsClient() {
                       : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
-                    <line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
-                  </svg>
+                  <List size={12} />
                   List
                 </button>
               </div>
@@ -223,11 +199,7 @@ export function SavedJobsClient() {
         ) : jobs.length === 0 ? (
           <div className="mt-16 text-center animate-fade-in">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary-100 to-accent-100">
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary-500">
-                <rect x="3" y="3" width="5" height="18" rx="1" />
-                <rect x="10" y="8" width="5" height="13" rx="1" />
-                <rect x="17" y="5" width="5" height="16" rx="1" />
-              </svg>
+              <BarChart3 size={36} className="text-primary-500" />
             </div>
             <h2 className="mt-6 font-display text-2xl font-extrabold text-primary-950">No tracked jobs yet</h2>
             <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
@@ -237,33 +209,20 @@ export function SavedJobsClient() {
               href="/"
               className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary-950 px-6 py-3 font-semibold text-white shadow-lg shadow-primary-950/20 transition-all hover:bg-primary-900 hover:-translate-y-0.5"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.3-4.3" />
-              </svg>
+              <Search size={16} />
               Search for Jobs
             </Link>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400">
               <span className="inline-flex items-center gap-1.5">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-                </svg>
+                <Bookmark size={14} />
                 Bookmark jobs
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="5" height="18" rx="1" />
-                  <rect x="10" y="8" width="5" height="13" rx="1" />
-                  <rect x="17" y="5" width="5" height="16" rx="1" />
-                </svg>
+                <BarChart3 size={14} />
                 Track status
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
+                <Download size={14} />
                 Export CSV
               </span>
             </div>
@@ -309,20 +268,14 @@ export function SavedJobsClient() {
                   className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${viewMode === 'table' ? 'bg-primary-950 text-white' : 'text-slate-500 hover:text-slate-700'}`}
                   title="Table view"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
-                    <line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
-                  </svg>
+                  <List size={14} />
                 </button>
                 <button
                   onClick={() => { setViewMode('cards'); localStorage.setItem('jobhunter_view_mode', 'cards'); }}
                   className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${viewMode === 'cards' ? 'bg-primary-950 text-white' : 'text-slate-500 hover:text-slate-700'}`}
                   title="Card view"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
-                    <rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
-                  </svg>
+                  <LayoutGrid size={14} />
                 </button>
               </div>
             </div>

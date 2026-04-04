@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Filter, ChevronDown, X } from 'lucide-react';
 import type { JobStats, JobStatus } from '@/lib/types';
 import { JOB_SOURCES, JOB_STATUSES } from '@/lib/types';
 import { getSourceColor, getSourceDisplayName, cn } from '@/lib/utils';
@@ -448,10 +449,7 @@ export function Filters({
             onClick={clearAll}
             className="inline-flex items-center gap-1 rounded-full bg-error-50 px-3 py-1 text-xs font-semibold text-error-600 transition-all hover:bg-error-100"
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <X size={12} />
             Clear all
           </button>
         )}
@@ -468,12 +466,7 @@ export function Filters({
           className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm"
         >
           <div className="flex items-center gap-2">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
-              <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" />
-              <line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" />
-              <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
-              <line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" />
-            </svg>
+            <Filter size={16} className="text-slate-400" />
             Filters
             {activeFilterCount > 0 && (
               <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-950 px-1.5 text-[10px] font-bold text-white">
@@ -481,12 +474,7 @@ export function Filters({
               </span>
             )}
           </div>
-          <svg
-            width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-            className={`text-slate-400 transition-transform duration-200 ${mobileOpen ? 'rotate-180' : ''}`}
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
+          <ChevronDown size={16} className={`text-slate-400 transition-transform duration-200 ${mobileOpen ? 'rotate-180' : ''}`} />
         </button>
         {mobileOpen && (
           <div className="mt-2 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm animate-slide-down">

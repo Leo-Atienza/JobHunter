@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect, useRef } from 'react';
+import { ArrowRight, Check, ChevronRight } from 'lucide-react';
 import type { Job, JobStatus } from '@/lib/types';
 import { cn, getSourceColor } from '@/lib/utils';
 
@@ -217,16 +218,12 @@ export function PipelineView({ jobs, onJobClick, onStatusChange }: PipelineViewP
                             className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-400 opacity-0 transition-all hover:bg-slate-200 hover:text-slate-600 group-hover:opacity-100"
                             title={`Move to ${PIPELINE_STAGES.find((s) => s.status === stage.next)?.label}`}
                           >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
-                            </svg>
+                            <ArrowRight size={12} />
                           </button>
                         )}
                         {!stage.next && (
                           <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-emerald-100 text-emerald-600">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
+                            <Check size={12} strokeWidth={3} />
                           </div>
                         )}
                       </div>
@@ -254,13 +251,10 @@ export function PipelineView({ jobs, onJobClick, onStatusChange }: PipelineViewP
       {counts['rejected'] > 0 && (
         <details className="group rounded-xl border border-slate-200/60 bg-slate-50/50">
           <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700">
-            <svg
-              width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-              strokeLinecap="round" strokeLinejoin="round"
+            <ChevronRight
+              size={14}
               className="transition-transform group-open:rotate-90"
-            >
-              <path d="m9 18 6-6-6-6" />
-            </svg>
+            />
             Rejected ({counts['rejected']})
           </summary>
           <div className="border-t border-slate-200/60 px-4 py-3">

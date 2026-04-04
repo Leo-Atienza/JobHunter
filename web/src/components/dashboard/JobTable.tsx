@@ -3,6 +3,7 @@
 import type { Job } from '@/lib/types';
 import { JobRow } from './JobRow';
 import { cn } from '@/lib/utils';
+import { Search, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface JobTableProps {
   jobs: Job[];
@@ -38,18 +39,11 @@ const columns: ColumnDef[] = [
 
 function SortIndicator({ field, sortField, sortDirection }: { field: keyof Job; sortField: keyof Job; sortDirection: 'asc' | 'desc' }) {
   if (field !== sortField) {
-    return (
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1 opacity-0 group-hover:opacity-30">
-        <path d="M7 15l5 5 5-5" />
-        <path d="M7 9l5-5 5 5" />
-      </svg>
-    );
+    return <ChevronDown size={12} className="ml-1 opacity-0 group-hover:opacity-30" />;
   }
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-1 text-primary-600">
-      {sortDirection === 'asc' ? <path d="M7 14l5-5 5 5" /> : <path d="M7 10l5 5 5-5" />}
-    </svg>
-  );
+  return sortDirection === 'asc'
+    ? <ChevronUp size={12} className="ml-1 text-primary-600" />
+    : <ChevronDown size={12} className="ml-1 text-primary-600" />;
 }
 
 export function JobTable({ jobs, sortField, sortDirection, onSort, onJobUpdate, onJobClick, sessionCode, onClearFilters, selectedIds, onToggleSelect, onToggleSelectAll }: JobTableProps) {
@@ -57,24 +51,21 @@ export function JobTable({ jobs, sortField, sortDirection, onSort, onJobUpdate, 
   if (jobs.length === 0) {
     return (
       <div className="mt-8 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-16 animate-fade-in">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" />
-            <path d="M8 11h6" />
-          </svg>
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-50">
+          <Search size={32} className="text-primary-400" />
         </div>
         <p className="mt-4 font-display text-lg font-bold text-slate-700">
-          No jobs match your filters
+          No jobs match your current filters
         </p>
-        <p className="mt-1 text-sm text-slate-500">
-          Try removing some filters or broadening your search terms
+        <p className="mt-1 max-w-xs text-center text-sm text-slate-500">
+          Try widening your search — remove a filter, broaden your keywords, or add more locations.
         </p>
         {onClearFilters && (
           <button
             onClick={onClearFilters}
-            className="mt-4 rounded-xl bg-primary-950 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-primary-900 hover:-translate-y-0.5"
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary-950 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-primary-900 hover:-translate-y-0.5"
           >
+            <Search size={14} />
             Clear all filters
           </button>
         )}

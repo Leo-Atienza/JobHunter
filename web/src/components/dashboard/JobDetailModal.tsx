@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { ChevronLeft, ChevronRight, X, Sparkles, RefreshCw, ExternalLink } from 'lucide-react';
 import type { Job } from '@/lib/types';
 import { StatusSelect } from './StatusSelect';
 import { getSourceColor, getSourceDisplayName, formatDate } from '@/lib/utils';
@@ -24,9 +25,15 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
   const [aiSummary, setAiSummary] = useState<string | null>(job.ai_summary ?? null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const summaryFetchedRef = useRef(false);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  const handleClose = useCallback(() => {
+    setLeaving(true);
+    setTimeout(() => onClose(), 150);
+  }, [onClose]);
 
   // SSR guard — createPortal needs document.body
   useEffect(() => { setMounted(true); }, []);
@@ -90,16 +97,16 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
         // Only allow Escape in form fields
-        if (e.key === 'Escape') { (e.target as HTMLElement).blur(); onClose(); }
+        if (e.key === 'Escape') { (e.target as HTMLElement).blur(); handleClose(); }
         return;
       }
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') handleClose();
       if (e.key === 'ArrowLeft' && hasPrev) onNavigate?.('prev');
       if (e.key === 'ArrowRight' && hasNext) onNavigate?.('next');
     }
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
-  }, [onClose, onNavigate, hasPrev, hasNext]);
+  }, [handleClose, onNavigate, hasPrev, hasNext]);
 
   // Lock body scroll
   useEffect(() => {
@@ -135,12 +142,12 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
   const modal = (
     <div className="fixed inset-0 z-50 flex items-start justify-end" role="dialog" aria-modal="true" aria-labelledby="job-modal-title">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={handleClose} />
 
       {/* Slide-out panel */}
       <div
         ref={panelRef}
-        className="relative z-10 flex h-full w-full flex-col bg-white shadow-2xl animate-slide-in-right sm:max-w-2xl"
+        className={`relative z-10 flex h-full w-full flex-col bg-white shadow-2xl sm:max-w-2xl ${leaving ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
@@ -154,9 +161,7 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
                   title="Previous job (Left arrow)"
                   aria-label="Previous job"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="15 18 9 12 15 6" />
-                  </svg>
+                  <ChevronLeft size={16} />
                 </button>
                 <button
                   onClick={() => onNavigate('next')}
@@ -165,9 +170,7 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
                   title="Next job (Right arrow)"
                   aria-label="Next job"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
+                  <ChevronRight size={16} />
                 </button>
               </div>
             )}
@@ -186,15 +189,12 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
             )}
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
             title="Close (Esc)"
             aria-label="Close"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <X size={18} />
           </button>
         </div>
 
@@ -263,17 +263,12 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
           {(aiSummary || summaryLoading) && (
             <div className="rounded-xl border border-primary-200 bg-primary-50/50 p-4">
               <div className="flex items-center gap-2 mb-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-600">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
-                </svg>
+                <Sparkles size={14} className="text-primary-600" />
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-primary-600">AI Summary</h4>
               </div>
               {summaryLoading ? (
                 <div className="flex items-center gap-2 text-sm text-primary-500">
-                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
+                  <RefreshCw size={16} className="animate-spin" />
                   Generating summary...
                 </div>
               ) : (
@@ -339,11 +334,7 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary-950 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-800"
           >
             View original listing
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-              <polyline points="15 3 21 3 21 9" />
-              <line x1="10" y1="14" x2="21" y2="3" />
-            </svg>
+            <ExternalLink size={14} />
           </a>
           <p className="text-xs text-slate-400">
             Use arrow keys to navigate

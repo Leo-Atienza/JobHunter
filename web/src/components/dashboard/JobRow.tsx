@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useMemo } from 'react';
+import { Bookmark, ExternalLink, ChevronDown, MapPin, DollarSign } from 'lucide-react';
 import type { Job } from '@/lib/types';
 import { StatusSelect } from './StatusSelect';
 import { AISummaryBlock } from './AISummaryBlock';
@@ -189,9 +190,7 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
               }`}
               title={job.status === 'saved' ? 'Unsave job' : 'Save job'}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill={job.status === 'saved' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-              </svg>
+              <Bookmark size={13} fill={job.status === 'saved' ? 'currentColor' : 'none'} />
             </button>
             {onJobClick && (
               <button
@@ -199,26 +198,10 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
                 className="rounded-md p-1 text-slate-400 transition-colors hover:bg-primary-50 hover:text-primary-600"
                 title="View details"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                  <polyline points="15 3 21 3 21 9" />
-                  <line x1="10" y1="14" x2="21" y2="3" />
-                </svg>
+                <ExternalLink size={14} />
               </button>
             )}
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className={`text-slate-400 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
+            <ChevronDown size={16} className={`text-slate-400 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
           </div>
         </td>
       </tr>
@@ -228,7 +211,7 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
         <tr className="animate-slide-down">
           <td colSpan={onToggleSelect ? 10 : 9} className="border-b border-slate-100 bg-slate-50/50 px-4 py-5">
             {/* Job detail badges */}
-            {(job.job_type || job.experience_level || job.relevance_score > 0 || job.dream_score > 0 || job.country || job.is_ghost) && (
+            {(job.job_type || job.experience_level || job.relevance_score > 0 || job.country || job.is_ghost) && (
               <div className="mb-4 flex flex-wrap gap-2">
                 {job.job_type && (
                   <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
@@ -246,20 +229,6 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
                     breakdown={job.score_breakdown ?? null}
                     id={`row-expanded-${job.id}`}
                   />
-                )}
-                {job.dream_score > 0 && (
-                  <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                      job.dream_score >= 80
-                        ? 'bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 ring-1 ring-amber-200'
-                        : job.dream_score >= 50
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-slate-100 text-slate-600'
-                    }`}
-                    title={`Dream fit: ${job.dream_score}%`}
-                  >
-                    {job.dream_score >= 80 ? 'Dream Fit' : `Dream ${job.dream_score}%`}
-                  </span>
                 )}
                 {job.country && (
                   <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
@@ -327,11 +296,7 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
                   onClick={(e) => e.stopPropagation()}
                 >
                   View original listing
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                    <polyline points="15 3 21 3 21 9" />
-                    <line x1="10" y1="14" x2="21" y2="3" />
-                  </svg>
+                  <ExternalLink size={14} />
                 </a>
               </div>
 
@@ -356,19 +321,13 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
             <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-500 md:hidden">
               {job.location && (
                 <span className="flex items-center gap-1">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                    <circle cx="12" cy="10" r="3" />
-                  </svg>
+                  <MapPin size={12} />
                   {job.location}
                 </span>
               )}
               {job.salary && (
                 <span className="flex items-center gap-1">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="1" x2="12" y2="23" />
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                  </svg>
+                  <DollarSign size={12} />
                   {job.salary}
                 </span>
               )}

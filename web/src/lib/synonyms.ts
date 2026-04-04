@@ -116,6 +116,20 @@ const SYNONYMS: Record<string, string[]> = {
   'grafana': ['prometheus', 'datadog', 'monitoring', 'observability'],
   'splunk': ['log management', 'siem', 'log analysis'],
   'power bi': ['tableau', 'looker', 'data visualization'],
+
+  // Non-tech professional roles
+  'accounting': ['bookkeeping', 'accounts payable', 'accounts receivable', 'cpa', 'tax accountant', 'controller', 'financial accountant'],
+  'nurse': ['registered nurse', 'rn', 'lpn', 'healthcare worker', 'nursing'],
+  'teacher': ['educator', 'instructor', 'professor', 'lecturer', 'tutor'],
+  'marketing manager': ['brand manager', 'campaign manager', 'marketing coordinator', 'marketing specialist'],
+  'human resources': ['people operations', 'talent acquisition', 'recruiter', 'hrbp', 'hr coordinator'],
+  'operations manager': ['ops manager', 'operations coordinator', 'operations analyst'],
+  'financial analyst': ['fp&a', 'treasury analyst', 'financial planning'],
+  'administrative assistant': ['office administrator', 'office manager', 'executive assistant', 'ea'],
+  // 'help desk' intentionally excluded — already in 'it support'
+  'customer service': ['customer support', 'customer success', 'client services', 'support agent'],
+  // 'compliance officer' intentionally excluded — already in 'compliance analyst'
+  'legal': ['paralegal', 'legal counsel', 'attorney', 'corporate counsel'],
 };
 
 /**

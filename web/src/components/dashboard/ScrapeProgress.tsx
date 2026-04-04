@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { SERVER_SCRAPER_NAMES } from '@/lib/scrapers';
+import { RefreshCw } from 'lucide-react';
 import { getSourceDisplayName } from '@/lib/utils';
 
 interface ScrapeProgressProps {
@@ -74,7 +75,7 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
   return (
     <div className="mt-8 animate-fade-in">
       <div className="mx-auto max-w-lg">
-        <div className="text-center">
+        <div className="text-center" aria-live="polite" aria-atomic="true">
           {!allDone && (
             <div className="relative mx-auto h-16 w-16 mb-6">
               <div className="absolute inset-0 rounded-full border-4 border-primary-100" />
@@ -92,6 +93,11 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
               ? 'All sources have been searched. Results are shown below.'
               : `Scanning ${totalServer} sources in parallel...`}
           </p>
+          {!allDone && entries.length > 0 && (
+            <p className="mt-1.5 text-xs font-medium text-primary-600">
+              {totalDone} / {entries.length} sources complete
+            </p>
+          )}
         </div>
 
         {/* Progress bar */}
@@ -121,10 +127,7 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
                 )}
                 {status.state === 'running' && (
                   <span className="flex items-center gap-1.5 text-xs text-primary-600">
-                    <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
+                    <RefreshCw size={12} className="animate-spin" />
                     Searching...
                   </span>
                 )}

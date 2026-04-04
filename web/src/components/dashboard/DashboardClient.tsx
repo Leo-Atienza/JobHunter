@@ -21,7 +21,6 @@ import { extractCity, expandCity } from '@/lib/city-filter';
 import { expandWithSynonyms } from '@/lib/synonyms';
 import { ActionsMenu } from './ActionsMenu';
 import Link from 'next/link';
-import { UserMenu } from '@/components/auth/UserMenu';
 import { ResumeUpload } from './ResumeUpload';
 import { BackfillButton } from './BackfillButton';
 import { useSession } from 'next-auth/react';
@@ -29,6 +28,9 @@ import { useKeyboardNav } from '@/hooks/useKeyboardNav';
 import { KeyboardShortcutsOverlay } from './KeyboardShortcutsOverlay';
 import { BulkActions } from './BulkActions';
 import { useToast } from '@/components/ui/Toast';
+import { SiteHeader } from '@/components/layout/SiteHeader';
+import { useUrlFilters } from '@/hooks/useUrlFilters';
+import { Search, BarChart3, MapPin, List, LayoutGrid, X } from 'lucide-react';
 
 interface DashboardClientProps {
   code: string;
@@ -38,18 +40,21 @@ interface DashboardClientProps {
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
-  const [sourceFilter, setSourceFilter] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [remoteFilter, setRemoteFilter] = useState(false);
-  const [experienceFilter, setExperienceFilter] = useState<string | null>(null);
-  const [jobTypeFilter, setJobTypeFilter] = useState<string | null>(null);
-  const [salaryMin, setSalaryMin] = useState('');
-  const [salaryMax, setSalaryMax] = useState('');
-  const [freshnessFilter, setFreshnessFilter] = useState<string | null>(null);
-  const [hideGhosts, setHideGhosts] = useState(false);
-  const [companyFilter, setCompanyFilter] = useState<string | null>(null);
-  const [locationFilter, setLocationFilter] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const {
+    sourceFilter, setSourceFilter,
+    statusFilter, setStatusFilter,
+    remoteFilter, setRemoteFilter,
+    experienceFilter, setExperienceFilter,
+    jobTypeFilter, setJobTypeFilter,
+    salaryMin, setSalaryMin,
+    salaryMax, setSalaryMax,
+    freshnessFilter, setFreshnessFilter,
+    hideGhosts, setHideGhosts,
+    companyFilter, setCompanyFilter,
+    locationFilter, setLocationFilter,
+    searchQuery, setSearchQuery,
+    clearAll: clearUrlFilters,
+  } = useUrlFilters();
   const [viewMode, setViewMode] = useState<'table' | 'cards'>(() => {
     if (typeof window === 'undefined') return 'table';
     return (localStorage.getItem('jobhunter_view_mode') as 'table' | 'cards')
@@ -156,20 +161,9 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
   const resetPage = useCallback(() => setCurrentPage(1), []);
 
   const clearAllFilters = useCallback(() => {
-    setSourceFilter(null);
-    setStatusFilter(null);
-    setRemoteFilter(false);
-    setExperienceFilter(null);
-    setJobTypeFilter(null);
-    setSalaryMin('');
-    setSalaryMax('');
-    setFreshnessFilter(null);
-    setHideGhosts(false);
-    setCompanyFilter(null);
-    setLocationFilter(null);
-    setSearchQuery('');
+    clearUrlFilters();
     setCurrentPage(1);
-  }, []);
+  }, [clearUrlFilters]);
 
   // Merge duplicates: hide duplicate rows, add "also_on" sources to primary
   const allJobs = jobs ?? [];
@@ -407,34 +401,20 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
   return (
     <div className="min-h-screen overflow-x-hidden bg-slate-50">
       {/* Top bar */}
-      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <Link href="/" className="flex shrink-0 items-center gap-2 transition-opacity hover:opacity-80">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-950">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent-400">
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="m21 21-4.3-4.3" />
-                </svg>
-              </div>
-              <span className="hidden sm:inline font-display text-lg font-bold text-primary-950">JobHunter</span>
-            </Link>
-            <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 sm:gap-2 sm:px-3">
-              <span className="font-mono text-xs font-semibold text-primary-800 sm:text-sm">{code}</span>
-              <CopyButton text={code} />
-            </div>
+      <SiteHeader
+        left={
+          <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 sm:gap-2 sm:px-3">
+            <span className="font-mono text-xs font-semibold text-primary-800 sm:text-sm">{code}</span>
+            <CopyButton text={code} />
           </div>
-
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        }
+        right={
+          <>
             <Link
               href="/saved"
               className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-300"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="5" height="18" rx="1" />
-                <rect x="10" y="8" width="5" height="13" rx="1" />
-                <rect x="17" y="5" width="5" height="16" rx="1" />
-              </svg>
+              <BarChart3 size={14} />
               Tracker
               {(stats?.by_status?.saved ?? 0) > 0 && (
                 <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-purple-500 px-1.5 text-[10px] font-bold text-white tabular-nums">
@@ -464,12 +444,9 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 onRescanComplete={handleJobUpdate}
               />
             </div>
-            <div className="ml-1 border-l border-slate-200 pl-2">
-              <UserMenu />
-            </div>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <main id="main-content" className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
         {/* Search context — what the user is looking for */}
@@ -477,10 +454,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
           {session ? (
             <div className="animate-hero-in flex items-start gap-3 sm:gap-4">
               <div className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 shadow-lg shadow-primary-500/20">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="m21 21-4.3-4.3" />
-                </svg>
+                <Search size={20} className="text-white" />
               </div>
               <div className="min-w-0 pt-0.5">
                 <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-primary-950 tracking-tight leading-tight">
@@ -491,10 +465,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-slate-500">
                   {(session.locations ?? (session.location ? [session.location] : [])).map((loc) => (
                     <span key={loc} className="inline-flex items-center gap-1">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                        <circle cx="12" cy="10" r="3" />
-                      </svg>
+                      <MapPin size={13} className="text-slate-400" />
                       {loc}
                     </span>
                   ))}
@@ -562,9 +533,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                   className="text-white/50 hover:text-white transition-colors"
                   aria-label="Dismiss"
                 >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X size={16} />
                 </button>
               </div>
             </div>
@@ -582,7 +551,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
         </div>
 
         {/* Backfill scores for older unscored jobs */}
-        {hasJobs && session?.resume_skills && (
+        {hasJobs && (session?.resume_skills || authSession?.user) && (
           <BackfillButton sessionCode={code} onComplete={handleJobUpdate} />
         )}
 
@@ -655,10 +624,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                   title="Table view"
                   aria-label="Switch to table view"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
-                    <line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
-                  </svg>
+                  <List size={14} />
                 </button>
                 <button
                   onClick={() => { setViewMode('cards'); localStorage.setItem('jobhunter_view_mode', 'cards'); }}
@@ -666,10 +632,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                   title="Card view"
                   aria-label="Switch to card view"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
-                    <rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
-                  </svg>
+                  <LayoutGrid size={14} />
                 </button>
               </div>
             </div>
@@ -692,11 +655,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
             ) : paginatedJobs.length === 0 ? (
               <div className="mt-8 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-16 animate-fade-in">
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="m21 21-4.3-4.3" />
-                    <path d="M8 11h6" />
-                  </svg>
+                  <Search size={32} className="text-slate-400" />
                 </div>
                 <p className="mt-4 font-display text-lg font-bold text-slate-700">No jobs match your filters</p>
                 <p className="mt-1 text-sm text-slate-500">Try removing some filters or broadening your search terms</p>

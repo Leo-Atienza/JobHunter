@@ -11,6 +11,7 @@ import { inferCountryFromLocation, getCountryLabel } from '@/lib/country-filter'
 import { extractCity } from '@/lib/city-filter';
 import { FirecrawlCreditsBadge } from '@/components/dashboard/FirecrawlCreditsBadge';
 import { ApifyCreditsBadge } from '@/components/dashboard/ApifyCreditsBadge';
+import { Check, ExternalLink, Upload, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
 const COUNTRY_FLAGS: Record<string, string> = {
   ca: '\u{1F1E8}\u{1F1E6}',
@@ -272,9 +273,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
                     </>
                   ) : state.url ? (
                     <>
-                      <svg className="h-3 w-3 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
+                      <Check className="h-3 w-3 text-emerald-500" strokeWidth={2.5} />
                       <a
                         href={state.url}
                         target="_blank"
@@ -284,9 +283,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
                       >
                         {key} careers
                       </a>
-                      <svg className="h-3 w-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                      </svg>
+                      <ExternalLink className="h-3 w-3 text-slate-400" />
                     </>
                   ) : (
                     <>
@@ -328,9 +325,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
             >
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-500">
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
-                  </svg>
+                  <Upload className="h-4 w-4" strokeWidth={1.5} />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-slate-600">
@@ -357,9 +352,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
             <div className="mt-1.5 rounded-lg border border-emerald-200 bg-emerald-50/30 px-3 py-2.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                  </svg>
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" strokeWidth={1.5} />
                   <p className="text-sm font-medium text-slate-700 truncate max-w-[260px]">
                     {resumeFileName}
                   </p>
@@ -382,9 +375,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
             <div className="mt-1.5 rounded-lg border border-red-200 bg-red-50/50 px-3 py-2.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <svg className="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-                  </svg>
+                  <AlertCircle className="h-4 w-4 text-red-500" strokeWidth={1.5} />
                   <p className="text-xs text-red-600">{resumeError}</p>
                 </div>
                 <button
@@ -494,9 +485,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
                       }`}
                     >
                       {selectedSources.includes(source) && !isDisabled && (
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
+                        <Check size={10} color="white" strokeWidth={3} />
                       )}
                     </div>
                     <span className="text-sm font-medium">
@@ -543,10 +532,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">
-              <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
+              <Loader2 size={20} className="animate-spin" />
               {resumeText ? 'Analyzing Resume & Creating Session...' : 'Generating Session...'}
             </span>
           ) : (

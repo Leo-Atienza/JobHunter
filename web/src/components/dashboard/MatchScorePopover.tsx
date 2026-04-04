@@ -1,5 +1,6 @@
 'use client';
 
+import { Info } from 'lucide-react';
 import type { MatchBreakdown } from '@/lib/match-scoring';
 
 interface Props {
@@ -60,11 +61,7 @@ export function MatchScorePopover({ score, breakdown, id }: Props) {
             className="rounded-full p-0.5 text-slate-300 transition-colors hover:text-slate-500"
             aria-label="Why this score?"
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
+            <Info size={12} />
           </button>
 
           <div

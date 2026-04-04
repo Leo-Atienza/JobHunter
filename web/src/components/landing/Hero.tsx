@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import { Wand2, ArrowLeft, ArrowRight, Shield, User, Code2, Globe, Sparkles } from 'lucide-react';
 import { SearchConfig } from './SearchConfig';
 
 type FlowStep = 'initial' | 'configure';
@@ -101,9 +102,25 @@ export function Hero() {
         </h1>
 
         <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-slate-600 sm:text-xl">
-          Search 13 job sources instantly — Job Bank, LinkedIn, Remotive, Greenhouse, and more.
+          Search 16 job sources instantly — Job Bank, LinkedIn, Remotive, Greenhouse, and more.
           AI-powered summaries, smart deduplication, and advanced filters. All free.
         </p>
+
+        {/* Trust badges */}
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <div className="stagger-1 inline-flex items-center gap-2 rounded-full border border-primary-200 bg-primary-50 px-4 py-2 text-sm font-medium text-primary-800 animate-fade-in">
+            <Globe size={15} className="text-primary-600" />
+            16 Job Sources
+          </div>
+          <div className="stagger-2 inline-flex items-center gap-2 rounded-full border border-accent-200 bg-accent-50 px-4 py-2 text-sm font-medium text-accent-800 animate-fade-in">
+            <Sparkles size={15} className="text-accent-600" />
+            AI-Powered Matching
+          </div>
+          <div className="stagger-3 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 animate-fade-in">
+            <Shield size={15} className="text-emerald-600" />
+            100% Free
+          </div>
+        </div>
 
         {/* CTA / Search Config area */}
         <div className="mt-10 space-y-8">
@@ -112,9 +129,7 @@ export function Hero() {
               onClick={() => setStep('configure')}
               className="group relative inline-flex items-center gap-3 rounded-xl bg-primary-950 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-primary-950/20 transition-all hover:bg-primary-900 hover:shadow-xl hover:shadow-primary-950/30 hover:-translate-y-0.5"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
-              </svg>
+              <Wand2 size={20} />
               Get Started
               <span className="absolute inset-0 rounded-xl bg-white/10 opacity-0 transition-opacity group-hover:opacity-100" />
             </button>
@@ -124,9 +139,7 @@ export function Hero() {
                 onClick={() => setStep('initial')}
                 className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-primary-700 transition-colors"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 12H5M12 19l-7-7 7-7" />
-                </svg>
+                <ArrowLeft size={14} />
                 Back
               </button>
               <SearchConfig onSessionCreated={handleSessionCreated} />
@@ -140,10 +153,7 @@ export function Hero() {
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">My Sessions</p>
                   <span className="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                      <circle cx="9" cy="7" r="4" />
-                    </svg>
+                    <User size={10} strokeWidth={2.5} />
                     Saved
                   </span>
                 </div>
@@ -163,9 +173,7 @@ export function Hero() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-slate-400">{s.job_count} jobs</span>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 shrink-0">
-                        <path d="M5 12h14M12 5l7 7-7 7" />
-                      </svg>
+                      <ArrowRight size={16} className="text-slate-400 shrink-0" />
                     </div>
                   </Link>
                 ))}
@@ -200,9 +208,7 @@ export function Hero() {
                         {s.keywords.join(', ')}
                       </span>
                     </div>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 shrink-0">
-                      <path d="M5 12h14M12 5l7 7-7 7" />
-                    </svg>
+                    <ArrowRight size={16} className="text-slate-400 shrink-0" />
                   </Link>
                 ))}
               </div>
@@ -212,23 +218,15 @@ export function Hero() {
 
         <div className="mt-16 flex flex-wrap items-center justify-center gap-6 sm:gap-8 text-sm text-slate-400">
           <div className="flex items-center gap-2">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-            </svg>
+            <Shield size={16} />
             No account needed
           </div>
           <div className="flex items-center gap-2">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
+            <User size={16} />
             Sign in to save forever
           </div>
           <div className="flex items-center gap-2">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="16 18 22 12 16 6" />
-              <polyline points="8 6 2 12 8 18" />
-            </svg>
+            <Code2 size={16} />
             Open source
           </div>
         </div>
@@ -236,4 +234,3 @@ export function Hero() {
     </section>
   );
 }
-

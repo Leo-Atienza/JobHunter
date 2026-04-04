@@ -1,5 +1,7 @@
 'use client';
 
+import { X } from 'lucide-react';
+
 const shortcuts = [
   { key: 'j / \u2193', description: 'Next job' },
   { key: 'k / \u2191', description: 'Previous job' },
@@ -31,9 +33,7 @@ export function KeyboardShortcutsOverlay({ onClose }: KeyboardShortcutsOverlayPr
             className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
             aria-label="Close"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X size={16} />
           </button>
         </div>
         <div className="space-y-2">

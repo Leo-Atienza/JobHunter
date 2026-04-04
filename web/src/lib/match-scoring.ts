@@ -104,7 +104,7 @@ function scoreTitleRelevance(resumeTitles: string[], jobTitle: string): { score:
   if (resumeTitles.length === 0) return { score: 0, bestTitle: null };
 
   const jobNorm = norm(jobTitle);
-  const jobWords = new Set(jobNorm.split(/\s+/).filter((w) => w.length > 2));
+  const jobWords = new Set(jobNorm.split(/\s+/).filter((w) => w.length > 1));
 
   let bestScore = 0;
   let bestTitle: string | null = null;
@@ -118,7 +118,7 @@ function scoreTitleRelevance(resumeTitles: string[], jobTitle: string): { score:
     }
 
     // Word overlap
-    const titleWords = titleNorm.split(/\s+/).filter((w) => w.length > 2);
+    const titleWords = titleNorm.split(/\s+/).filter((w) => w.length > 1);
     if (titleWords.length === 0) continue;
 
     let overlap = 0;
