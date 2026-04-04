@@ -8,7 +8,7 @@ interface HimalayasJob {
   minSalary?: number; maxSalary?: number;
   pubDate?: string; publishedDate?: string;
   excerpt?: string; description?: string;
-  seniority?: string;
+  seniority?: string | string[];
 }
 
 const SENIORITY_MAP: Record<string, string> = {
@@ -25,6 +25,9 @@ export async function scrapeHimalayas(params: ScrapeParams): Promise<ScrapeResul
     const data = await fetchJson<{ jobs?: HimalayasJob[] }>(
       `https://himalayas.app/jobs/api?q=${encodeURIComponent(query)}&offset=${page * 20}&limit=20&sort=recent`
     );
+    if (data === null && jobs.length === 0) {
+      return { source: 'himalayas', jobs: [], error: 'Himalayas API unavailable' };
+    }
     const items = data?.jobs ?? [];
     if (!items.length) break;
 
@@ -49,7 +52,8 @@ export async function scrapeHimalayas(params: ScrapeParams): Promise<ScrapeResul
       else if (item.minSalary) salary = `From $${item.minSalary.toLocaleString()}`;
       else if (item.maxSalary) salary = `Up to $${item.maxSalary.toLocaleString()}`;
 
-      const seniority = item.seniority?.toLowerCase().trim();
+      const rawSeniority = Array.isArray(item.seniority) ? item.seniority[0] : item.seniority;
+      const seniority = rawSeniority?.toLowerCase().trim();
       jobs.push({
         title, company: item.companyName?.trim() || undefined,
         location, url, source: 'himalayas' as const,

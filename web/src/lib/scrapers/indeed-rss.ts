@@ -35,8 +35,13 @@ function parseRssItems(xml: string): JobInput[] {
 
     const { cleanTitle, company, location } = parseIndeedTitle(title);
 
-    // Strip Indeed tracking params from URL for cleaner dedup
-    const cleanUrl = link.includes('?') ? link.split('?')[0] : link;
+    // Preserve Indeed's jk parameter (unique job key), strip tracking noise
+    let cleanUrl = link;
+    try {
+      const u = new URL(link);
+      const jk = u.searchParams.get('jk');
+      if (jk) cleanUrl = `${u.origin}${u.pathname}?jk=${jk}`;
+    } catch { /* invalid URL, use as-is */ }
 
     items.push({
       title: cleanTitle,

@@ -43,7 +43,7 @@ export async function scrapeRemoteOK(params: ScrapeParams): Promise<ScrapeResult
   });
 
   if (!raw || !Array.isArray(raw)) {
-    return { source: 'remoteok', jobs: [] };
+    return { source: 'remoteok', jobs: [], error: 'RemoteOK API unavailable' };
   }
 
   // First element is always API metadata — skip it.

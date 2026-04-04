@@ -24,7 +24,9 @@ export async function scrapeJooble(params: ScrapeParams): Promise<ScrapeResult> 
         body: JSON.stringify({ keywords: query, location: params.location, page: String(page) }),
         signal: AbortSignal.timeout(8000),
       });
-      if (!resp.ok) break;
+      if (!resp.ok) {
+        return { source: 'jooble', jobs, error: `Jooble returned ${resp.status}` };
+      }
       const data = await resp.json() as { jobs?: JoobleJob[] };
       const items = data.jobs ?? [];
       if (!items.length) break;
@@ -45,8 +47,9 @@ export async function scrapeJooble(params: ScrapeParams): Promise<ScrapeResult> 
           job_type: normalizeJobType(item.type),
         });
       }
-    } catch {
-      break;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'fetch failed';
+      return { source: 'jooble', jobs, error: `Jooble error: ${msg}` };
     }
   }
 

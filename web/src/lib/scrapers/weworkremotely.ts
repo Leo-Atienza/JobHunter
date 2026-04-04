@@ -53,14 +53,12 @@ export async function scrapeWeWorkRemotely(params: ScrapeParams): Promise<Scrape
       signal: AbortSignal.timeout(8_000),
     });
     if (!resp.ok) {
-      console.warn(`scrapeWeWorkRemotely: ${resp.status} ${resp.statusText}`);
-      return { source: 'weworkremotely', jobs: [] };
+      return { source: 'weworkremotely', jobs: [], error: `WeWorkRemotely returned ${resp.status}` };
     }
     xml = await resp.text();
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.warn(`scrapeWeWorkRemotely error: ${msg}`);
-    return { source: 'weworkremotely', jobs: [] };
+    return { source: 'weworkremotely', jobs: [], error: `WeWorkRemotely fetch error: ${msg}` };
   }
 
   const items = extractItems(xml);

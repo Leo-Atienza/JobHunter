@@ -32,8 +32,10 @@ export async function scrapeRemotive(params: ScrapeParams): Promise<ScrapeResult
   urls.push(`https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}`);
 
   let items: RemotiveJob[] = [];
+  let allFailed = true;
   for (const url of urls) {
     const data = await fetchJson<{ jobs?: RemotiveJob[] }>(url);
+    if (data !== null) allFailed = false;
     items = data?.jobs ?? [];
     if (items.length) break;
   }
@@ -52,5 +54,9 @@ export async function scrapeRemotive(params: ScrapeParams): Promise<ScrapeResult
       job_type: normalizeJobType(item.job_type),
     }));
 
-  return { source: 'remotive', jobs };
+  return {
+    source: 'remotive',
+    jobs,
+    ...(jobs.length === 0 && allFailed ? { error: 'Remotive API unavailable' } : {}),
+  };
 }

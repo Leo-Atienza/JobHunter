@@ -58,14 +58,19 @@ export async function scrapeJobicy(params: ScrapeParams): Promise<ScrapeResult> 
 
   // Try with industry filter first
   const resp = await fetchJson<{ jobs?: JobicyJob[] }>(buildUrl(true));
-  // Check for HTML response (bot protection)
   const items = resp?.jobs ?? [];
   let jobs = parseJobs(items);
+  let allFailed = resp === null;
 
   if (!jobs.length && industry) {
     const fallback = await fetchJson<{ jobs?: JobicyJob[] }>(buildUrl(false));
+    if (fallback !== null) allFailed = false;
     jobs = parseJobs(fallback?.jobs ?? []);
   }
 
-  return { source: 'jobicy', jobs };
+  return {
+    source: 'jobicy',
+    jobs,
+    ...(jobs.length === 0 && allFailed ? { error: 'Jobicy API unavailable' } : {}),
+  };
 }

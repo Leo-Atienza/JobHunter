@@ -48,6 +48,9 @@ export async function scrapeAdzuna(params: ScrapeParams): Promise<ScrapeResult> 
       `&results_per_page=20&content-type=application/json`;
 
     const data = await fetchJson<{ results?: AdzunaJob[] }>(url);
+    if (data === null && jobs.length === 0) {
+      return { source: 'adzuna', jobs: [], error: 'Adzuna API unavailable' };
+    }
     const items = data?.results ?? [];
     if (!items.length) break;
 

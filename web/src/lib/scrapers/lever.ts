@@ -65,9 +65,15 @@ export async function scrapeLever(params: ScrapeParams): Promise<ScrapeResult> {
     })
   );
 
+  let failures = 0;
   for (const r of results) {
     if (r.status === 'fulfilled') jobs.push(...r.value);
+    else failures++;
   }
 
-  return { source: 'lever', jobs };
+  return {
+    source: 'lever',
+    jobs,
+    ...(jobs.length === 0 && failures > 0 ? { error: `All ${failures} Lever boards failed` } : {}),
+  };
 }

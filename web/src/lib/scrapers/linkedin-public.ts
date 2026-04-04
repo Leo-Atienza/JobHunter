@@ -9,7 +9,7 @@
 
 import type { ScrapeParams, ScrapeResult } from './types';
 import type { JobInput } from '@/lib/types';
-import { USER_AGENT, normalizeJobType, parseDate } from './utils';
+import { USER_AGENT, parseDate } from './utils';
 
 const JOBS_PER_PAGE = 25;
 const MAX_PAGES = 2; // 50 jobs max — enough for most searches, keeps scan fast
@@ -42,7 +42,7 @@ function buildSearchUrl(params: ScrapeParams, start: number): string {
 }
 
 /** Fetch one page of LinkedIn guest job results. */
-async function fetchPage(url: string): Promise<string | null> {
+async function fetchPage(url: string): Promise<{ html: string | null; error?: string }> {
   try {
     const resp = await fetch(url, {
       headers: {
@@ -52,10 +52,18 @@ async function fetchPage(url: string): Promise<string | null> {
       },
       signal: AbortSignal.timeout(8_000),
     });
-    if (!resp.ok) return null;
-    return await resp.text();
-  } catch {
-    return null;
+    if (!resp.ok) {
+      return { html: null, error: `LinkedIn returned ${resp.status}` };
+    }
+    const html = await resp.text();
+    // Detect block/CAPTCHA pages — real results contain job card class names
+    if (html.length > 200 && !html.includes('base-search-card')) {
+      return { html: null, error: 'LinkedIn blocked request (no job cards in response)' };
+    }
+    return { html };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'fetch failed';
+    return { html: null, error: `LinkedIn fetch error: ${msg}` };
   }
 }
 
@@ -89,8 +97,8 @@ function parseJobCards(html: string): JobInput[] {
     /<span[^>]*class="[^"]*job-search-card__salary-info[^"]*"[^>]*>([\s\S]*?)<\/span>/gi,
   )].map(m => m[1].trim());
 
-  // Also try to extract job type from list metadata
-  const jobTypes = [...html.matchAll(
+  // listdate class contains posting dates (e.g. "2 days ago"), not job types
+  const postedDates = [...html.matchAll(
     /<span[^>]*class="[^"]*job-search-card__listdate[^"]*"[^>]*>([\s\S]*?)<\/span>/gi,
   )].map(m => m[1].trim());
 
@@ -107,8 +115,7 @@ function parseJobCards(html: string): JobInput[] {
       url,
       source: 'linkedin-public',
       salary: salaries[i] || undefined,
-      posted_date: parseDate(dates[i]),
-      job_type: normalizeJobType(jobTypes[i]),
+      posted_date: parseDate(dates[i] || postedDates[i]),
     });
   }
 
@@ -118,16 +125,21 @@ function parseJobCards(html: string): JobInput[] {
 export async function scrapeLinkedInPublic(params: ScrapeParams): Promise<ScrapeResult> {
   const allJobs: JobInput[] = [];
   const seen = new Set<string>();
+  let lastError: string | undefined;
 
   for (let page = 0; page < MAX_PAGES; page++) {
     const start = page * JOBS_PER_PAGE;
     const url = buildSearchUrl(params, start);
-    const html = await fetchPage(url);
+    const { html, error } = await fetchPage(url);
 
-    if (!html || html.length < 200) break; // Empty or error page
+    if (error) {
+      lastError = error;
+      break;
+    }
+    if (!html || html.length < 200) break;
 
     const pageJobs = parseJobCards(html);
-    if (!pageJobs.length) break; // No more results
+    if (!pageJobs.length) break;
 
     for (const job of pageJobs) {
       if (!seen.has(job.url)) {
@@ -136,11 +148,14 @@ export async function scrapeLinkedInPublic(params: ScrapeParams): Promise<Scrape
       }
     }
 
-    // Small delay between pages to be respectful
     if (page < MAX_PAGES - 1) {
       await new Promise(r => setTimeout(r, 200));
     }
   }
 
-  return { source: 'linkedin-public', jobs: allJobs };
+  return {
+    source: 'linkedin-public',
+    jobs: allJobs,
+    ...(allJobs.length === 0 && lastError ? { error: lastError } : {}),
+  };
 }

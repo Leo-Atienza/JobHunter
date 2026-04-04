@@ -13,7 +13,7 @@ interface DevITJob {
 
 export async function scrapeDevitjobs(params: ScrapeParams): Promise<ScrapeResult> {
   const data = await fetchJson<DevITJob[]>('https://devitjobs.com/api/jobslight');
-  if (!Array.isArray(data)) return { source: 'devitjobs', jobs: [] };
+  if (!Array.isArray(data)) return { source: 'devitjobs', jobs: [], error: 'DevITjobs API unavailable' };
 
   const jobs = [];
   for (const item of data) {
