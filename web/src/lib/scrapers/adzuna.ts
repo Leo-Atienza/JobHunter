@@ -39,6 +39,7 @@ export async function scrapeAdzuna(params: ScrapeParams): Promise<ScrapeResult> 
     return { source: 'adzuna', jobs: [], error: 'Could not determine country from location' };
   }
   const jobs = [];
+  let failedPages = 0;
 
   for (let page = 1; page <= 2; page++) {
     const url = `https://api.adzuna.com/v1/api/jobs/${country}/search/${page}` +
@@ -48,8 +49,12 @@ export async function scrapeAdzuna(params: ScrapeParams): Promise<ScrapeResult> 
       `&results_per_page=20&content-type=application/json`;
 
     const data = await fetchJson<{ results?: AdzunaJob[] }>(url);
-    if (data === null && jobs.length === 0) {
-      return { source: 'adzuna', jobs: [], error: 'Adzuna API unavailable' };
+    if (data === null) {
+      failedPages++;
+      if (jobs.length === 0 && page === 1) {
+        return { source: 'adzuna', jobs: [], error: 'Adzuna API unavailable' };
+      }
+      continue;
     }
     const items = data?.results ?? [];
     if (!items.length) break;
@@ -77,5 +82,9 @@ export async function scrapeAdzuna(params: ScrapeParams): Promise<ScrapeResult> 
     }
   }
 
-  return { source: 'adzuna', jobs };
+  return {
+    source: 'adzuna',
+    jobs,
+    ...(failedPages > 0 ? { error: `${failedPages} of 2 pages failed (${jobs.length} jobs from successful pages)` } : {}),
+  };
 }

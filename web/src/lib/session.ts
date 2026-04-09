@@ -29,6 +29,25 @@ export async function sessionExists(code: string): Promise<boolean> {
   return rows.length > 0;
 }
 
+/**
+ * Check if a caller owns a session.
+ * Anonymous sessions (no user_id) are accessible to anyone with the code.
+ * Authenticated sessions require the caller's userId to match.
+ */
+export async function isSessionOwner(code: string, userId: string | null): Promise<boolean> {
+  const sql = getDb();
+  const rows = await sql(
+    'SELECT user_id FROM sessions WHERE code = $1 AND (expires_at > NOW() OR user_id IS NOT NULL)',
+    [code]
+  );
+  if (rows.length === 0) return false;
+  const sessionUserId = rows[0].user_id as string | null;
+  // Anonymous session — anyone with the code can access
+  if (!sessionUserId) return true;
+  // Authenticated session — must match
+  return sessionUserId === userId;
+}
+
 export async function getSession(code: string): Promise<{
   code: string;
   created_at: string;

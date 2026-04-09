@@ -56,9 +56,11 @@ export async function scrapeGreenhouse(params: ScrapeParams): Promise<ScrapeResu
     else failures++;
   }
 
-  return {
-    source: 'greenhouse',
-    jobs,
-    ...(jobs.length === 0 && failures > 0 ? { error: `All ${failures} Greenhouse boards failed` } : {}),
-  };
+  const error = failures > 0
+    ? jobs.length === 0
+      ? `All ${failures} Greenhouse boards failed`
+      : `${failures} of ${companies.length} boards failed (${jobs.length} jobs from successful boards)`
+    : undefined;
+
+  return { source: 'greenhouse', jobs, error };
 }

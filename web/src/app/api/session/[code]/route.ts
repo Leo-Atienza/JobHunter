@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isValidCodeFormat, getSession } from '@/lib/session';
-import { getDb } from '@/lib/db';
+import { isValidCodeFormat, getSession, isSessionOwner } from '@/lib/session';
+import { auth } from '@/lib/auth';
 
 export async function GET(
   _request: NextRequest,
@@ -13,6 +13,17 @@ export async function GET(
       return NextResponse.json(
         { error: 'Invalid session code format' },
         { status: 400 }
+      );
+    }
+
+    const authSession = await auth().catch(() => null);
+    const userId = authSession?.user?.id ?? null;
+
+    const allowed = await isSessionOwner(code, userId);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Session not found or expired' },
+        { status: 404 }
       );
     }
 
@@ -60,8 +71,19 @@ export async function DELETE(
       );
     }
 
+    const authSession = await auth().catch(() => null);
+    const userId = authSession?.user?.id ?? null;
+
+    const allowed = await isSessionOwner(code, userId);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Session not found or expired' },
+        { status: 404 }
+      );
+    }
+
+    const { getDb } = await import('@/lib/db');
     const sql = getDb();
-    // CASCADE on foreign key will delete all associated jobs
     await sql('DELETE FROM sessions WHERE code = $1', [code]);
 
     return NextResponse.json({ deleted: true });

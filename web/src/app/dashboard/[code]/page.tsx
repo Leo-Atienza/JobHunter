@@ -9,7 +9,7 @@ interface DashboardPageProps {
   params: Promise<{ code: string }>;
 }
 
-async function validateSession(code: string): Promise<{ valid: boolean; expiresAt: string | null }> {
+async function validateSession(code: string): Promise<{ valid: false; expiresAt: null } | { valid: true; expiresAt: string }> {
   if (!isValidCodeFormat(code)) {
     return { valid: false, expiresAt: null };
   }
@@ -21,7 +21,7 @@ async function validateSession(code: string): Promise<{ valid: boolean; expiresA
     [code]
   );
 
-  if (rows.length === 0) {
+  if (rows.length === 0 || !rows[0].expires_at) {
     return { valid: false, expiresAt: null };
   }
 
@@ -68,7 +68,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
 
   return (
     <Suspense>
-      <DashboardClient code={code} expiresAt={expiresAt!} />
+      <DashboardClient code={code} expiresAt={expiresAt} />
     </Suspense>
   );
 }

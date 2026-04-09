@@ -48,29 +48,35 @@ export async function scrapeJobbank(params: ScrapeParams): Promise<ScrapeResult>
     `?searchstring=${encodeURIComponent(query)}` +
     `&locationstring=${encodeURIComponent(params.location || '')}`;
 
-  const resp = await fetch(
-    `https://api.apify.com/v2/acts/powerdot~jobbank-ca-actor/run-sync-get-dataset-items?token=${token}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        urls: [{ url: searchUrl }],
-        maxPositionsPerUrl: 50,
-        proxyConfiguration: { useApifyProxy: true },
-      }),
-    },
-  );
+  let items: ApifyJobbankItem[];
+  try {
+    const resp = await fetch(
+      `https://api.apify.com/v2/acts/powerdot~jobbank-ca-actor/run-sync-get-dataset-items?token=${token}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          urls: [{ url: searchUrl }],
+          maxPositionsPerUrl: 50,
+          proxyConfiguration: { useApifyProxy: true },
+        }),
+      },
+    );
 
-  if (!resp.ok) {
-    const msg = resp.status === 402
-      ? 'Apify credits exhausted'
-      : `Apify API error (${resp.status})`;
-    return { source: 'jobbank', jobs: [], error: msg };
-  }
+    if (!resp.ok) {
+      const msg = resp.status === 402
+        ? 'Apify credits exhausted'
+        : `Apify API error (${resp.status})`;
+      return { source: 'jobbank', jobs: [], error: msg };
+    }
 
-  const items: ApifyJobbankItem[] = await resp.json();
-  if (!Array.isArray(items)) {
-    return { source: 'jobbank', jobs: [], error: 'Unexpected Apify response' };
+    items = await resp.json();
+    if (!Array.isArray(items)) {
+      return { source: 'jobbank', jobs: [], error: 'Unexpected Apify response' };
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'fetch failed';
+    return { source: 'jobbank', jobs: [], error: `Apify request failed: ${msg}` };
   }
 
   const jobs = items

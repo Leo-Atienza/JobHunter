@@ -12,20 +12,22 @@ export function useAISummary(
 ) {
   const [summary, setSummary] = useState<string | null>(cachedSummary);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
   const fetchedRef = useRef(false);
 
   useEffect(() => {
     if (!enabled || summary || fetchedRef.current || !hasDescription) return;
     fetchedRef.current = true;
     setLoading(true);
+    setError(false);
     fetch(`/api/jobs/${jobId}/summarize`, { method: 'POST' })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: { summary?: string } | null) => {
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`${res.status}`))))
+      .then((data: { summary?: string }) => {
         if (data?.summary) setSummary(data.summary);
       })
-      .catch(() => {})
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [enabled, summary, jobId, hasDescription]);
 
-  return { summary, loading };
+  return { summary, loading, error };
 }

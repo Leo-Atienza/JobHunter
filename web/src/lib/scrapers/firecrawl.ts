@@ -153,19 +153,17 @@ export async function scrapeFirecrawl(params: ScrapeParams): Promise<ScrapeResul
 
   console.log(`Firecrawl: ${queries.length} queries, ${totalWebResults} results, ${totalExtracted} extracted, ${totalEnriched} enriched -> ${allJobs.length} total jobs`);
 
-  // Only set error when no jobs found — the route short-circuits on result.error
-  // and skips insertion. Partial failures are logged to console only.
-  if (errors.length > 0 && allJobs.length > 0) {
-    console.warn(`Firecrawl: partial failures (${allJobs.length} jobs still extracted): ${errors.join('; ')}`);
-  }
+  const error = errors.length > 0
+    ? allJobs.length === 0
+      ? `No jobs extracted (${queries.length} queries, ${totalWebResults} results): ${errors.join('; ')}`
+      : `${errors.length} query failures (${allJobs.length} jobs from successful queries): ${errors.join('; ')}`
+    : undefined;
 
   return {
     source: 'firecrawl',
     jobs: allJobs,
     credits_used: creditsUsed,
-    error: allJobs.length === 0
-      ? `No jobs extracted (${queries.length} queries, ${totalWebResults} results)${errors.length ? ': ' + errors.join('; ') : ''}`
-      : undefined,
+    error,
   };
 }
 

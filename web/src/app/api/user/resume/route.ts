@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getDb } from '@/lib/db';
-import { sessionExists } from '@/lib/session';
+import { sessionExists, isSessionOwner } from '@/lib/session';
 import { computeMatchScoreWithBreakdown } from '@/lib/match-scoring';
 import { extractResumeSkills } from '@/lib/resume-extract';
 import type { ResumeProfile } from '@/lib/types';
@@ -146,6 +146,14 @@ export async function DELETE(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const sessionCode = searchParams.get('session');
+
+    // Verify caller owns the session before modifying it
+    if (sessionCode) {
+      const allowed = await isSessionOwner(sessionCode, userId);
+      if (!allowed) {
+        return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+      }
+    }
 
     const sql = getDb();
 

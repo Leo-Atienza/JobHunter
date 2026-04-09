@@ -20,13 +20,18 @@ const SENIORITY_MAP: Record<string, string> = {
 export async function scrapeHimalayas(params: ScrapeParams): Promise<ScrapeResult> {
   const query = params.keywords.join(' ');
   const jobs = [];
+  let failedPages = 0;
 
   for (let page = 0; page < 3; page++) {
     const data = await fetchJson<{ jobs?: HimalayasJob[] }>(
       `https://himalayas.app/jobs/api?q=${encodeURIComponent(query)}&offset=${page * 20}&limit=20&sort=recent`
     );
-    if (data === null && jobs.length === 0) {
-      return { source: 'himalayas', jobs: [], error: 'Himalayas API unavailable' };
+    if (data === null) {
+      failedPages++;
+      if (jobs.length === 0 && page === 0) {
+        return { source: 'himalayas', jobs: [], error: 'Himalayas API unavailable' };
+      }
+      continue;
     }
     const items = data?.jobs ?? [];
     if (!items.length) break;
@@ -65,5 +70,9 @@ export async function scrapeHimalayas(params: ScrapeParams): Promise<ScrapeResul
     if (items.length < 20) break;
   }
 
-  return { source: 'himalayas', jobs };
+  return {
+    source: 'himalayas',
+    jobs,
+    ...(failedPages > 0 ? { error: `${failedPages} of 3 pages failed (${jobs.length} jobs from successful pages)` } : {}),
+  };
 }

@@ -33,11 +33,16 @@ export async function scrapeRemotive(params: ScrapeParams): Promise<ScrapeResult
 
   let items: RemotiveJob[] = [];
   let allFailed = true;
+  let categoryFailed = false;
   for (const url of urls) {
     const data = await fetchJson<{ jobs?: RemotiveJob[] }>(url);
-    if (data !== null) allFailed = false;
-    items = data?.jobs ?? [];
-    if (items.length) break;
+    if (data !== null) {
+      allFailed = false;
+      items = data?.jobs ?? [];
+      if (items.length) break;
+    } else if (urls.length > 1 && url === urls[0]) {
+      categoryFailed = true;
+    }
   }
 
   const jobs = items
@@ -54,9 +59,11 @@ export async function scrapeRemotive(params: ScrapeParams): Promise<ScrapeResult
       job_type: normalizeJobType(item.job_type),
     }));
 
-  return {
-    source: 'remotive',
-    jobs,
-    ...(jobs.length === 0 && allFailed ? { error: 'Remotive API unavailable' } : {}),
-  };
+  const error = allFailed
+    ? 'Remotive API unavailable'
+    : categoryFailed && jobs.length > 0
+      ? 'Category search failed, results from generic fallback'
+      : undefined;
+
+  return { source: 'remotive', jobs, error };
 }

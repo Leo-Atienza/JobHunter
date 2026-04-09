@@ -71,9 +71,11 @@ export async function scrapeLever(params: ScrapeParams): Promise<ScrapeResult> {
     else failures++;
   }
 
-  return {
-    source: 'lever',
-    jobs,
-    ...(jobs.length === 0 && failures > 0 ? { error: `All ${failures} Lever boards failed` } : {}),
-  };
+  const error = failures > 0
+    ? jobs.length === 0
+      ? `All ${failures} Lever boards failed`
+      : `${failures} of ${companies.length} boards failed (${jobs.length} jobs from successful boards)`
+    : undefined;
+
+  return { source: 'lever', jobs, error };
 }

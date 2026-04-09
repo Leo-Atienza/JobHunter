@@ -153,9 +153,11 @@ export async function scrapeLinkedInPublic(params: ScrapeParams): Promise<Scrape
     }
   }
 
-  return {
-    source: 'linkedin-public',
-    jobs: allJobs,
-    ...(allJobs.length === 0 && lastError ? { error: lastError } : {}),
-  };
+  const error = lastError
+    ? allJobs.length === 0
+      ? lastError
+      : `Partial results (${allJobs.length} jobs): ${lastError}`
+    : undefined;
+
+  return { source: 'linkedin-public', jobs: allJobs, error };
 }

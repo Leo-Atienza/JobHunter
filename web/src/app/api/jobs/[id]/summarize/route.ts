@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { isSessionOwner } from '@/lib/session';
+import { auth } from '@/lib/auth';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -23,11 +25,19 @@ export async function POST(
 
     // Check if summary already exists
     const [job] = await sql(
-      'SELECT id, title, company, location, description, salary, job_type, experience_level, skills, ai_summary FROM jobs WHERE id = $1',
+      'SELECT id, title, company, location, description, salary, job_type, experience_level, skills, ai_summary, session_code FROM jobs WHERE id = $1',
       [jobId],
     );
 
     if (!job) {
+      return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+    }
+
+    // Verify caller owns the session that contains this job
+    const authSession = await auth().catch(() => null);
+    const userId = authSession?.user?.id ?? null;
+    const allowed = await isSessionOwner(job.session_code as string, userId);
+    if (!allowed) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
