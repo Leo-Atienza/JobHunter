@@ -207,7 +207,10 @@ export async function POST(
       }
     }
 
-    // Log success
+    // Log success — capture partial-failure error messages if some cities failed
+    // but others succeeded. Essential for observing LinkedIn/Greenhouse per-board
+    // failures that otherwise get hidden when total jobs > 0.
+    const partialErrorMsg = errors.length > 0 ? errors.join(' | ').slice(0, 1000) : null;
     await logScrapeRun(
       sql,
       body.session_code,
@@ -216,7 +219,7 @@ export async function POST(
       dedupedJobs.length,
       inserted,
       duplicates,
-      null,
+      partialErrorMsg,
       durationMs,
       totalCreditsUsed,
     );

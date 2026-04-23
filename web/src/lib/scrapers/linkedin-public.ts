@@ -50,7 +50,7 @@ async function fetchPage(url: string): Promise<{ html: string | null; error?: st
     // anti-detection technique for bypassing LinkedIn connection challenges.
     const resp = await stealthFetch(url, {
       mode: 'google-referrer',
-      maxRetries: 2,
+      maxRetries: 3,
       timeout: 10_000,
     });
     if (!resp.ok) {
