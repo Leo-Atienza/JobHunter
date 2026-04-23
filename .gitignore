@@ -50,3 +50,10 @@ htmlcov/
 
 # Logs
 *.log
+
+# Local tooling (Claude, graphify, root-level Next build, scraper scratch)
+.claude/
+web/.claude/
+.next/
+graphify-out/
+raw/
