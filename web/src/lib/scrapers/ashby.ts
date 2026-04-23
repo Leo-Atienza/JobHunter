@@ -7,6 +7,7 @@ import { stealthFetchJson } from './anti-detect';
 // no auth required. Many tier-1 AI + dev-tooling companies migrated here from
 // Greenhouse / Lever over the past two years.
 const DEFAULT_COMPANIES = [
+  // Original tier (2026-04-23)
   'openai',
   'cohere',
   'notion',
@@ -25,6 +26,31 @@ const DEFAULT_COMPANIES = [
   'perplexity',
   'vapi',
   'ashby',
+  // Added 2026-04-23 Session 14 — each verified live with ≥2 active listings
+  // AI infra / dev tools
+  'character',
+  'modal',
+  'pinecone',
+  'langchain',
+  'warp',
+  'browserbase',
+  'elevenlabs',
+  'granola',
+  'dust',
+  'tavus',
+  'n8n',
+  'anyscale',
+  'mosaic',
+  'pika',
+  // Applied AI / vertical
+  'harvey',
+  'decagon',
+  'sierra',
+  // Product tools / fintech / HR
+  'attio',
+  'quora',
+  'zip',
+  'deel',
 ];
 
 // Slug → display name overrides for brands that don't title-case cleanly.
@@ -36,6 +62,10 @@ const COMPANY_NAMES: Record<string, string> = {
   neon: 'Neon',
   ramp: 'Ramp',
   ashby: 'Ashby',
+  elevenlabs: 'ElevenLabs',
+  langchain: 'LangChain',
+  n8n: 'n8n',
+  character: 'Character.AI',
 };
 
 interface AshbyJob {
