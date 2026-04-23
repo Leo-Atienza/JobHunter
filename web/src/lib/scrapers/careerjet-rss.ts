@@ -1,6 +1,7 @@
 import type { ScrapeParams, ScrapeResult } from './types';
 import type { JobInput } from '@/lib/types';
-import { USER_AGENT, extractTag, extractCdata, stripHtml, safeParseDate } from './utils';
+import { extractTag, extractCdata, stripHtml, safeParseDate } from './utils';
+import { stealthFetch } from './anti-detect';
 
 const FEED_BASE = 'https://www.careerjet.ca/search/jobs';
 
@@ -44,13 +45,10 @@ export async function scrapeCareerjetRss(params: ScrapeParams): Promise<ScrapeRe
   const url = `${FEED_BASE}?s=${encodeURIComponent(query)}&l=${encodeURIComponent(location)}&sort=date&format=rss`;
 
   try {
-    const resp = await fetch(url, {
-      headers: {
-        'User-Agent': USER_AGENT,
-        Accept: 'application/rss+xml, application/xml, text/xml',
-        'Accept-Language': 'en-CA,en;q=0.9',
-      },
-      signal: AbortSignal.timeout(10_000),
+    const resp = await stealthFetch(url, {
+      mode: 'rss',
+      maxRetries: 2,
+      timeout: 12_000,
     });
 
     if (!resp.ok) {

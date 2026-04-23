@@ -19,7 +19,16 @@ interface LazyJobCardProps {
  * Lazy-loads a JobCard using IntersectionObserver.
  * Shows a lightweight placeholder until the card scrolls into view.
  */
-export function LazyJobCard({ job, onUpdate, onJobClick, sessionCode, isFocused, isSelected, onToggleSelect, animationIndex }: LazyJobCardProps) {
+export function LazyJobCard({
+  job,
+  onUpdate,
+  onJobClick,
+  sessionCode,
+  isFocused,
+  isSelected,
+  onToggleSelect,
+  animationIndex,
+}: LazyJobCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -43,7 +52,7 @@ export function LazyJobCard({ job, onUpdate, onJobClick, sessionCode, isFocused,
 
   if (!visible) {
     return (
-      <div ref={ref} className="h-48 rounded-xl border border-slate-200 bg-white animate-pulse" />
+      <div ref={ref} className="h-48 animate-pulse rounded-xl border border-slate-200 bg-white" />
     );
   }
 
@@ -54,7 +63,15 @@ export function LazyJobCard({ job, onUpdate, onJobClick, sessionCode, isFocused,
       ref={ref}
       style={delay > 0 ? { animation: `slide-in-up 0.3s ease-out ${delay}ms both` } : undefined}
     >
-      <JobCard job={job} onUpdate={onUpdate} onJobClick={onJobClick} sessionCode={sessionCode} isFocused={isFocused} isSelected={isSelected} onToggleSelect={onToggleSelect} />
+      <JobCard
+        job={job}
+        onUpdate={onUpdate}
+        onJobClick={onJobClick}
+        sessionCode={sessionCode}
+        isFocused={isFocused}
+        isSelected={isSelected}
+        onToggleSelect={onToggleSelect}
+      />
     </div>
   );
 }

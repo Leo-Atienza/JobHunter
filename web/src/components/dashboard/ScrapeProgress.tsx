@@ -73,19 +73,19 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
   const allDone = totalDone >= entries.length && entries.length > 0;
 
   return (
-    <div className="mt-8 animate-fade-in">
+    <div className="animate-fade-in mt-8">
       <div className="mx-auto max-w-lg">
         <div className="text-center" aria-live="polite" aria-atomic="true">
           {!allDone && (
-            <div className="relative mx-auto h-16 w-16 mb-6">
-              <div className="absolute inset-0 rounded-full border-4 border-primary-100" />
+            <div className="relative mx-auto mb-6 h-16 w-16">
+              <div className="border-primary-100 absolute inset-0 rounded-full border-4" />
               <div
-                className="absolute inset-0 rounded-full border-4 border-t-primary-600 animate-spin"
+                className="border-t-primary-600 absolute inset-0 animate-spin rounded-full border-4"
                 style={{ animationDuration: '1s' }}
               />
             </div>
           )}
-          <h2 className="font-display text-xl font-bold text-primary-950">
+          <h2 className="font-display text-primary-950 text-xl font-bold">
             {allDone ? `Found ${totalInserted} jobs` : 'Searching for jobs...'}
           </h2>
           <p className="mt-2 text-sm text-slate-500">
@@ -94,20 +94,20 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
               : `Scanning ${totalServer} sources in parallel...`}
           </p>
           {!allDone && entries.length > 0 && (
-            <p className="mt-1.5 text-xs font-medium text-primary-600">
+            <p className="text-primary-600 mt-1.5 text-xs font-medium">
               {totalDone} / {entries.length} sources complete
             </p>
           )}
         </div>
 
         {/* Progress bar */}
-        <div className="mt-6 h-2 rounded-full bg-slate-200 overflow-hidden">
+        <div className="mt-6 h-2 overflow-hidden rounded-full bg-slate-200">
           <div
-            className="h-full rounded-full bg-primary-600 transition-all duration-500"
+            className="bg-primary-600 h-full rounded-full transition-all duration-500"
             style={{ width: `${entries.length ? (totalDone / entries.length) * 100 : 0}%` }}
           />
         </div>
-        <p className="mt-1.5 text-xs text-slate-400 text-center">
+        <p className="mt-1.5 text-center text-xs text-slate-400">
           {totalDone} of {entries.length} sources complete
         </p>
 
@@ -118,7 +118,15 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
               key={source}
               className="flex items-center justify-between rounded-lg px-3 py-2 text-sm"
             >
-              <span className={status.state === 'done' ? 'text-slate-700' : status.state === 'error' ? 'text-error-600' : 'text-slate-500'}>
+              <span
+                className={
+                  status.state === 'done'
+                    ? 'text-slate-700'
+                    : status.state === 'error'
+                      ? 'text-error-600'
+                      : 'text-slate-500'
+                }
+              >
                 {getSourceDisplayName(source)}
               </span>
               <span className="flex items-center gap-2">
@@ -126,23 +134,27 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
                   <span className="text-xs text-slate-400">Waiting...</span>
                 )}
                 {status.state === 'running' && (
-                  <span className="flex items-center gap-1.5 text-xs text-primary-600">
+                  <span className="text-primary-600 flex items-center gap-1.5 text-xs">
                     <RefreshCw size={12} className="animate-spin" />
                     Searching...
                   </span>
                 )}
                 {status.state === 'done' && (
-                  <span className="text-xs font-medium text-success-600">
+                  <span className="text-success-600 text-xs font-medium">
                     {status.inserted ?? 0} jobs
                   </span>
                 )}
                 {status.state === 'error' && (
-                  <span className={`text-xs ${
-                    status.error?.includes('limit')
-                      ? 'font-medium text-amber-600'
-                      : 'text-error-500'
-                  }`}>
-                    {status.error?.includes('limit') ? 'Monthly limit reached' : status.error ?? 'Failed'}
+                  <span
+                    className={`text-xs ${
+                      status.error?.includes('limit')
+                        ? 'font-medium text-amber-600'
+                        : 'text-error-500'
+                    }`}
+                  >
+                    {status.error?.includes('limit')
+                      ? 'Monthly limit reached'
+                      : (status.error ?? 'Failed')}
                   </span>
                 )}
               </span>
@@ -151,21 +163,23 @@ export function ScrapeProgress({ code, sessionSources }: ScrapeProgressProps) {
         </div>
 
         {/* RSS reliability warning */}
-        {allDone && (() => {
-          const rssSources = ['indeed-rss', 'careerjet', 'talent'];
-          const failedRss = entries.filter(
-            ([source, s]) => rssSources.includes(source) && (s.state === 'error' || (s.state === 'done' && (s.inserted ?? 0) === 0)),
-          );
-          if (failedRss.length === 0) return null;
-          return (
-            <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
-              {failedRss.length === 1
-                ? `${getSourceDisplayName(failedRss[0][0])} returned no results — this source may be temporarily unavailable.`
-                : `${failedRss.length} RSS sources returned no results — these sources may be temporarily unavailable.`}
-            </p>
-          );
-        })()}
-
+        {allDone &&
+          (() => {
+            const rssSources = ['indeed-rss', 'careerjet', 'talent'];
+            const failedRss = entries.filter(
+              ([source, s]) =>
+                rssSources.includes(source) &&
+                (s.state === 'error' || (s.state === 'done' && (s.inserted ?? 0) === 0)),
+            );
+            if (failedRss.length === 0) return null;
+            return (
+              <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                {failedRss.length === 1
+                  ? `${getSourceDisplayName(failedRss[0][0])} returned no results — this source may be temporarily unavailable.`
+                  : `${failedRss.length} RSS sources returned no results — these sources may be temporarily unavailable.`}
+              </p>
+            );
+          })()}
       </div>
     </div>
   );

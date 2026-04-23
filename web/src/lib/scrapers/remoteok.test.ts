@@ -82,10 +82,7 @@ describe('scrapeRemoteOK', () => {
   });
 
   it('defaults location to "Remote" when location field is missing', async () => {
-    const apiResponse = [
-      {},
-      { id: '1', position: 'TypeScript developer', tags: ['typescript'] },
-    ];
+    const apiResponse = [{}, { id: '1', position: 'TypeScript developer', tags: ['typescript'] }];
     vi.stubGlobal('fetch', mockFetch(apiResponse));
 
     const result = await scrapeRemoteOK(BASE_PARAMS);
@@ -93,10 +90,7 @@ describe('scrapeRemoteOK', () => {
   });
 
   it('builds fallback URL from id when url and apply_url are absent', async () => {
-    const apiResponse = [
-      {},
-      { id: '99', position: 'TypeScript developer', tags: ['typescript'] },
-    ];
+    const apiResponse = [{}, { id: '99', position: 'TypeScript developer', tags: ['typescript'] }];
     vi.stubGlobal('fetch', mockFetch(apiResponse));
 
     const result = await scrapeRemoteOK(BASE_PARAMS);
@@ -117,8 +111,18 @@ describe('scrapeRemoteOK', () => {
   it('filters out jobs that do not match any keyword', async () => {
     const apiResponse = [
       {},
-      { id: '1', position: 'Marketing Manager', tags: ['marketing'], url: 'https://remoteok.com/jobs/1' },
-      { id: '2', position: 'Senior TypeScript Developer', tags: ['typescript'], url: 'https://remoteok.com/jobs/2' },
+      {
+        id: '1',
+        position: 'Marketing Manager',
+        tags: ['marketing'],
+        url: 'https://remoteok.com/jobs/1',
+      },
+      {
+        id: '2',
+        position: 'Senior TypeScript Developer',
+        tags: ['typescript'],
+        url: 'https://remoteok.com/jobs/2',
+      },
     ];
     vi.stubGlobal('fetch', mockFetch(apiResponse));
 
@@ -131,7 +135,9 @@ describe('scrapeRemoteOK', () => {
     const apiResponse = [
       {},
       {
-        id: '5', position: 'Remote Engineer', company: 'Co',
+        id: '5',
+        position: 'Remote Engineer',
+        company: 'Co',
         tags: ['typescript', 'react'],
         url: 'https://remoteok.com/jobs/5',
       },

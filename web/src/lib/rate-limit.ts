@@ -8,7 +8,7 @@ import { getDb } from './db';
 export async function checkRateLimit(
   key: string,
   maxRequests: number,
-  windowMs: number
+  windowMs: number,
 ): Promise<boolean> {
   const sql = getDb();
   const windowSeconds = Math.floor(windowMs / 1000);
@@ -28,7 +28,7 @@ export async function checkRateLimit(
          ELSE rate_limits.window_start
        END
      RETURNING count`,
-    [key, windowSeconds.toString()]
+    [key, windowSeconds.toString()],
   );
 
   return result[0].count <= maxRequests;

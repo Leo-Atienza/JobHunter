@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import useSWR from 'swr';
 import { AlertCircle, CheckCircle2, Upload } from 'lucide-react';
 import type { ResumeProfile } from '@/lib/types';
+import { fetcher } from '@/lib/utils';
 
 interface ResumeUploadProps {
   sessionCode: string;
@@ -18,11 +19,14 @@ interface ResumeResponse {
   updated_at: string | null;
 }
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
-
 type UploadState = 'idle' | 'extracting' | 'analyzing' | 'scoring' | 'done' | 'error';
 
-export function ResumeUpload({ sessionCode, onScored, isSignedIn, sessionResumeProfile }: ResumeUploadProps) {
+export function ResumeUpload({
+  sessionCode,
+  onScored,
+  isSignedIn,
+  sessionResumeProfile,
+}: ResumeUploadProps) {
   const [state, setState] = useState<UploadState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -128,10 +132,10 @@ export function ResumeUpload({ sessionCode, onScored, isSignedIn, sessionResumeP
     };
 
     return (
-      <div className="rounded-xl border border-primary-200 bg-primary-50/50 p-4">
+      <div className="border-primary-200 bg-primary-50/50 rounded-xl border p-4">
         <div className="flex items-center gap-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
-          <p className="text-sm font-medium text-primary-700">{messages[state]}</p>
+          <div className="border-primary-500 h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
+          <p className="text-primary-700 text-sm font-medium">{messages[state]}</p>
         </div>
       </div>
     );
@@ -171,15 +175,13 @@ export function ResumeUpload({ sessionCode, onScored, isSignedIn, sessionResumeP
     return (
       <div className="rounded-xl border border-emerald-200 bg-emerald-50/30 p-4">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
               <CheckCircle2 size={20} />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <p className="text-sm font-medium text-slate-700 truncate">
-                  {filename}
-                </p>
+                <p className="truncate text-sm font-medium text-slate-700">{filename}</p>
                 <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
                   {activeProfile.skills.length} skills
                 </span>
@@ -193,7 +195,7 @@ export function ResumeUpload({ sessionCode, onScored, isSignedIn, sessionResumeP
                 {activeProfile.skills.slice(0, 8).map((skill) => (
                   <span
                     key={skill}
-                    className="rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-slate-600 border border-slate-200"
+                    className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-slate-600"
                   >
                     {skill}
                   </span>
@@ -249,7 +251,7 @@ export function ResumeUpload({ sessionCode, onScored, isSignedIn, sessionResumeP
       }`}
     >
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-500">
+        <div className="bg-primary-50 text-primary-500 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
           <Upload size={20} />
         </div>
         <div>

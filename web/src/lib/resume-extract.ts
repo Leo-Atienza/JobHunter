@@ -34,8 +34,7 @@ ${resumeText}`;
     skills: Array.isArray(parsed.skills)
       ? parsed.skills.filter((s: unknown) => typeof s === 'string').slice(0, 50)
       : [],
-    experience_years:
-      typeof parsed.experience_years === 'number' ? parsed.experience_years : null,
+    experience_years: typeof parsed.experience_years === 'number' ? parsed.experience_years : null,
     titles: Array.isArray(parsed.titles)
       ? parsed.titles.filter((t: unknown) => typeof t === 'string').slice(0, 10)
       : [],

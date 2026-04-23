@@ -53,9 +53,9 @@ function FAQAccordionItem({ item }: { item: FAQItem }) {
     <div className="border-b border-slate-200 last:border-b-0">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between py-5 text-left transition-colors hover:text-primary-700"
+        className="hover:text-primary-700 flex w-full items-center justify-between py-5 text-left transition-colors"
       >
-        <span className="pr-4 font-display text-lg font-semibold text-primary-950">
+        <span className="font-display text-primary-950 pr-4 text-lg font-semibold">
           {item.question}
         </span>
         <span
@@ -82,7 +82,7 @@ export function FAQ() {
     <section className="border-t border-slate-100 bg-slate-50 py-24">
       <div className="mx-auto max-w-3xl px-6">
         <div className="text-center">
-          <h2 className="font-display text-3xl font-extrabold text-primary-950 sm:text-4xl">
+          <h2 className="font-display text-primary-950 text-3xl font-extrabold sm:text-4xl">
             Questions? Answered.
           </h2>
           <p className="mt-4 text-lg text-slate-500">

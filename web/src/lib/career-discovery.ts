@@ -20,7 +20,10 @@ function slugify(company: string): string {
 
 function domainGuesses(company: string): string[] {
   const slug = slugify(company);
-  const slugDashed = company.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const slugDashed = company
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
   const unique = new Set<string>();
 
   // Common domain patterns
@@ -67,7 +70,7 @@ export async function tryHeuristicUrls(company: string): Promise<string | null> 
           });
           if (res.ok) return url;
           throw new Error(`${res.status}`);
-        })
+        }),
       );
 
       for (const result of results) {

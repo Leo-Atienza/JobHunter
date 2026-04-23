@@ -1,19 +1,28 @@
 import type { ScrapeParams, ScrapeResult } from './types';
-import { fetchJson, normalizeJobType, parseDate, matchesKeywords } from './utils';
+import { normalizeJobType, parseDate, matchesKeywords } from './utils';
+import { stealthFetchJson } from './anti-detect';
 
 interface DevITJob {
-  name?: string; company?: string;
-  cityCategory?: string; stateCategory?: string;
-  jobUrl?: string; redirectJobUrl?: string;
-  remoteType?: string; workplace?: string;
-  annualSalaryFrom?: number; annualSalaryTo?: number;
-  jobType?: string; expLevel?: string;
-  activeFrom?: string; technologies?: string[];
+  name?: string;
+  company?: string;
+  cityCategory?: string;
+  stateCategory?: string;
+  jobUrl?: string;
+  redirectJobUrl?: string;
+  remoteType?: string;
+  workplace?: string;
+  annualSalaryFrom?: number;
+  annualSalaryTo?: number;
+  jobType?: string;
+  expLevel?: string;
+  activeFrom?: string;
+  technologies?: string[];
 }
 
 export async function scrapeDevitjobs(params: ScrapeParams): Promise<ScrapeResult> {
-  const data = await fetchJson<DevITJob[]>('https://devitjobs.com/api/jobslight');
-  if (!Array.isArray(data)) return { source: 'devitjobs', jobs: [], error: 'DevITjobs API unavailable' };
+  const data = await stealthFetchJson<DevITJob[]>('https://devitjobs.com/api/jobslight');
+  if (!Array.isArray(data))
+    return { source: 'devitjobs', jobs: [], error: 'DevITjobs API unavailable' };
 
   const jobs = [];
   for (const item of data) {
@@ -38,9 +47,13 @@ export async function scrapeDevitjobs(params: ScrapeParams): Promise<ScrapeResul
     }
 
     jobs.push({
-      title, company: item.company?.trim() || undefined,
-      location, url, source: 'devitjobs' as const,
-      salary, posted_date: parseDate(item.activeFrom),
+      title,
+      company: item.company?.trim() || undefined,
+      location,
+      url,
+      source: 'devitjobs' as const,
+      salary,
+      posted_date: parseDate(item.activeFrom),
       job_type: normalizeJobType(item.jobType),
       experience_level: item.expLevel?.trim() || undefined,
       skills: item.technologies?.join(', ') || undefined,

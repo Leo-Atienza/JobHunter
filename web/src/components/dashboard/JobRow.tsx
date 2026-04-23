@@ -19,12 +19,22 @@ interface JobRowProps {
   onToggleSelect?: (id: number) => void;
 }
 
-export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onToggleSelect }: JobRowProps) {
+export function JobRow({
+  job,
+  onUpdate,
+  onJobClick,
+  sessionCode,
+  isSelected,
+  onToggleSelect,
+}: JobRowProps) {
   const [expanded, setExpanded] = useState(false);
   const [notes, setNotes] = useState(job.notes ?? '');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { summary: aiSummary, loading: summaryLoading } = useAISummary(
-    job.id, job.ai_summary ?? null, !!job.description, expanded,
+    job.id,
+    job.ai_summary ?? null,
+    !!job.description,
+    expanded,
   );
 
   const saveNotes = useCallback(
@@ -44,7 +54,7 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
         }
       }, 800);
     },
-    [job.id]
+    [job.id, sessionCode],
   );
 
   function handleNotesChange(value: string) {
@@ -64,7 +74,12 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
         aria-expanded={expanded}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(!expanded); } }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setExpanded(!expanded);
+          }
+        }}
       >
         {/* Checkbox */}
         {onToggleSelect && (
@@ -73,7 +88,7 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
               type="checkbox"
               checked={!!isSelected}
               onChange={() => onToggleSelect(job.id)}
-              className="h-3.5 w-3.5 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+              className="text-primary-600 focus:ring-primary-500 h-3.5 w-3.5 cursor-pointer rounded border-slate-300"
               aria-label={`Select ${job.title}`}
             />
           </td>
@@ -82,28 +97,22 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
         <td className="px-4 py-3">
           <div className="flex items-center gap-2">
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-primary-950 max-w-xs">
+              <p className="text-primary-950 max-w-xs truncate text-sm font-semibold">
                 {job.title}
               </p>
-              <p className="truncate text-xs text-slate-400 md:hidden">
-                {job.company}
-              </p>
+              <p className="truncate text-xs text-slate-400 md:hidden">{job.company}</p>
             </div>
           </div>
         </td>
 
         {/* Company */}
-        <td className="hidden md:table-cell px-4 py-3">
-          <p className="truncate text-sm text-slate-600 max-w-[180px]">
-            {job.company ?? '—'}
-          </p>
+        <td className="hidden px-4 py-3 md:table-cell">
+          <p className="max-w-[180px] truncate text-sm text-slate-600">{job.company ?? '—'}</p>
         </td>
 
         {/* Location */}
-        <td className="hidden lg:table-cell px-4 py-3">
-          <p className="truncate text-sm text-slate-500 max-w-[160px]">
-            {job.location ?? '—'}
-          </p>
+        <td className="hidden px-4 py-3 lg:table-cell">
+          <p className="max-w-[160px] truncate text-sm text-slate-500">{job.location ?? '—'}</p>
         </td>
 
         {/* Source */}
@@ -115,12 +124,18 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
               {getSourceDisplayName(job.source)}
             </span>
             {job.also_on && job.also_on.length > 0 && (
-              <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500" title={`Also on: ${job.also_on.join(', ')}`}>
+              <span
+                className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500"
+                title={`Also on: ${job.also_on.join(', ')}`}
+              >
                 +{job.also_on.length}
               </span>
             )}
             {job.is_ghost && (
-              <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600" title="This job listing URL returned 404 — it may have been removed">
+              <span
+                className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600"
+                title="This job listing URL returned 404 — it may have been removed"
+              >
                 Expired?
               </span>
             )}
@@ -128,7 +143,7 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
         </td>
 
         {/* Relevance */}
-        <td className="hidden lg:table-cell px-4 py-3">
+        <td className="hidden px-4 py-3 lg:table-cell">
           <div className="flex flex-col gap-1">
             {job.relevance_score > 0 ? (
               <MatchScorePopover
@@ -143,7 +158,7 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
         </td>
 
         {/* Salary */}
-        <td className="hidden xl:table-cell px-4 py-3">
+        <td className="hidden px-4 py-3 xl:table-cell">
           {job.salary ? (
             <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
               {job.salary}
@@ -154,10 +169,8 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
         </td>
 
         {/* Posted */}
-        <td className="hidden lg:table-cell px-4 py-3">
-          <p className="text-sm text-slate-500">
-            {formatDate(job.posted_date ?? job.scraped_at)}
-          </p>
+        <td className="hidden px-4 py-3 lg:table-cell">
+          <p className="text-sm text-slate-500">{formatDate(job.posted_date ?? job.scraped_at)}</p>
         </td>
 
         {/* Status */}
@@ -194,14 +207,20 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
             </button>
             {onJobClick && (
               <button
-                onClick={(e) => { e.stopPropagation(); onJobClick(job.id); }}
-                className="rounded-md p-1 text-slate-400 transition-colors hover:bg-primary-50 hover:text-primary-600"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onJobClick(job.id);
+                }}
+                className="hover:bg-primary-50 hover:text-primary-600 rounded-md p-1 text-slate-400 transition-colors"
                 title="View details"
               >
                 <ExternalLink size={14} />
               </button>
             )}
-            <ChevronDown size={16} className={`text-slate-400 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
+            <ChevronDown
+              size={16}
+              className={`text-slate-400 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+            />
           </div>
         </td>
       </tr>
@@ -209,9 +228,16 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
       {/* Expanded row */}
       {expanded && (
         <tr className="animate-slide-down">
-          <td colSpan={onToggleSelect ? 10 : 9} className="border-b border-slate-100 bg-slate-50/50 px-4 py-5">
+          <td
+            colSpan={onToggleSelect ? 10 : 9}
+            className="border-b border-slate-100 bg-slate-50/50 px-4 py-5"
+          >
             {/* Job detail badges */}
-            {(job.job_type || job.experience_level || job.relevance_score > 0 || job.country || job.is_ghost) && (
+            {(job.job_type ||
+              job.experience_level ||
+              job.relevance_score > 0 ||
+              job.country ||
+              job.is_ghost) && (
               <div className="mb-4 flex flex-wrap gap-2">
                 {job.job_type && (
                   <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
@@ -251,26 +277,29 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
             <div className="grid gap-6 md:grid-cols-2">
               {/* Description */}
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                <h4 className="mb-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">
                   Description
                 </h4>
                 {formattedDescription ? (
-                  <div className="text-sm leading-relaxed text-slate-600 max-h-72 overflow-y-auto whitespace-pre-wrap pr-2">
+                  <div className="max-h-72 overflow-y-auto pr-2 text-sm leading-relaxed whitespace-pre-wrap text-slate-600">
                     {formattedDescription}
                   </div>
                 ) : (
-                  <p className="text-sm italic text-slate-400">No description available</p>
+                  <p className="text-sm text-slate-400 italic">No description available</p>
                 )}
 
                 {/* Skills */}
                 {job.skills && (
                   <div className="mt-3">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                    <h4 className="mb-1.5 text-xs font-semibold tracking-wider text-slate-400 uppercase">
                       Skills
                     </h4>
                     <div className="flex flex-wrap gap-1.5">
                       {job.skills.split(',').map((skill) => (
-                        <span key={skill.trim()} className="inline-flex rounded-md bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 border border-primary-200">
+                        <span
+                          key={skill.trim()}
+                          className="bg-primary-50 text-primary-700 border-primary-200 inline-flex rounded-md border px-2 py-0.5 text-xs font-medium"
+                        >
                           {skill.trim()}
                         </span>
                       ))}
@@ -281,7 +310,7 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
                 {/* Benefits */}
                 {job.benefits && (
                   <div className="mt-3">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                    <h4 className="mb-1.5 text-xs font-semibold tracking-wider text-slate-400 uppercase">
                       Benefits
                     </h4>
                     <p className="text-sm text-slate-600">{job.benefits}</p>
@@ -292,7 +321,7 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
                   href={job.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 transition-colors hover:text-primary-800"
+                  className="text-primary-600 hover:text-primary-800 mt-3 inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
                   onClick={(e) => e.stopPropagation()}
                 >
                   View original listing
@@ -302,7 +331,7 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
 
               {/* Notes */}
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                <h4 className="mb-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">
                   Notes
                 </h4>
                 <textarea
@@ -311,7 +340,7 @@ export function JobRow({ job, onUpdate, onJobClick, sessionCode, isSelected, onT
                   onClick={(e) => e.stopPropagation()}
                   placeholder="Add your notes about this position..."
                   rows={5}
-                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700 placeholder-slate-400 outline-none transition-all focus:border-primary-400 focus:ring-2 focus:ring-primary-100 resize-none"
+                  className="focus:border-primary-400 focus:ring-primary-100 w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700 placeholder-slate-400 transition-all outline-none focus:ring-2"
                 />
                 <p className="mt-1 text-xs text-slate-400">Auto-saved as you type</p>
               </div>

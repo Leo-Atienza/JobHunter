@@ -60,23 +60,24 @@ export function BackfillButton({ sessionCode, onComplete }: BackfillButtonProps)
 
   return (
     <div className="mt-2 flex justify-end">
-    <button
-      onClick={runBackfill}
-      disabled={state === 'running'}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-all hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      {state === 'running' ? (
-        <>
-          <RefreshCw size={12} className="animate-spin" />
-          Scoring... {progress.updated > 0 && `(${progress.updated} done, ${progress.remaining} left)`}
-        </>
-      ) : (
-        <>
-          <RefreshCw size={12} />
-          Re-score older jobs
-        </>
-      )}
-    </button>
+      <button
+        onClick={runBackfill}
+        disabled={state === 'running'}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-all hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {state === 'running' ? (
+          <>
+            <RefreshCw size={12} className="animate-spin" />
+            Scoring...{' '}
+            {progress.updated > 0 && `(${progress.updated} done, ${progress.remaining} left)`}
+          </>
+        ) : (
+          <>
+            <RefreshCw size={12} />
+            Re-score older jobs
+          </>
+        )}
+      </button>
     </div>
   );
 }

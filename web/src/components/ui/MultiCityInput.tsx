@@ -136,17 +136,15 @@ export function MultiCityInput({
 
   return (
     <div ref={wrapperRef} className="relative">
-      <label className="block text-sm font-semibold text-slate-700">
-        {label}
-      </label>
+      <label className="block text-sm font-semibold text-slate-700">{label}</label>
 
       {/* Container mimics an input field */}
       <div
-        className={`mt-1.5 flex flex-wrap items-center gap-1.5 rounded-lg border px-2.5 py-2 transition-all cursor-text ${
-          shaking ? 'border-error-500 ring-2 ring-error-500/20' : ''
+        className={`mt-1.5 flex cursor-text flex-wrap items-center gap-1.5 rounded-lg border px-2.5 py-2 transition-all ${
+          shaking ? 'border-error-500 ring-error-500/20 ring-2' : ''
         } ${
           focused
-            ? 'border-primary-500 ring-2 ring-primary-500/20'
+            ? 'border-primary-500 ring-primary-500/20 ring-2'
             : 'border-slate-300 hover:border-slate-400'
         }`}
         style={shaking ? { animation: 'input-shake 350ms linear' } : undefined}
@@ -156,10 +154,8 @@ export function MultiCityInput({
         {cities.map((city, i) => (
           <span
             key={city}
-            className={`inline-flex items-center gap-1 rounded-full bg-primary-100 px-2.5 py-1 text-xs font-semibold text-primary-800 transition-all ${
-              removingIndex === i
-                ? 'opacity-0 scale-75'
-                : ''
+            className={`bg-primary-100 text-primary-800 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition-all ${
+              removingIndex === i ? 'scale-75 opacity-0' : ''
             }`}
             style={
               removingIndex === i
@@ -174,7 +170,7 @@ export function MultiCityInput({
                 e.stopPropagation();
                 removeCity(i);
               }}
-              className="ml-0.5 flex h-4 w-4 items-center justify-center rounded-full text-primary-600 transition-all hover:bg-primary-200 active:scale-90"
+              className="text-primary-600 hover:bg-primary-200 ml-0.5 flex h-4 w-4 items-center justify-center rounded-full transition-all active:scale-90"
               aria-label={`Remove ${city}`}
             >
               <X size={8} strokeWidth={3} />
@@ -198,7 +194,13 @@ export function MultiCityInput({
           }}
           onBlur={() => setFocused(false)}
           onKeyDown={handleKeyDown}
-          placeholder={cities.length === 0 ? placeholder : cities.length >= maxCities ? `Max ${maxCities} cities` : 'Add city...'}
+          placeholder={
+            cities.length === 0
+              ? placeholder
+              : cities.length >= maxCities
+                ? `Max ${maxCities} cities`
+                : 'Add city...'
+          }
           autoComplete="off"
           disabled={cities.length >= maxCities}
           className="min-w-[120px] flex-1 border-0 bg-transparent py-0.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none disabled:cursor-not-allowed disabled:text-slate-400"

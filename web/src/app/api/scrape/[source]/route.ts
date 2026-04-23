@@ -25,7 +25,7 @@ export async function POST(
 ) {
   try {
     const { source } = await params;
-    const body = await request.json() as { session_code?: string };
+    const body = (await request.json()) as { session_code?: string };
 
     if (!body.session_code) {
       return NextResponse.json({ error: 'Missing session_code' }, { status: 400 });
@@ -69,9 +69,12 @@ export async function POST(
 
     // Determine which locations to fan out to for this source.
     // Jobbank uses Apify ($0.25/run) — only scrape first location to conserve credits.
-    const fanOutLocations = effectiveLocations.length > 0
-      ? (source === 'jobbank' ? [effectiveLocations[0]] : effectiveLocations)
-      : [''];
+    const fanOutLocations =
+      effectiveLocations.length > 0
+        ? source === 'jobbank'
+          ? [effectiveLocations[0]]
+          : effectiveLocations
+        : [''];
 
     // Run the scraper with timing, guarded by route-level timeout.
     const SCRAPER_TIMEOUT_MS = 55000;
@@ -113,7 +116,18 @@ export async function POST(
     // If all cities failed, report error
     if (allJobs.length === 0 && errors.length > 0) {
       const errorMsg = errors[0] === 'timeout' ? 'Scraper timed out after 55s' : errors[0];
-      await logScrapeRun(sql, body.session_code, source, 'error', 0, 0, 0, errorMsg, durationMs, totalCreditsUsed);
+      await logScrapeRun(
+        sql,
+        body.session_code,
+        source,
+        'error',
+        0,
+        0,
+        0,
+        errorMsg,
+        durationMs,
+        totalCreditsUsed,
+      );
       return NextResponse.json({
         source,
         inserted: 0,
@@ -138,9 +152,12 @@ export async function POST(
 
     // Filter jobs by city — match any of the session's cities
     const includeRemote = session.include_remote !== false;
-    const filteredJobs = effectiveLocations.length > 0
-      ? countryFiltered.filter((job) => matchesAnyCity(job.location, effectiveLocations, session.remote, includeRemote))
-      : countryFiltered;
+    const filteredJobs =
+      effectiveLocations.length > 0
+        ? countryFiltered.filter((job) =>
+            matchesAnyCity(job.location, effectiveLocations, session.remote, includeRemote),
+          )
+        : countryFiltered;
 
     const filtered = dedupedJobs.length - filteredJobs.length;
 
@@ -191,7 +208,18 @@ export async function POST(
     }
 
     // Log success
-    await logScrapeRun(sql, body.session_code, source, 'success', dedupedJobs.length, inserted, duplicates, null, durationMs, totalCreditsUsed);
+    await logScrapeRun(
+      sql,
+      body.session_code,
+      source,
+      'success',
+      dedupedJobs.length,
+      inserted,
+      duplicates,
+      null,
+      durationMs,
+      totalCreditsUsed,
+    );
 
     return NextResponse.json({
       source,
@@ -202,17 +230,22 @@ export async function POST(
     });
   } catch (error) {
     console.error('Scrape error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
 /** Normalize title+company into a dedup key. */
 function dedupKey(title: string, company: string | null): string {
-  const t = title.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
-  const c = (company ?? '').toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+  const t = title
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const c = (company ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
   return `${t}::${c}`;
 }
 
@@ -251,15 +284,35 @@ async function insertJobs(
       const experience_level = job.experience_level ? sanitize(job.experience_level, 50) : null;
       const skills = job.skills ? sanitize(job.skills, 5000) : extractSkills(description);
       const benefits = job.benefits ? sanitize(job.benefits, 5000) : extractBenefits(description);
-      const relevance_score = typeof job.relevance_score === 'number'
-        ? Math.min(Math.max(Math.round(job.relevance_score), 0), 100)
-        : 0;
+      const relevance_score =
+        typeof job.relevance_score === 'number'
+          ? Math.min(Math.max(Math.round(job.relevance_score), 0), 100)
+          : 0;
       const country = job.country ? sanitize(job.country, 100) : null;
       const { min: salaryMin, max: salaryMax } = parseSalary(salary);
       const key = dedupKey(title, company);
       const duplicateOfId = existingKeys.get(key) ?? null;
 
-      return { title, company, location, url, source, salary, description, posted_date, job_type, experience_level, skills, benefits, relevance_score, country, salaryMin, salaryMax, key, duplicateOfId };
+      return {
+        title,
+        company,
+        location,
+        url,
+        source,
+        salary,
+        description,
+        posted_date,
+        job_type,
+        experience_level,
+        skills,
+        benefits,
+        relevance_score,
+        country,
+        salaryMin,
+        salaryMax,
+        key,
+        duplicateOfId,
+      };
     });
 
   // Insert in parallel chunks of 10
@@ -273,7 +326,26 @@ async function insertJobs(
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
            ON CONFLICT (session_code, url) DO NOTHING
            RETURNING id`,
-          [sessionCode, row.title, row.company, row.location, row.url, row.source, row.salary, row.description, row.posted_date, row.job_type, row.experience_level, row.skills, row.benefits, row.relevance_score, row.country, row.salaryMin, row.salaryMax, row.duplicateOfId],
+          [
+            sessionCode,
+            row.title,
+            row.company,
+            row.location,
+            row.url,
+            row.source,
+            row.salary,
+            row.description,
+            row.posted_date,
+            row.job_type,
+            row.experience_level,
+            row.skills,
+            row.benefits,
+            row.relevance_score,
+            row.country,
+            row.salaryMin,
+            row.salaryMax,
+            row.duplicateOfId,
+          ],
         );
         if (result.length > 0) {
           if (!row.duplicateOfId) {
@@ -282,7 +354,7 @@ async function insertJobs(
           return 'inserted' as const;
         }
         return 'duplicate' as const;
-      })
+      }),
     );
 
     for (const r of results) {
@@ -315,7 +387,17 @@ async function logScrapeRun(
     await sql(
       `INSERT INTO scrape_logs (session_code, source, status, jobs_found, jobs_inserted, duplicates, error_message, duration_ms, credits_used)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [sessionCode, source, status, jobsFound, jobsInserted, duplicates, errorMessage, durationMs, creditsUsed],
+      [
+        sessionCode,
+        source,
+        status,
+        jobsFound,
+        jobsInserted,
+        duplicates,
+        errorMessage,
+        durationMs,
+        creditsUsed,
+      ],
     );
   } catch {
     // Non-critical — don't let logging failures break scraping

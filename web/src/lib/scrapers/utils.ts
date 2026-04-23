@@ -1,8 +1,5 @@
 /** Shared utilities for server-side scrapers. */
 
-export const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36';
-
 /** Strip HTML tags and decode common entities. */
 export function stripHtml(html: string): string {
   return html
@@ -35,39 +32,6 @@ export function safeParseDate(raw: string): string | undefined {
     return d.toISOString().split('T')[0];
   } catch {
     return undefined;
-  }
-}
-
-/** Fetch JSON with timeout and error handling. Returns null on failure. */
-export async function fetchJson<T = unknown>(
-  url: string,
-  options: RequestInit & { timeout?: number } = {},
-): Promise<T | null> {
-  const { timeout = 8000, ...init } = options;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeout);
-
-  try {
-    const resp = await fetch(url, {
-      ...init,
-      signal: controller.signal,
-      headers: {
-        'User-Agent': USER_AGENT,
-        Accept: 'application/json',
-        ...init.headers,
-      },
-    });
-    if (!resp.ok) {
-      console.warn(`fetchJson ${resp.status} ${resp.statusText} — ${url}`);
-      return null;
-    }
-    return (await resp.json()) as T;
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.warn(`fetchJson error — ${url}: ${msg}`);
-    return null;
-  } finally {
-    clearTimeout(timer);
   }
 }
 

@@ -10,7 +10,17 @@ import { getSourceColor, getSourceDisplayName, formatDate } from '@/lib/utils';
 import { useToast } from '@/components/ui/Toast';
 import { MatchScorePopover } from './MatchScorePopover';
 
-function BookmarkButton({ jobId, isSaved, sessionCode, onUpdate }: { jobId: number; isSaved: boolean; sessionCode: string; onUpdate: () => void }) {
+function BookmarkButton({
+  jobId,
+  isSaved,
+  sessionCode,
+  onUpdate,
+}: {
+  jobId: number;
+  isSaved: boolean;
+  sessionCode: string;
+  onUpdate: () => void;
+}) {
   const [saving, setSaving] = useState(false);
   const toast = useToast();
 
@@ -36,7 +46,10 @@ function BookmarkButton({ jobId, isSaved, sessionCode, onUpdate }: { jobId: numb
 
   return (
     <button
-      onClick={(e) => { e.stopPropagation(); toggle(); }}
+      onClick={(e) => {
+        e.stopPropagation();
+        toggle();
+      }}
       disabled={saving}
       className={`group/bk flex h-7 w-7 items-center justify-center rounded-lg transition-all ${
         isSaved
@@ -50,7 +63,15 @@ function BookmarkButton({ jobId, isSaved, sessionCode, onUpdate }: { jobId: numb
   );
 }
 
-function QuickApplyButton({ jobId, sessionCode, onUpdate }: { jobId: number; sessionCode: string; onUpdate: () => void }) {
+function QuickApplyButton({
+  jobId,
+  sessionCode,
+  onUpdate,
+}: {
+  jobId: number;
+  sessionCode: string;
+  onUpdate: () => void;
+}) {
   const [applying, setApplying] = useState(false);
   const toast = useToast();
 
@@ -76,9 +97,12 @@ function QuickApplyButton({ jobId, sessionCode, onUpdate }: { jobId: number; ses
 
   return (
     <button
-      onClick={(e) => { e.stopPropagation(); apply(); }}
+      onClick={(e) => {
+        e.stopPropagation();
+        apply();
+      }}
       disabled={applying}
-      className="border-l border-slate-100 px-4 py-2 text-xs font-medium text-amber-600 hover:bg-amber-50 hover:text-amber-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+      className="border-l border-slate-100 px-4 py-2 text-xs font-medium text-amber-600 transition-colors hover:bg-amber-50 hover:text-amber-800 disabled:cursor-not-allowed disabled:opacity-40"
     >
       {applying ? 'Applying…' : 'Quick Apply'}
     </button>
@@ -95,54 +119,90 @@ interface JobCardProps {
   onToggleSelect?: (id: number) => void;
 }
 
-export function JobCard({ job, onUpdate, onJobClick, sessionCode, isFocused, isSelected, onToggleSelect }: JobCardProps) {
+export function JobCard({
+  job,
+  onUpdate,
+  onJobClick,
+  sessionCode,
+  isFocused,
+  isSelected,
+  onToggleSelect,
+}: JobCardProps) {
   const [showDetails, setShowDetails] = useState(false);
   const { summary: aiSummary, loading: summaryLoading } = useAISummary(
-    job.id, job.ai_summary ?? null, !!job.description, showDetails,
+    job.id,
+    job.ai_summary ?? null,
+    !!job.description,
+    showDetails,
   );
 
   const sourceColors = getSourceColor(job.source);
 
   return (
-    <div className={`group/card relative rounded-xl border bg-white shadow-sm transition-all duration-200 hover:shadow-lg hover:shadow-primary-950/[0.04] hover:border-primary-200/60 hover:-translate-y-0.5 ${isFocused ? 'ring-2 ring-primary-400 border-primary-300' : isSelected ? 'ring-2 ring-primary-300 border-primary-200 bg-primary-50/30' : 'border-slate-200/80'}`}>
+    <div
+      className={`group/card hover:shadow-primary-950/[0.04] hover:border-primary-200/60 relative rounded-xl border bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${isFocused ? 'ring-primary-400 border-primary-300 ring-2' : isSelected ? 'ring-primary-300 border-primary-200 bg-primary-50/30 ring-2' : 'border-slate-200/80'}`}
+    >
       {/* Selection checkbox — visible on hover or when selected */}
       {onToggleSelect && (
-        <div className={`absolute top-2.5 left-2.5 z-10 ${isSelected ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100'} transition-opacity`}>
+        <div
+          className={`absolute top-2.5 left-2.5 z-10 ${isSelected ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100'} transition-opacity`}
+        >
           <input
             type="checkbox"
             checked={!!isSelected}
-            onChange={(e) => { e.stopPropagation(); onToggleSelect(job.id); }}
-            className="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm"
+            onChange={(e) => {
+              e.stopPropagation();
+              onToggleSelect(job.id);
+            }}
+            className="text-primary-600 focus:ring-primary-500 h-4 w-4 cursor-pointer rounded border-slate-300 shadow-sm"
             aria-label={`Select ${job.title}`}
           />
         </div>
       )}
       <div className="p-4">
         {/* Header: source + status */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${sourceColors.bg} ${sourceColors.text}`}>
+            <span
+              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${sourceColors.bg} ${sourceColors.text}`}
+            >
               {getSourceDisplayName(job.source)}
             </span>
             {job.also_on && job.also_on.length > 0 && (
-              <span className="inline-flex items-center rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500" title={`Also on: ${job.also_on.join(', ')}`}>
+              <span
+                className="inline-flex items-center rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500"
+                title={`Also on: ${job.also_on.join(', ')}`}
+              >
                 +{job.also_on.length}
               </span>
             )}
             {job.is_ghost && (
-              <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600" title="This job listing URL returned 404 — it may have been removed">
+              <span
+                className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600"
+                title="This job listing URL returned 404 — it may have been removed"
+              >
                 Possibly expired
               </span>
             )}
           </div>
           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-            <BookmarkButton jobId={job.id} isSaved={job.status === 'saved'} sessionCode={sessionCode} onUpdate={onUpdate} />
-            <StatusSelect jobId={job.id} currentStatus={job.status} onUpdate={onUpdate} sessionCode={sessionCode} />
+            <BookmarkButton
+              jobId={job.id}
+              isSaved={job.status === 'saved'}
+              sessionCode={sessionCode}
+              onUpdate={onUpdate}
+            />
+            <StatusSelect
+              jobId={job.id}
+              currentStatus={job.status}
+              onUpdate={onUpdate}
+              sessionCode={sessionCode}
+            />
           </div>
         </div>
 
         {/* Title */}
-        <h3 className="text-[15px] font-bold text-primary-950 leading-snug line-clamp-2">
+        <h3 className="text-primary-950 line-clamp-2 text-[15px] leading-snug font-bold">
           <a
             href={job.url}
             target="_blank"
@@ -155,9 +215,7 @@ export function JobCard({ job, onUpdate, onJobClick, sessionCode, isFocused, isS
         </h3>
 
         {/* Company */}
-        {job.company && (
-          <p className="mt-1 text-sm text-slate-600 truncate">{job.company}</p>
-        )}
+        {job.company && <p className="mt-1 truncate text-sm text-slate-600">{job.company}</p>}
 
         {/* Salary (prominent) */}
         {job.salary && (
@@ -173,7 +231,7 @@ export function JobCard({ job, onUpdate, onJobClick, sessionCode, isFocused, isS
           {job.location && (
             <span className="flex items-center gap-1">
               <MapPin size={12} />
-              <span className="truncate max-w-[140px]">{job.location}</span>
+              <span className="max-w-[140px] truncate">{job.location}</span>
             </span>
           )}
           <span>{formatDate(job.posted_date ?? job.scraped_at)}</span>
@@ -207,17 +265,20 @@ export function JobCard({ job, onUpdate, onJobClick, sessionCode, isFocused, isS
       <div className="flex border-t border-slate-100">
         <button
           onClick={() => setShowDetails(!showDetails)}
-          className="flex-1 px-4 py-2 text-xs font-medium text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+          className="flex-1 px-4 py-2 text-xs font-medium text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600"
         >
           {showDetails ? 'Hide details' : 'Show details'}
         </button>
-        {job.status !== 'applied' && job.status !== 'interview' && job.status !== 'offer' && job.status !== 'rejected' && (
-          <QuickApplyButton jobId={job.id} sessionCode={sessionCode} onUpdate={onUpdate} />
-        )}
+        {job.status !== 'applied' &&
+          job.status !== 'interview' &&
+          job.status !== 'offer' &&
+          job.status !== 'rejected' && (
+            <QuickApplyButton jobId={job.id} sessionCode={sessionCode} onUpdate={onUpdate} />
+          )}
         {onJobClick && (
           <button
             onClick={() => onJobClick(job.id)}
-            className="border-l border-slate-100 px-4 py-2 text-xs font-medium text-primary-500 hover:bg-primary-50 hover:text-primary-700 transition-colors"
+            className="text-primary-500 hover:bg-primary-50 hover:text-primary-700 border-l border-slate-100 px-4 py-2 text-xs font-medium transition-colors"
           >
             Full view
           </button>
@@ -225,26 +286,36 @@ export function JobCard({ job, onUpdate, onJobClick, sessionCode, isFocused, isS
       </div>
 
       {showDetails && (
-        <div className="border-t border-slate-100 px-4 py-3 space-y-3">
+        <div className="space-y-3 border-t border-slate-100 px-4 py-3">
           {/* AI Summary */}
           <AISummaryBlock summary={aiSummary} loading={summaryLoading} compact />
 
           {/* Description excerpt */}
           {job.description && (
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Description</p>
-              <p className="text-xs leading-relaxed text-slate-600 line-clamp-6">{job.description}</p>
+              <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                Description
+              </p>
+              <p className="line-clamp-6 text-xs leading-relaxed text-slate-600">
+                {job.description}
+              </p>
             </div>
           )}
 
           {/* Skills */}
           {job.skills && (
             <div className="flex flex-wrap gap-1">
-              {job.skills.split(',').slice(0, 6).map((skill) => (
-                <span key={skill.trim()} className="rounded bg-primary-50 px-1.5 py-0.5 text-[10px] font-medium text-primary-700 border border-primary-200">
-                  {skill.trim()}
-                </span>
-              ))}
+              {job.skills
+                .split(',')
+                .slice(0, 6)
+                .map((skill) => (
+                  <span
+                    key={skill.trim()}
+                    className="bg-primary-50 text-primary-700 border-primary-200 rounded border px-1.5 py-0.5 text-[10px] font-medium"
+                  >
+                    {skill.trim()}
+                  </span>
+                ))}
             </div>
           )}
         </div>

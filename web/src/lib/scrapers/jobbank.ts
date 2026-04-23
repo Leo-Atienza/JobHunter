@@ -1,5 +1,6 @@
 import type { ScrapeParams, ScrapeResult } from './types';
 import { getDb } from '@/lib/db';
+import { stealthFetch } from './anti-detect';
 
 interface ApifyJobbankItem {
   url?: string;
@@ -50,9 +51,10 @@ export async function scrapeJobbank(params: ScrapeParams): Promise<ScrapeResult>
 
   let items: ApifyJobbankItem[];
   try {
-    const resp = await fetch(
+    const resp = await stealthFetch(
       `https://api.apify.com/v2/acts/powerdot~jobbank-ca-actor/run-sync-get-dataset-items?token=${token}`,
       {
+        mode: 'json',
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -60,13 +62,14 @@ export async function scrapeJobbank(params: ScrapeParams): Promise<ScrapeResult>
           maxPositionsPerUrl: 50,
           proxyConfiguration: { useApifyProxy: true },
         }),
+        maxRetries: 1,
+        timeout: 60_000, // Apify actor runs can take a while
       },
     );
 
     if (!resp.ok) {
-      const msg = resp.status === 402
-        ? 'Apify credits exhausted'
-        : `Apify API error (${resp.status})`;
+      const msg =
+        resp.status === 402 ? 'Apify credits exhausted' : `Apify API error (${resp.status})`;
       return { source: 'jobbank', jobs: [], error: msg };
     }
 

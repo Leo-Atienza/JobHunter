@@ -28,7 +28,7 @@ export function UserMenu() {
     return (
       <button
         onClick={() => signIn('google')}
-        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-300"
+        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50"
       >
         <LogIn size={14} />
         Sign in
@@ -40,7 +40,7 @@ export function UserMenu() {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1 transition-all hover:bg-slate-50 hover:border-slate-300"
+        className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1 transition-all hover:border-slate-300 hover:bg-slate-50"
       >
         {session.user.image ? (
           <img
@@ -50,39 +50,39 @@ export function UserMenu() {
             referrerPolicy="no-referrer"
           />
         ) : (
-          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700">
+          <div className="bg-primary-100 text-primary-700 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold">
             {session.user.name?.[0] ?? '?'}
           </div>
         )}
-        <span className="hidden sm:inline text-sm font-medium text-slate-700 max-w-24 truncate">
+        <span className="hidden max-w-24 truncate text-sm font-medium text-slate-700 sm:inline">
           {session.user.name?.split(' ')[0]}
         </span>
         <ChevronDown size={12} className="text-slate-400" />
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white py-1.5 shadow-lg shadow-slate-200/50 animate-slide-up">
-          <div className="px-4 py-2 border-b border-slate-100">
-            <p className="text-sm font-medium text-slate-900 truncate">{session.user.name}</p>
-            <p className="text-xs text-slate-500 truncate">{session.user.email}</p>
+        <div className="animate-slide-up absolute right-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white py-1.5 shadow-lg shadow-slate-200/50">
+          <div className="border-b border-slate-100 px-4 py-2">
+            <p className="truncate text-sm font-medium text-slate-900">{session.user.name}</p>
+            <p className="truncate text-xs text-slate-500">{session.user.email}</p>
           </div>
           <Link
             href="/"
-            className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50"
           >
             <Home size={14} />
             My Sessions
           </Link>
           <Link
             href="/saved"
-            className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50"
           >
             <BarChart3 size={14} />
             Tracker
           </Link>
           <button
             onClick={() => signOut()}
-            className="flex w-full items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+            className="flex w-full items-center gap-2 px-4 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50"
           >
             <LogOut size={14} />
             Sign out

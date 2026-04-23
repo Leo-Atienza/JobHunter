@@ -1,12 +1,24 @@
 import type { ScrapeParams, ScrapeResult } from './types';
-import { fetchJson, normalizeJobType } from './utils';
+import { normalizeJobType } from './utils';
+import { stealthFetchJson } from './anti-detect';
 
 const CATEGORY_MAP: Record<string, string> = {
-  software: 'software-dev', engineer: 'software-dev', developer: 'software-dev',
-  frontend: 'software-dev', backend: 'software-dev', fullstack: 'software-dev',
-  'full stack': 'software-dev', devops: 'devops-sysadmin', data: 'data',
-  design: 'design', product: 'product', marketing: 'marketing',
-  customer: 'customer-support', sales: 'sales', qa: 'qa', writing: 'writing',
+  software: 'software-dev',
+  engineer: 'software-dev',
+  developer: 'software-dev',
+  frontend: 'software-dev',
+  backend: 'software-dev',
+  fullstack: 'software-dev',
+  'full stack': 'software-dev',
+  devops: 'devops-sysadmin',
+  data: 'data',
+  design: 'design',
+  product: 'product',
+  marketing: 'marketing',
+  customer: 'customer-support',
+  sales: 'sales',
+  qa: 'qa',
+  writing: 'writing',
 };
 
 function guessCategory(keywords: string[]): string | undefined {
@@ -18,9 +30,14 @@ function guessCategory(keywords: string[]): string | undefined {
 }
 
 interface RemotiveJob {
-  title?: string; company_name?: string; url?: string;
-  salary?: string; description?: string; publication_date?: string;
-  candidate_required_location?: string; job_type?: string;
+  title?: string;
+  company_name?: string;
+  url?: string;
+  salary?: string;
+  description?: string;
+  publication_date?: string;
+  candidate_required_location?: string;
+  job_type?: string;
 }
 
 export async function scrapeRemotive(params: ScrapeParams): Promise<ScrapeResult> {
@@ -28,14 +45,17 @@ export async function scrapeRemotive(params: ScrapeParams): Promise<ScrapeResult
   const category = guessCategory(params.keywords);
 
   const urls: string[] = [];
-  if (category) urls.push(`https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}&category=${category}`);
+  if (category)
+    urls.push(
+      `https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}&category=${category}`,
+    );
   urls.push(`https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}`);
 
   let items: RemotiveJob[] = [];
   let allFailed = true;
   let categoryFailed = false;
   for (const url of urls) {
-    const data = await fetchJson<{ jobs?: RemotiveJob[] }>(url);
+    const data = await stealthFetchJson<{ jobs?: RemotiveJob[] }>(url);
     if (data !== null) {
       allFailed = false;
       items = data?.jobs ?? [];

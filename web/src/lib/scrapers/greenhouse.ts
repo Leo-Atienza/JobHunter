@@ -1,15 +1,31 @@
 import type { ScrapeParams, ScrapeResult } from './types';
-import { fetchJson, stripHtml, matchesKeywords, parseDate } from './utils';
+import { stripHtml, matchesKeywords, parseDate } from './utils';
+import { stealthFetchJson } from './anti-detect';
 
 // Verified active as of April 2026 — sorted by Canada-eligible job count.
 // Dead tokens removed: lightspeedcommerce, nuvei, coveo, dapperlabs,
 // applydigital, thinkific, trulioo, achievers, procurify, opentext,
 // sap, ceridian (all 404).
 const DEFAULT_COMPANIES = [
-  'gitlab', 'grafanalabs', 'stripe', 'databricks', 'datadog',
-  'webflow', 'anthropic', 'elastic', 'hootsuite', 'benevity',
-  'cloudflare', 'postman', 'unity3d', 'figma', 'flipp',
-  'd2l', 'fingerprint', 'ritual', 'lattice',
+  'gitlab',
+  'grafanalabs',
+  'stripe',
+  'databricks',
+  'datadog',
+  'webflow',
+  'anthropic',
+  'elastic',
+  'hootsuite',
+  'benevity',
+  'cloudflare',
+  'postman',
+  'unity3d',
+  'figma',
+  'flipp',
+  'd2l',
+  'fingerprint',
+  'ritual',
+  'lattice',
 ];
 
 interface GreenhouseJob {
@@ -17,7 +33,8 @@ interface GreenhouseJob {
   location?: { name?: string };
   absolute_url?: string;
   content?: string;
-  updated_at?: string; created_at?: string;
+  updated_at?: string;
+  created_at?: string;
   departments?: { name?: string }[];
 }
 
@@ -28,8 +45,8 @@ export async function scrapeGreenhouse(params: ScrapeParams): Promise<ScrapeResu
   // All companies in parallel — each hits a different Greenhouse board.
   const results = await Promise.allSettled(
     companies.map(async (token) => {
-      const data = await fetchJson<{ jobs?: GreenhouseJob[] }>(
-        `https://boards-api.greenhouse.io/v1/boards/${token}/jobs?content=true`
+      const data = await stealthFetchJson<{ jobs?: GreenhouseJob[] }>(
+        `https://boards-api.greenhouse.io/v1/boards/${token}/jobs?content=true`,
       );
       return (data?.jobs ?? [])
         .filter((j) => {
@@ -47,7 +64,7 @@ export async function scrapeGreenhouse(params: ScrapeParams): Promise<ScrapeResu
           description: j.content ? stripHtml(j.content) : undefined,
           posted_date: parseDate(j.updated_at || j.created_at),
         }));
-    })
+    }),
   );
 
   let failures = 0;
@@ -56,11 +73,12 @@ export async function scrapeGreenhouse(params: ScrapeParams): Promise<ScrapeResu
     else failures++;
   }
 
-  const error = failures > 0
-    ? jobs.length === 0
-      ? `All ${failures} Greenhouse boards failed`
-      : `${failures} of ${companies.length} boards failed (${jobs.length} jobs from successful boards)`
-    : undefined;
+  const error =
+    failures > 0
+      ? jobs.length === 0
+        ? `All ${failures} Greenhouse boards failed`
+        : `${failures} of ${companies.length} boards failed (${jobs.length} jobs from successful boards)`
+      : undefined;
 
   return { source: 'greenhouse', jobs, error };
 }

@@ -1,5 +1,6 @@
 import type { ScrapeParams, ScrapeResult } from './types';
-import { fetchJson, matchesKeywords, parseDate } from './utils';
+import { matchesKeywords, parseDate } from './utils';
+import { stealthFetchJson } from './anti-detect';
 
 /** Shape of a job object returned by the RemoteOK public API. */
 interface RemoteOKJob {
@@ -37,9 +38,10 @@ export async function scrapeRemoteOK(params: ScrapeParams): Promise<ScrapeResult
   const query = params.keywords.slice(0, 3).join(',');
   const url = `https://remoteok.com/api?tags=${encodeURIComponent(query)}`;
 
-  // RemoteOK requires a browser-like User-Agent to avoid 403 responses.
-  const raw = await fetchJson<(RemoteOKJob | Record<string, unknown>)[]>(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; JobHunter/1.0)' },
+  // RemoteOK blocks non-browser User-Agents — use full Chrome fingerprint + retry.
+  const raw = await stealthFetchJson<(RemoteOKJob | Record<string, unknown>)[]>(url, {
+    mode: 'json',
+    maxRetries: 2,
   });
 
   if (!raw || !Array.isArray(raw)) {
@@ -59,9 +61,8 @@ export async function scrapeRemoteOK(params: ScrapeParams): Promise<ScrapeResult
     })
     .map((item) => {
       const id = item.id ?? '';
-      const jobUrl = item.url?.trim()
-        || item.apply_url?.trim()
-        || `https://remoteok.com/remote-jobs/${id}`;
+      const jobUrl =
+        item.url?.trim() || item.apply_url?.trim() || `https://remoteok.com/remote-jobs/${id}`;
 
       return {
         title: item.position!.trim(),

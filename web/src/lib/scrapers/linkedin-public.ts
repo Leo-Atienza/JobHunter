@@ -9,20 +9,21 @@
 
 import type { ScrapeParams, ScrapeResult } from './types';
 import type { JobInput } from '@/lib/types';
-import { USER_AGENT, parseDate } from './utils';
+import { parseDate } from './utils';
+import { stealthFetch, humanDelay } from './anti-detect';
 
 const JOBS_PER_PAGE = 25;
 const MAX_PAGES = 2; // 50 jobs max — enough for most searches, keeps scan fast
 
 /** Country code → LinkedIn geo ID for better location targeting. */
 const COUNTRY_GEO: Record<string, string> = {
-  ca: '101174742',   // Canada
-  us: '103644278',   // United States
-  uk: '101165590',   // United Kingdom
-  au: '101452733',   // Australia
-  de: '101282230',   // Germany
-  fr: '105015875',   // France
-  in: '102713980',   // India
+  ca: '101174742', // Canada
+  us: '103644278', // United States
+  uk: '101165590', // United Kingdom
+  au: '101452733', // Australia
+  de: '101282230', // Germany
+  fr: '105015875', // France
+  in: '102713980', // India
 };
 
 /** Build LinkedIn guest search URL. */
@@ -32,8 +33,9 @@ function buildSearchUrl(params: ScrapeParams, start: number): string {
   const country = params.country?.toLowerCase() || '';
   const geoId = COUNTRY_GEO[country] || '';
 
-  let url = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search`
-    + `?keywords=${keywords}&location=${location}&start=${start}`;
+  let url =
+    `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search` +
+    `?keywords=${keywords}&location=${location}&start=${start}`;
 
   if (geoId) url += `&geoId=${geoId}`;
   if (params.remote) url += '&f_WT=2'; // Remote filter
@@ -44,13 +46,12 @@ function buildSearchUrl(params: ScrapeParams, start: number): string {
 /** Fetch one page of LinkedIn guest job results. */
 async function fetchPage(url: string): Promise<{ html: string | null; error?: string }> {
   try {
-    const resp = await fetch(url, {
-      headers: {
-        'User-Agent': USER_AGENT,
-        'Accept': 'text/html',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-      signal: AbortSignal.timeout(8_000),
+    // Google Referrer trick + full Chrome fingerprint — Botasaurus's key
+    // anti-detection technique for bypassing LinkedIn connection challenges.
+    const resp = await stealthFetch(url, {
+      mode: 'google-referrer',
+      maxRetries: 2,
+      timeout: 10_000,
     });
     if (!resp.ok) {
       return { html: null, error: `LinkedIn returned ${resp.status}` };
@@ -72,35 +73,41 @@ function parseJobCards(html: string): JobInput[] {
   const jobs: JobInput[] = [];
 
   // Extract each field with regex — LinkedIn uses consistent class names
-  const titles = [...html.matchAll(
-    /<h3[^>]*class="[^"]*base-search-card__title[^"]*"[^>]*>([\s\S]*?)<\/h3>/gi,
-  )].map(m => m[1].trim());
+  const titles = [
+    ...html.matchAll(/<h3[^>]*class="[^"]*base-search-card__title[^"]*"[^>]*>([\s\S]*?)<\/h3>/gi),
+  ].map((m) => m[1].trim());
 
-  const companies = [...html.matchAll(
-    /<h4[^>]*class="[^"]*base-search-card__subtitle[^"]*"[^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/gi,
-  )].map(m => m[1].trim());
+  const companies = [
+    ...html.matchAll(
+      /<h4[^>]*class="[^"]*base-search-card__subtitle[^"]*"[^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/gi,
+    ),
+  ].map((m) => m[1].trim());
 
-  const locations = [...html.matchAll(
-    /<span[^>]*class="[^"]*job-search-card__location[^"]*"[^>]*>([\s\S]*?)<\/span>/gi,
-  )].map(m => m[1].trim());
+  const locations = [
+    ...html.matchAll(
+      /<span[^>]*class="[^"]*job-search-card__location[^"]*"[^>]*>([\s\S]*?)<\/span>/gi,
+    ),
+  ].map((m) => m[1].trim());
 
-  const links = [...html.matchAll(
-    /<a[^>]*class="[^"]*base-card__full-link[^"]*"[^>]*href="([^"]+)"/gi,
-  )].map(m => m[1].split('?')[0]); // Strip tracking params
+  const links = [
+    ...html.matchAll(/<a[^>]*class="[^"]*base-card__full-link[^"]*"[^>]*href="([^"]+)"/gi),
+  ].map((m) => m[1].split('?')[0]); // Strip tracking params
 
-  const dates = [...html.matchAll(
-    /<time[^>]*datetime="([^"]+)"/gi,
-  )].map(m => m[1]);
+  const dates = [...html.matchAll(/<time[^>]*datetime="([^"]+)"/gi)].map((m) => m[1]);
 
   // LinkedIn sometimes includes salary in a separate span
-  const salaries = [...html.matchAll(
-    /<span[^>]*class="[^"]*job-search-card__salary-info[^"]*"[^>]*>([\s\S]*?)<\/span>/gi,
-  )].map(m => m[1].trim());
+  const salaries = [
+    ...html.matchAll(
+      /<span[^>]*class="[^"]*job-search-card__salary-info[^"]*"[^>]*>([\s\S]*?)<\/span>/gi,
+    ),
+  ].map((m) => m[1].trim());
 
   // listdate class contains posting dates (e.g. "2 days ago"), not job types
-  const postedDates = [...html.matchAll(
-    /<span[^>]*class="[^"]*job-search-card__listdate[^"]*"[^>]*>([\s\S]*?)<\/span>/gi,
-  )].map(m => m[1].trim());
+  const postedDates = [
+    ...html.matchAll(
+      /<span[^>]*class="[^"]*job-search-card__listdate[^"]*"[^>]*>([\s\S]*?)<\/span>/gi,
+    ),
+  ].map((m) => m[1].trim());
 
   const count = Math.min(titles.length, links.length);
   for (let i = 0; i < count; i++) {
@@ -149,7 +156,7 @@ export async function scrapeLinkedInPublic(params: ScrapeParams): Promise<Scrape
     }
 
     if (page < MAX_PAGES - 1) {
-      await new Promise(r => setTimeout(r, 200));
+      await humanDelay(400, 1200); // Human-like interval between pages
     }
   }
 

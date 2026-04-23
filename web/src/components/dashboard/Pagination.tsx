@@ -34,7 +34,11 @@ export function Pagination({
   } else {
     pages.push(1);
     if (currentPage > 3) pages.push('ellipsis');
-    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+    for (
+      let i = Math.max(2, currentPage - 1);
+      i <= Math.min(totalPages - 1, currentPage + 1);
+      i++
+    ) {
       pages.push(i);
     }
     if (currentPage < totalPages - 2) pages.push('ellipsis');
@@ -51,7 +55,7 @@ export function Pagination({
         <select
           value={pageSize}
           onChange={(e) => onPageSizeChange(Number(e.target.value))}
-          className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+          className="focus:border-primary-400 focus:ring-primary-100 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 outline-none focus:ring-2"
         >
           {PAGE_SIZES.map((size) => (
             <option key={size} value={size}>
@@ -67,17 +71,19 @@ export function Pagination({
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
+            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-30"
             aria-label="Previous page"
           >
             <ChevronLeft size={16} />
           </button>
 
           {/* Desktop: numbered pages */}
-          <div className="hidden sm:flex items-center gap-1">
+          <div className="hidden items-center gap-1 sm:flex">
             {pages.map((page, i) =>
               page === 'ellipsis' ? (
-                <span key={`e${i}`} className="px-1 text-slate-300">...</span>
+                <span key={`e${i}`} className="px-1 text-slate-300">
+                  ...
+                </span>
               ) : (
                 <button
                   key={page}
@@ -86,7 +92,7 @@ export function Pagination({
                     'min-w-[32px] rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors',
                     page === currentPage
                       ? 'bg-primary-950 text-white shadow-sm'
-                      : 'text-slate-600 hover:bg-slate-100'
+                      : 'text-slate-600 hover:bg-slate-100',
                   )}
                 >
                   {page}
@@ -96,14 +102,14 @@ export function Pagination({
           </div>
 
           {/* Mobile: compact page indicator */}
-          <span className="flex sm:hidden items-center px-3 text-xs font-medium text-slate-600 select-none">
+          <span className="flex items-center px-3 text-xs font-medium text-slate-600 select-none sm:hidden">
             {currentPage} / {totalPages}
           </span>
 
           <button
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
+            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-30"
             aria-label="Next page"
           >
             <ChevronRight size={16} />

@@ -5,7 +5,7 @@
  */
 export default function DashboardLoading() {
   return (
-    <div className="min-h-screen bg-slate-50 animate-pulse">
+    <div className="min-h-screen animate-pulse bg-slate-50">
       {/* Sticky header skeleton */}
       <div className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
@@ -21,10 +21,7 @@ export default function DashboardLoading() {
         {/* Stats bar skeleton — 5 cards */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div
-              key={i}
-              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-            >
+            <div key={i} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="h-4 w-16 rounded bg-slate-200" />
               <div className="mt-3 h-7 w-12 rounded-lg bg-slate-200" />
             </div>

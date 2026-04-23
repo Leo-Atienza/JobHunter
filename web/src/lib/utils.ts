@@ -9,6 +9,26 @@ export function cn(...inputs: ClassValue[]): string {
 }
 
 /**
+ * SWR-compatible fetcher that rejects on non-2xx responses so useSWR's
+ * `error` state is populated instead of passing a JSON error body through
+ * as if it were data. Plain `fetch().then(r => r.json())` silently returns
+ * `{ error: ... }` objects on failure, which crashes downstream code that
+ * expects a typed payload.
+ */
+export async function fetcher<T = unknown>(url: string): Promise<T> {
+  const res = await fetch(url);
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    const err = new Error(
+      `Request failed (${res.status}) for ${url}: ${text.slice(0, 200)}`,
+    ) as Error & { status?: number };
+    err.status = res.status;
+    throw err;
+  }
+  return (await res.json()) as T;
+}
+
+/**
  * Format a date string to a human-readable relative or absolute format.
  */
 export function formatDate(dateStr: string | null): string {
@@ -61,10 +81,7 @@ export function sanitize(input: string, maxLength = 10000): string {
 /**
  * Generate a CSV string from rows.
  */
-export function generateCsv(
-  headers: string[],
-  rows: string[][]
-): string {
+export function generateCsv(headers: string[], rows: string[][]): string {
   const escapeCsvField = (field: string): string => {
     if (field.includes(',') || field.includes('"') || field.includes('\n')) {
       return `"${field.replace(/"/g, '""')}"`;

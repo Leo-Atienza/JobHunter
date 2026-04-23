@@ -1,5 +1,6 @@
 import type { ScrapeParams, ScrapeResult } from './types';
 import { matchesKeywords, parseDate, stripHtml } from './utils';
+import { stealthFetch } from './anti-detect';
 
 const WWR_FEED_URL = 'https://weworkremotely.com/remote-jobs.rss';
 
@@ -14,7 +15,10 @@ function extractItems(xml: string): string[] {
 
 /** Extract text content of the first matching XML tag within a block. */
 function extractTag(block: string, tag: string): string | undefined {
-  const pattern = new RegExp(`<${tag}(?:[^>]*)><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>|<${tag}(?:[^>]*)>([\\s\\S]*?)<\\/${tag}>`, 'i');
+  const pattern = new RegExp(
+    `<${tag}(?:[^>]*)><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>|<${tag}(?:[^>]*)>([\\s\\S]*?)<\\/${tag}>`,
+    'i',
+  );
   const match = block.match(pattern);
   if (!match) return undefined;
   // Group 1 = CDATA content, group 2 = plain content
@@ -41,19 +45,24 @@ function parseTitle(raw: string): { title: string; company: string | undefined }
 /**
  * Scrape remote jobs from the We Work Remotely public RSS feed.
  *
- * Uses raw fetch (not fetchJson) because the endpoint returns XML, not JSON.
+ * Uses stealthFetch (RSS mode) because the endpoint returns XML, not JSON.
  * Parses the RSS with regex — the feed structure is stable and well-defined.
  */
 export async function scrapeWeWorkRemotely(params: ScrapeParams): Promise<ScrapeResult> {
   let xml: string;
 
   try {
-    const resp = await fetch(WWR_FEED_URL, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; JobHunter/1.0)' },
-      signal: AbortSignal.timeout(8_000),
+    const resp = await stealthFetch(WWR_FEED_URL, {
+      mode: 'rss',
+      maxRetries: 2,
+      timeout: 10_000,
     });
     if (!resp.ok) {
-      return { source: 'weworkremotely', jobs: [], error: `WeWorkRemotely returned ${resp.status}` };
+      return {
+        source: 'weworkremotely',
+        jobs: [],
+        error: `WeWorkRemotely returned ${resp.status}`,
+      };
     }
     xml = await resp.text();
   } catch (err) {

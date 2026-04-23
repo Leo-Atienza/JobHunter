@@ -1,19 +1,76 @@
 /** Post-scrape city filter — keeps only jobs in the user's chosen city. */
 
-const REMOTE_PATTERN = /\bremote\b|\bwork from home\b|\bwfh\b|\banywhere\b|\bworldwide\b|\bglobal\b|\bdistributed\b/i;
+const REMOTE_PATTERN =
+  /\bremote\b|\bwork from home\b|\bwfh\b|\banywhere\b|\bworldwide\b|\bglobal\b|\bdistributed\b/i;
 
 /** Metro area aliases — searching "GTA" also matches Toronto, Mississauga, etc. */
-const GTA_CITIES = ['toronto', 'mississauga', 'brampton', 'vaughan', 'markham', 'richmond hill', 'oakville', 'burlington', 'oshawa', 'pickering'];
-const VANCOUVER_CITIES = ['vancouver', 'burnaby', 'surrey', 'richmond', 'coquitlam', 'langley', 'delta', 'north vancouver', 'west vancouver', 'new westminster', 'port moody', 'port coquitlam', 'maple ridge', 'white rock', 'abbotsford'];
+const GTA_CITIES = [
+  'toronto',
+  'mississauga',
+  'brampton',
+  'vaughan',
+  'markham',
+  'richmond hill',
+  'oakville',
+  'burlington',
+  'oshawa',
+  'pickering',
+];
+const VANCOUVER_CITIES = [
+  'vancouver',
+  'burnaby',
+  'surrey',
+  'richmond',
+  'coquitlam',
+  'langley',
+  'delta',
+  'north vancouver',
+  'west vancouver',
+  'new westminster',
+  'port moody',
+  'port coquitlam',
+  'maple ridge',
+  'white rock',
+  'abbotsford',
+];
 const METRO_ALIASES: Record<string, string[]> = {
-  'gta': GTA_CITIES,
+  gta: GTA_CITIES,
   'greater toronto': GTA_CITIES,
   'greater toronto area': GTA_CITIES,
-  'toronto': ['gta', 'greater toronto', 'mississauga', 'brampton', 'vaughan', 'markham', 'richmond hill', 'oakville', 'burlington', 'oshawa', 'pickering'],
+  toronto: [
+    'gta',
+    'greater toronto',
+    'mississauga',
+    'brampton',
+    'vaughan',
+    'markham',
+    'richmond hill',
+    'oakville',
+    'burlington',
+    'oshawa',
+    'pickering',
+  ],
   'lower mainland': VANCOUVER_CITIES,
   'metro vancouver': VANCOUVER_CITIES,
   'greater vancouver': VANCOUVER_CITIES,
-  'vancouver': ['lower mainland', 'metro vancouver', 'burnaby', 'surrey', 'richmond', 'coquitlam', 'langley', 'delta', 'north vancouver', 'west vancouver', 'new westminster', 'port moody', 'port coquitlam', 'maple ridge', 'white rock', 'abbotsford'],
+  vancouver: [
+    'lower mainland',
+    'metro vancouver',
+    'burnaby',
+    'surrey',
+    'richmond',
+    'coquitlam',
+    'langley',
+    'delta',
+    'north vancouver',
+    'west vancouver',
+    'new westminster',
+    'port moody',
+    'port coquitlam',
+    'maple ridge',
+    'white rock',
+    'abbotsford',
+  ],
 };
 
 /** Expand a city into itself + all its metro aliases. */
@@ -28,9 +85,24 @@ function cityTokensMatch(normalized: string, city: string): boolean {
 
 /** Country/region names that aren't cities. */
 const NON_CITY_TERMS = new Set([
-  'canada', 'united states', 'usa', 'us', 'uk', 'united kingdom',
-  'australia', 'germany', 'france', 'india', 'deutschland', 'england',
-  'britain', 'remote', 'anywhere', 'worldwide', 'global', 'distributed',
+  'canada',
+  'united states',
+  'usa',
+  'us',
+  'uk',
+  'united kingdom',
+  'australia',
+  'germany',
+  'france',
+  'india',
+  'deutschland',
+  'england',
+  'britain',
+  'remote',
+  'anywhere',
+  'worldwide',
+  'global',
+  'distributed',
 ]);
 
 /**
@@ -125,7 +197,8 @@ export function matchesAnyCity(
   return cities.some((city) => cityTokensMatch(normalized, city));
 }
 
-const REMOTE_SQL_PATTERN = "location ~* 'remote|work from home|wfh|anywhere|worldwide|global|distributed'";
+const REMOTE_SQL_PATTERN =
+  "location ~* 'remote|work from home|wfh|anywhere|worldwide|global|distributed'";
 
 /** Build ILIKE conditions for a set of city tokens, starting at paramIndex. */
 function buildCityIlikeClauses(

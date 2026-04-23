@@ -14,7 +14,7 @@ export default function HomePage() {
           <>
             <Link
               href="/saved"
-              className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-slate-600 transition-colors hover:text-primary-700"
+              className="hover:text-primary-700 hidden items-center gap-1.5 text-sm font-medium text-slate-600 transition-colors sm:flex"
             >
               <BarChart3 size={14} />
               Tracker
@@ -23,7 +23,10 @@ export default function HomePage() {
         }
         mobileLinks={
           <>
-            <Link href="/saved" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+            <Link
+              href="/saved"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
               <BarChart3 size={16} />
               Application Tracker
             </Link>
@@ -37,12 +40,13 @@ export default function HomePage() {
 
       <footer className="border-t border-slate-200 bg-slate-50 py-12">
         <div className="mx-auto max-w-6xl px-6 text-center">
-          <p className="font-display text-lg font-bold text-primary-950">JobHunter</p>
+          <p className="font-display text-primary-950 text-lg font-bold">JobHunter</p>
           <p className="mt-2 text-sm text-slate-500">
             Open source job search aggregator. Your data, your searches, your control.
           </p>
           <p className="mt-4 text-xs text-slate-400">
-            Anonymous sessions expire after 48 hours. Sign in with Google to save sessions permanently.
+            Anonymous sessions expire after 48 hours. Sign in with Google to save sessions
+            permanently.
           </p>
           <p className="mt-2 text-xs text-slate-400">
             &copy; {new Date().getFullYear()} JobHunter &middot; Built with Next.js + Neon

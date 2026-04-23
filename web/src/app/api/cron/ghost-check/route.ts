@@ -35,7 +35,9 @@ async function isGhostUrl(url: string): Promise<boolean> {
 }
 
 /** Process URLs in batches with concurrency limit */
-async function checkBatch(jobs: { id: number; url: string }[]): Promise<{ id: number; isGhost: boolean }[]> {
+async function checkBatch(
+  jobs: { id: number; url: string }[],
+): Promise<{ id: number; isGhost: boolean }[]> {
   const results: { id: number; isGhost: boolean }[] = [];
 
   for (let i = 0; i < jobs.length; i += CONCURRENCY) {
@@ -44,7 +46,7 @@ async function checkBatch(jobs: { id: number; url: string }[]): Promise<{ id: nu
       chunk.map(async (job) => ({
         id: job.id,
         isGhost: await isGhostUrl(job.url),
-      }))
+      })),
     );
     results.push(...chunkResults);
   }
@@ -99,7 +101,9 @@ export async function GET(request: NextRequest) {
     // Un-ghost any that were previously ghost but now respond OK
     const revivedIds = results.filter((r) => !r.isGhost).map((r) => r.id);
     if (revivedIds.length > 0) {
-      await sql(`UPDATE jobs SET is_ghost = false WHERE id = ANY($1) AND is_ghost = true`, [revivedIds]);
+      await sql(`UPDATE jobs SET is_ghost = false WHERE id = ANY($1) AND is_ghost = true`, [
+        revivedIds,
+      ]);
     }
 
     console.log(`Ghost check: checked ${results.length}, found ${ghostIds.length} ghosts`);

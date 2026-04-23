@@ -127,28 +127,31 @@ export function PipelineView({ jobs, onJobClick, onStatusChange }: PipelineViewP
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
         {PIPELINE_STAGES.map((stage, i) => {
           const prevCount = i > 0 ? counts[PIPELINE_STAGES[i - 1].status] : null;
-          const conversion = prevCount && prevCount > 0
-            ? Math.round((counts[stage.status] / prevCount) * 100)
-            : null;
+          const conversion =
+            prevCount && prevCount > 0
+              ? Math.round((counts[stage.status] / prevCount) * 100)
+              : null;
           return (
             <div
               key={stage.status}
               className={cn(
-                'relative overflow-hidden rounded-xl border border-slate-200/80 bg-gradient-to-br to-white p-3 sm:p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md',
-                stage.gradientFrom
+                'relative overflow-hidden rounded-xl border border-slate-200/80 bg-gradient-to-br to-white p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-4',
+                stage.gradientFrom,
               )}
             >
               <div className="flex items-baseline justify-between gap-2">
-                <span className={cn('font-display text-2xl font-extrabold sm:text-3xl', stage.color)}>
+                <span
+                  className={cn('font-display text-2xl font-extrabold sm:text-3xl', stage.color)}
+                >
                   <AnimatedCounter value={counts[stage.status]} />
                 </span>
                 {conversion !== null && (
-                  <span className="rounded-full bg-white/80 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 ring-1 ring-inset ring-slate-200/60">
+                  <span className="rounded-full bg-white/80 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 ring-1 ring-slate-200/60 ring-inset">
                     {conversion}%
                   </span>
                 )}
               </div>
-              <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 sm:text-xs">
+              <p className="mt-0.5 text-[10px] font-semibold tracking-wider text-slate-400 uppercase sm:text-xs">
                 {stage.label}
               </p>
             </div>
@@ -157,16 +160,23 @@ export function PipelineView({ jobs, onJobClick, onStatusChange }: PipelineViewP
       </div>
 
       {/* Kanban columns */}
-      <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-none sm:gap-4">
+      <div className="scrollbar-none flex gap-3 overflow-x-auto pb-4 sm:gap-4">
         {PIPELINE_STAGES.map((stage) => (
           <div key={stage.status} className="w-64 shrink-0 sm:w-72">
             {/* Column header */}
-            <div className={cn('mb-3 flex items-center justify-between rounded-lg px-3 py-2', stage.headerBg)}>
+            <div
+              className={cn(
+                'mb-3 flex items-center justify-between rounded-lg px-3 py-2',
+                stage.headerBg,
+              )}
+            >
               <span className={cn('text-sm font-bold', stage.headerText)}>{stage.label}</span>
-              <span className={cn(
-                'flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold text-white',
-                counts[stage.status] > 0 ? 'bg-slate-700' : 'bg-slate-300'
-              )}>
+              <span
+                className={cn(
+                  'flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold text-white',
+                  counts[stage.status] > 0 ? 'bg-slate-700' : 'bg-slate-300',
+                )}
+              >
                 {counts[stage.status]}
               </span>
             </div>
@@ -176,7 +186,10 @@ export function PipelineView({ jobs, onJobClick, onStatusChange }: PipelineViewP
               {grouped[stage.status].length === 0 ? (
                 <div className="space-y-2">
                   {[0, 1].map((i) => (
-                    <div key={i} className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-4">
+                    <div
+                      key={i}
+                      className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-4"
+                    >
                       <div className="h-3 w-3/4 rounded bg-slate-100" />
                       <div className="mt-2 h-2.5 w-1/2 rounded bg-slate-100" />
                     </div>
@@ -194,8 +207,8 @@ export function PipelineView({ jobs, onJobClick, onStatusChange }: PipelineViewP
                     <div
                       key={job.id}
                       className={cn(
-                        'group cursor-pointer rounded-xl border border-slate-200/80 border-l-4 bg-white p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md',
-                        stage.border
+                        'group cursor-pointer rounded-xl border border-l-4 border-slate-200/80 bg-white p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md',
+                        stage.border,
                       )}
                       style={{ animationDelay: `${index * 40}ms` }}
                       onClick={() => onJobClick(job.id)}
@@ -215,7 +228,7 @@ export function PipelineView({ jobs, onJobClick, onStatusChange }: PipelineViewP
                               e.stopPropagation();
                               onStatusChange(job.id, job.session_code, stage.next!);
                             }}
-                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-400 opacity-0 transition-all hover:bg-slate-200 hover:text-slate-600 group-hover:opacity-100"
+                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-400 opacity-0 transition-all group-hover:opacity-100 hover:bg-slate-200 hover:text-slate-600"
                             title={`Move to ${PIPELINE_STAGES.find((s) => s.status === stage.next)?.label}`}
                           >
                             <ArrowRight size={12} />
@@ -228,15 +241,25 @@ export function PipelineView({ jobs, onJobClick, onStatusChange }: PipelineViewP
                         )}
                       </div>
                       <div className="mt-2 flex items-center gap-2">
-                        <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize', sourceColor.bg, sourceColor.text)}>
+                        <span
+                          className={cn(
+                            'rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize',
+                            sourceColor.bg,
+                            sourceColor.text,
+                          )}
+                        >
                           {job.source}
                         </span>
                         {job.posted_date && (
-                          <span className="text-[10px] text-slate-400">{formatDate(job.posted_date)}</span>
+                          <span className="text-[10px] text-slate-400">
+                            {formatDate(job.posted_date)}
+                          </span>
                         )}
                       </div>
                       {job.salary && (
-                        <p className="mt-1.5 truncate text-[11px] font-medium text-green-700">{job.salary}</p>
+                        <p className="mt-1.5 truncate text-[11px] font-medium text-green-700">
+                          {job.salary}
+                        </p>
                       )}
                     </div>
                   );
@@ -251,10 +274,7 @@ export function PipelineView({ jobs, onJobClick, onStatusChange }: PipelineViewP
       {counts['rejected'] > 0 && (
         <details className="group rounded-xl border border-slate-200/60 bg-slate-50/50">
           <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700">
-            <ChevronRight
-              size={14}
-              className="transition-transform group-open:rotate-90"
-            />
+            <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
             Rejected ({counts['rejected']})
           </summary>
           <div className="border-t border-slate-200/60 px-4 py-3">

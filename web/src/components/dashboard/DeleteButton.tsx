@@ -47,18 +47,16 @@ export function DeleteButton({ code }: DeleteButtonProps) {
         onClick={() => setShowConfirm(true)}
         disabled={deleting}
         title="Delete session"
-        className={`inline-flex items-center gap-2 rounded-xl p-2 sm:px-4 sm:py-2 text-sm font-semibold transition-all ${
+        className={`inline-flex items-center gap-2 rounded-xl p-2 text-sm font-semibold transition-all sm:px-4 sm:py-2 ${
           deleting
             ? 'cursor-not-allowed bg-slate-100 text-slate-400'
-            : 'border border-red-200 bg-white text-red-600 hover:bg-red-50 hover:border-red-300 hover:-translate-y-0.5'
+            : 'border border-red-200 bg-white text-red-600 hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-50'
         }`}
       >
         <Trash2 size={16} />
         <span className="hidden sm:inline">{deleting ? 'Deleting...' : 'Delete'}</span>
       </button>
-      {error && (
-        <p className="mt-1 text-xs text-red-500">{error}</p>
-      )}
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
       <ConfirmDialog
         open={showConfirm}
         title="Delete Session"

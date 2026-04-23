@@ -24,7 +24,7 @@ export async function sessionExists(code: string): Promise<boolean> {
   const sql = getDb();
   const rows = await sql(
     'SELECT 1 FROM sessions WHERE code = $1 AND (expires_at > NOW() OR user_id IS NOT NULL)',
-    [code]
+    [code],
   );
   return rows.length > 0;
 }
@@ -38,7 +38,7 @@ export async function isSessionOwner(code: string, userId: string | null): Promi
   const sql = getDb();
   const rows = await sql(
     'SELECT user_id FROM sessions WHERE code = $1 AND (expires_at > NOW() OR user_id IS NOT NULL)',
-    [code]
+    [code],
   );
   if (rows.length === 0) return false;
   const sessionUserId = rows[0].user_id as string | null;
@@ -66,7 +66,7 @@ export async function getSession(code: string): Promise<{
   const sql = getDb();
   const rows = await sql(
     'SELECT code, created_at, expires_at, keywords, location, locations, sources, remote, include_remote, companies, country, user_id, resume_skills FROM sessions WHERE code = $1 AND (expires_at > NOW() OR user_id IS NOT NULL)',
-    [code]
+    [code],
   );
   if (rows.length === 0) return null;
   const row = rows[0] as {

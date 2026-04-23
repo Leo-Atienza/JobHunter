@@ -16,13 +16,16 @@ export function ExportButton({ code, disabled }: ExportButtonProps) {
       href={disabled ? undefined : `/api/jobs/export?session=${code}`}
       download
       title="Export CSV"
-      className={`inline-flex items-center gap-2 rounded-xl p-2 sm:px-4 sm:py-2 text-sm font-semibold transition-all ${
+      className={`inline-flex items-center gap-2 rounded-xl p-2 text-sm font-semibold transition-all sm:px-4 sm:py-2 ${
         disabled
           ? 'cursor-not-allowed bg-slate-100 text-slate-400'
-          : 'bg-primary-950 text-white shadow-md shadow-primary-950/10 hover:bg-primary-900 hover:-translate-y-0.5'
+          : 'bg-primary-950 shadow-primary-950/10 hover:bg-primary-900 text-white shadow-md hover:-translate-y-0.5'
       }`}
       onClick={(e) => {
-        if (disabled) { e.preventDefault(); return; }
+        if (disabled) {
+          e.preventDefault();
+          return;
+        }
         toast({ message: 'Exporting CSV...', type: 'success', duration: 2500 });
       }}
     >

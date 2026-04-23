@@ -26,9 +26,7 @@ function toastReducer(state: ToastState, action: ToastAction): ToastState {
       return { toasts: [...state.toasts, action.toast].slice(-5) };
     case 'DISMISS':
       return {
-        toasts: state.toasts.map((t) =>
-          t.id === action.id ? { ...t, leaving: true } : t
-        ),
+        toasts: state.toasts.map((t) => (t.id === action.id ? { ...t, leaving: true } : t)),
       };
     case 'REMOVE':
       return { toasts: state.toasts.filter((t) => t.id !== action.id) };
@@ -76,7 +74,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {/* Toast container */}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed bottom-4 right-4 z-[100] flex flex-col items-end gap-2"
+        className="pointer-events-none fixed right-4 bottom-4 z-[100] flex flex-col items-end gap-2"
       >
         {state.toasts.map((t) => (
           <div
@@ -102,28 +100,27 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               <X className="h-4 w-4 shrink-0 text-red-500" strokeWidth={2.5} />
             )}
             {t.type === 'info' && (
-              <Info className="h-4 w-4 shrink-0 text-primary-500" strokeWidth={2.5} />
+              <Info className="text-primary-500 h-4 w-4 shrink-0" strokeWidth={2.5} />
             )}
 
             <span className="text-sm font-medium">{t.message}</span>
 
-            {t.action && (
-              t.action.href ? (
+            {t.action &&
+              (t.action.href ? (
                 <a
                   href={t.action.href}
-                  className="shrink-0 rounded-lg bg-primary-950 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-primary-800"
+                  className="bg-primary-950 hover:bg-primary-800 shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold text-white transition-colors"
                 >
                   {t.action.label}
                 </a>
               ) : (
                 <button
                   onClick={t.action.onClick}
-                  className="shrink-0 rounded-lg bg-primary-950 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-primary-800"
+                  className="bg-primary-950 hover:bg-primary-800 shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold text-white transition-colors"
                 >
                   {t.action.label}
                 </button>
-              )
-            )}
+              ))}
 
             <button
               onClick={() => handleDismiss(t.id)}

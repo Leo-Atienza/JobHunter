@@ -37,7 +37,14 @@ interface FiltersProps {
 }
 
 const EXPERIENCE_LEVELS = ['Entry', 'Intern', 'Mid', 'Senior', 'Lead', 'Principal'] as const;
-const JOB_TYPES = ['Full-time', 'Part-time', 'Contract', 'Internship', 'Freelance', 'Temporary'] as const;
+const JOB_TYPES = [
+  'Full-time',
+  'Part-time',
+  'Contract',
+  'Internship',
+  'Freelance',
+  'Temporary',
+] as const;
 
 const statusLabels: Record<JobStatus, string> = {
   new: 'New',
@@ -112,15 +119,17 @@ export function Filters({
   const filterContent = (
     <>
       {/* Source filters */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
-        <span className="mr-1 shrink-0 text-xs font-medium uppercase tracking-wider text-slate-400">Source:</span>
+      <div className="scrollbar-none -mx-4 flex items-center gap-1.5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+        <span className="mr-1 shrink-0 text-xs font-medium tracking-wider text-slate-400 uppercase">
+          Source:
+        </span>
         <button
           onClick={() => onSourceChange(null)}
           className={cn(
             'shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-all',
             !sourceFilter
               ? 'bg-primary-950 text-white shadow-sm'
-              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
           )}
         >
           All
@@ -135,12 +144,12 @@ export function Filters({
               onClick={() => onSourceChange(sourceFilter === source ? null : source)}
               disabled={!isActive}
               className={cn(
-                'shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-all whitespace-nowrap',
+                'shrink-0 rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap transition-all',
                 sourceFilter === source
-                  ? `${colors.bg} ${colors.text} ring-2 ring-primary-300`
+                  ? `${colors.bg} ${colors.text} ring-primary-300 ring-2`
                   : isActive
-                    ? `${colors.bg} ${colors.text} hover:ring-1 hover:ring-primary-200`
-                    : 'bg-slate-50 text-slate-300 cursor-not-allowed'
+                    ? `${colors.bg} ${colors.text} hover:ring-primary-200 hover:ring-1`
+                    : 'cursor-not-allowed bg-slate-50 text-slate-300',
               )}
             >
               {getSourceDisplayName(source)}
@@ -152,27 +161,30 @@ export function Filters({
 
       {/* Location filter pills — data-driven from job locations */}
       {(detectedCities.cities.length > 0 || detectedCities.remoteCount > 0) && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
-          <span className="mr-1 shrink-0 text-xs font-medium uppercase tracking-wider text-slate-400">Location:</span>
+        <div className="scrollbar-none -mx-4 flex items-center gap-1.5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+          <span className="mr-1 shrink-0 text-xs font-medium tracking-wider text-slate-400 uppercase">
+            Location:
+          </span>
           {/* Metro grouping — only if session has a city with metro aliases */}
-          {sessionLocations && sessionLocations.map((loc) => {
-            const city = loc.split(',')[0].trim();
-            const filterKey = `near:${city.toLowerCase()}`;
-            return (
-              <button
-                key={`metro-${city}`}
-                onClick={() => onLocationChange(locationFilter === filterKey ? null : filterKey)}
-                className={cn(
-                  'shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-all whitespace-nowrap',
-                  locationFilter === filterKey
-                    ? 'bg-primary-950 text-white shadow-sm'
-                    : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
-                )}
-              >
-                All {city} area
-              </button>
-            );
-          })}
+          {sessionLocations &&
+            sessionLocations.map((loc) => {
+              const city = loc.split(',')[0].trim();
+              const filterKey = `near:${city.toLowerCase()}`;
+              return (
+                <button
+                  key={`metro-${city}`}
+                  onClick={() => onLocationChange(locationFilter === filterKey ? null : filterKey)}
+                  className={cn(
+                    'shrink-0 rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap transition-all',
+                    locationFilter === filterKey
+                      ? 'bg-primary-950 text-white shadow-sm'
+                      : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100',
+                  )}
+                >
+                  All {city} area
+                </button>
+              );
+            })}
           {/* Individual detected cities */}
           {detectedCities.cities.map(({ name, count }) => {
             const filterKey = `city:${name.toLowerCase()}`;
@@ -181,10 +193,10 @@ export function Filters({
                 key={name}
                 onClick={() => onLocationChange(locationFilter === filterKey ? null : filterKey)}
                 className={cn(
-                  'shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-all whitespace-nowrap',
+                  'shrink-0 rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap transition-all',
                   locationFilter === filterKey
                     ? 'bg-primary-950 text-white shadow-sm'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
                 )}
               >
                 {name}
@@ -197,10 +209,10 @@ export function Filters({
             <button
               onClick={() => onLocationChange(locationFilter === 'remote' ? null : 'remote')}
               className={cn(
-                'shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-all whitespace-nowrap',
+                'shrink-0 rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap transition-all',
                 locationFilter === 'remote'
                   ? 'bg-primary-950 text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
               )}
             >
               Remote
@@ -217,7 +229,7 @@ export function Filters({
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         {/* Remote toggle — hidden when session excludes remote */}
         {includeRemote && (
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="flex cursor-pointer items-center gap-2">
             <button
               type="button"
               role="switch"
@@ -239,13 +251,17 @@ export function Filters({
 
         {/* Status filter — pill group */}
         <div className="flex items-center gap-1">
-          <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Status:</span>
+          <span className="mr-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+            Status:
+          </span>
           <div className="flex items-center gap-0.5 rounded-lg bg-slate-100/60 p-0.5">
             <button
               onClick={() => onStatusChange(null)}
               className={cn(
                 'rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all',
-                !statusFilter ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                !statusFilter
+                  ? 'text-primary-800 bg-white shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700',
               )}
             >
               All
@@ -258,10 +274,10 @@ export function Filters({
                   key={status}
                   onClick={() => onStatusChange(statusFilter === status ? null : status)}
                   className={cn(
-                    'rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all whitespace-nowrap',
+                    'rounded-md px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap transition-all',
                     statusFilter === status
-                      ? 'bg-white text-primary-800 shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700'
+                      ? 'text-primary-800 bg-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700',
                   )}
                 >
                   {statusLabels[status]}
@@ -274,13 +290,17 @@ export function Filters({
 
         {/* Experience level — pill group */}
         <div className="flex items-center gap-1">
-          <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Level:</span>
+          <span className="mr-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+            Level:
+          </span>
           <div className="flex items-center gap-0.5 rounded-lg bg-slate-100/60 p-0.5">
             <button
               onClick={() => onExperienceChange(null)}
               className={cn(
                 'rounded-md px-2 py-1 text-[11px] font-semibold transition-all',
-                !experienceFilter ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                !experienceFilter
+                  ? 'text-primary-800 bg-white shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700',
               )}
             >
               Any
@@ -292,8 +312,8 @@ export function Filters({
                 className={cn(
                   'rounded-md px-2 py-1 text-[11px] font-semibold transition-all',
                   experienceFilter === level
-                    ? 'bg-white text-primary-800 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'text-primary-800 bg-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700',
                 )}
               >
                 {level}
@@ -304,13 +324,17 @@ export function Filters({
 
         {/* Job type — pill group */}
         <div className="flex items-center gap-1">
-          <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Type:</span>
+          <span className="mr-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+            Type:
+          </span>
           <div className="flex items-center gap-0.5 rounded-lg bg-slate-100/60 p-0.5">
             <button
               onClick={() => onJobTypeChange(null)}
               className={cn(
                 'rounded-md px-2 py-1 text-[11px] font-semibold transition-all',
-                !jobTypeFilter ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                !jobTypeFilter
+                  ? 'text-primary-800 bg-white shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700',
               )}
             >
               Any
@@ -320,10 +344,10 @@ export function Filters({
                 key={type}
                 onClick={() => onJobTypeChange(jobTypeFilter === type ? null : type)}
                 className={cn(
-                  'rounded-md px-2 py-1 text-[11px] font-semibold transition-all whitespace-nowrap',
+                  'rounded-md px-2 py-1 text-[11px] font-semibold whitespace-nowrap transition-all',
                   jobTypeFilter === type
-                    ? 'bg-white text-primary-800 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'text-primary-800 bg-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700',
                 )}
               >
                 {type}
@@ -337,27 +361,33 @@ export function Filters({
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         {/* Salary range filter */}
         <div className="flex items-center gap-1.5">
-          <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Salary:</span>
+          <span className="mr-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+            Salary:
+          </span>
           <div className="flex items-center gap-1 rounded-lg bg-slate-100/60 p-0.5">
             <div className="relative">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">$</span>
+              <span className="absolute top-1/2 left-2 -translate-y-1/2 text-[10px] text-slate-400">
+                $
+              </span>
               <input
                 type="number"
                 placeholder="Min"
                 value={salaryMin}
                 onChange={(e) => onSalaryMinChange(e.target.value)}
-                className="w-20 rounded-md border-0 bg-white py-1 pl-5 pr-1.5 text-xs text-slate-700 shadow-sm outline-none focus:ring-2 focus:ring-primary-200"
+                className="focus:ring-primary-200 w-20 rounded-md border-0 bg-white py-1 pr-1.5 pl-5 text-xs text-slate-700 shadow-sm outline-none focus:ring-2"
               />
             </div>
             <span className="text-[10px] text-slate-400">to</span>
             <div className="relative">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">$</span>
+              <span className="absolute top-1/2 left-2 -translate-y-1/2 text-[10px] text-slate-400">
+                $
+              </span>
               <input
                 type="number"
                 placeholder="Max"
                 value={salaryMax}
                 onChange={(e) => onSalaryMaxChange(e.target.value)}
-                className="w-20 rounded-md border-0 bg-white py-1 pl-5 pr-1.5 text-xs text-slate-700 shadow-sm outline-none focus:ring-2 focus:ring-primary-200"
+                className="focus:ring-primary-200 w-20 rounded-md border-0 bg-white py-1 pr-1.5 pl-5 text-xs text-slate-700 shadow-sm outline-none focus:ring-2"
               />
             </div>
           </div>
@@ -365,7 +395,9 @@ export function Filters({
 
         {/* Freshness filter — pill group */}
         <div className="flex items-center gap-1">
-          <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Posted:</span>
+          <span className="mr-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+            Posted:
+          </span>
           <div className="flex items-center gap-0.5 rounded-lg bg-slate-100/60 p-0.5">
             {[
               { value: null, label: 'Any time' },
@@ -377,10 +409,10 @@ export function Filters({
                 key={opt.label}
                 onClick={() => onFreshnessChange(freshnessFilter === opt.value ? null : opt.value)}
                 className={cn(
-                  'rounded-md px-2 py-1 text-[11px] font-semibold transition-all whitespace-nowrap',
+                  'rounded-md px-2 py-1 text-[11px] font-semibold whitespace-nowrap transition-all',
                   freshnessFilter === opt.value
-                    ? 'bg-white text-primary-800 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'text-primary-800 bg-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700',
                 )}
               >
                 {opt.label}
@@ -390,7 +422,7 @@ export function Filters({
         </div>
 
         {/* Hide ghost jobs toggle */}
-        <label className="flex items-center gap-2 cursor-pointer">
+        <label className="flex cursor-pointer items-center gap-2">
           <button
             type="button"
             role="switch"
@@ -414,13 +446,17 @@ export function Filters({
         {/* Company filter (from session) */}
         {sessionCompanies && sessionCompanies.length > 0 && (
           <div className="flex items-center gap-1.5">
-            <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Company:</span>
+            <span className="mr-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+              Company:
+            </span>
             <div className="flex items-center gap-0.5 rounded-lg bg-slate-100/60 p-0.5">
               <button
                 onClick={() => onCompanyChange(null)}
                 className={cn(
                   'rounded-md px-2 py-1 text-[11px] font-semibold transition-all',
-                  !companyFilter ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                  !companyFilter
+                    ? 'text-primary-800 bg-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700',
                 )}
               >
                 All
@@ -430,10 +466,10 @@ export function Filters({
                   key={c}
                   onClick={() => onCompanyChange(companyFilter === c ? null : c)}
                   className={cn(
-                    'rounded-md px-2 py-1 text-[11px] font-semibold transition-all capitalize',
+                    'rounded-md px-2 py-1 text-[11px] font-semibold capitalize transition-all',
                     companyFilter === c
-                      ? 'bg-white text-primary-800 shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700'
+                      ? 'text-primary-800 bg-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700',
                   )}
                 >
                   {c}
@@ -447,7 +483,7 @@ export function Filters({
         {activeFilterCount > 0 && (
           <button
             onClick={clearAll}
-            className="inline-flex items-center gap-1 rounded-full bg-error-50 px-3 py-1 text-xs font-semibold text-error-600 transition-all hover:bg-error-100"
+            className="bg-error-50 text-error-600 hover:bg-error-100 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-all"
           >
             <X size={12} />
             Clear all
@@ -469,22 +505,25 @@ export function Filters({
             <Filter size={16} className="text-slate-400" />
             Filters
             {activeFilterCount > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-950 px-1.5 text-[10px] font-bold text-white">
+              <span className="bg-primary-950 flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold text-white">
                 {activeFilterCount}
               </span>
             )}
           </div>
-          <ChevronDown size={16} className={`text-slate-400 transition-transform duration-200 ${mobileOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown
+            size={16}
+            className={`text-slate-400 transition-transform duration-200 ${mobileOpen ? 'rotate-180' : ''}`}
+          />
         </button>
         {mobileOpen && (
-          <div className="mt-2 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm animate-slide-down">
+          <div className="animate-slide-down mt-2 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             {filterContent}
           </div>
         )}
       </div>
 
       {/* Desktop: always visible */}
-      <div className="hidden sm:flex sm:flex-col gap-2.5 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
+      <div className="hidden gap-2.5 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:flex sm:flex-col">
         {filterContent}
       </div>
     </div>

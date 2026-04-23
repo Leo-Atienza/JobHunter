@@ -1,6 +1,7 @@
 import type { ScrapeParams, ScrapeResult } from './types';
 import type { JobInput } from '@/lib/types';
-import { USER_AGENT, extractTag, extractCdata, stripHtml, safeParseDate } from './utils';
+import { extractTag, extractCdata, stripHtml, safeParseDate } from './utils';
+import { stealthFetch } from './anti-detect';
 
 const FEED_BASE = 'https://ca.indeed.com/rss';
 
@@ -8,7 +9,11 @@ const FEED_BASE = 'https://ca.indeed.com/rss';
  * Parse Indeed's title format: "Job Title - Company Name - City, Province"
  * Falls back gracefully if the format doesn't match.
  */
-function parseIndeedTitle(raw: string): { cleanTitle: string; company: string | null; location: string | null } {
+function parseIndeedTitle(raw: string): {
+  cleanTitle: string;
+  company: string | null;
+  location: string | null;
+} {
   const parts = raw.split(' - ').map((p) => p.trim());
   if (parts.length >= 3) {
     return { cleanTitle: parts[0], company: parts[1], location: parts.slice(2).join(' - ') };
@@ -16,7 +21,11 @@ function parseIndeedTitle(raw: string): { cleanTitle: string; company: string | 
   if (parts.length === 2) {
     // Could be "Title - Location" or "Title - Company" — heuristic: if it contains a comma, it's location
     const maybeLocation = parts[1].includes(',') ? parts[1] : null;
-    return { cleanTitle: parts[0], company: maybeLocation ? null : parts[1], location: maybeLocation };
+    return {
+      cleanTitle: parts[0],
+      company: maybeLocation ? null : parts[1],
+      location: maybeLocation,
+    };
   }
   return { cleanTitle: raw, company: null, location: null };
 }
@@ -41,7 +50,9 @@ function parseRssItems(xml: string): JobInput[] {
       const u = new URL(link);
       const jk = u.searchParams.get('jk');
       if (jk) cleanUrl = `${u.origin}${u.pathname}?jk=${jk}`;
-    } catch { /* invalid URL, use as-is */ }
+    } catch {
+      /* invalid URL, use as-is */
+    }
 
     items.push({
       title: cleanTitle,
@@ -69,13 +80,10 @@ export async function scrapeIndeedRss(params: ScrapeParams): Promise<ScrapeResul
   const url = `${FEED_BASE}?q=${encodeURIComponent(query)}&l=${encodeURIComponent(location)}&sort=date&limit=50`;
 
   try {
-    const resp = await fetch(url, {
-      headers: {
-        'User-Agent': USER_AGENT,
-        Accept: 'application/rss+xml, application/xml, text/xml',
-        'Accept-Language': 'en-CA,en;q=0.9',
-      },
-      signal: AbortSignal.timeout(10_000),
+    const resp = await stealthFetch(url, {
+      mode: 'rss',
+      maxRetries: 2,
+      timeout: 12_000,
     });
 
     if (!resp.ok) {

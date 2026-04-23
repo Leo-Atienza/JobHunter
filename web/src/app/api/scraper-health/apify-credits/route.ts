@@ -9,7 +9,7 @@ export async function GET() {
        FROM scrape_logs
        WHERE source = 'jobbank'
          AND status = 'success'
-         AND scraped_at >= date_trunc('month', NOW())`
+         AND scraped_at >= date_trunc('month', NOW())`,
     );
 
     const MONTHLY_LIMIT = parseInt(process.env.APIFY_MONTHLY_LIMIT ?? '16', 10);

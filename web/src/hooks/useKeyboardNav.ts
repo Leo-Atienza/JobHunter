@@ -32,9 +32,8 @@ export function useKeyboardNav({
     if (idx !== -1) setFocusedIndex(idx);
   }, [selectedJobId, jobs]);
 
-  const focusedJobId = focusedIndex >= 0 && focusedIndex < jobs.length
-    ? jobs[focusedIndex].id
-    : null;
+  const focusedJobId =
+    focusedIndex >= 0 && focusedIndex < jobs.length ? jobs[focusedIndex].id : null;
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -99,7 +98,17 @@ export function useKeyboardNav({
           break;
       }
     },
-    [jobs, focusedIndex, focusedJobId, isModalOpen, showShortcuts, onSelectJob, onOpenModal, onCloseModal, onToggleSave],
+    [
+      jobs,
+      focusedIndex,
+      focusedJobId,
+      isModalOpen,
+      showShortcuts,
+      onSelectJob,
+      onOpenModal,
+      onCloseModal,
+      onToggleSave,
+    ],
   );
 
   useEffect(() => {

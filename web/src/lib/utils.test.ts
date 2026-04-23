@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { cn, formatDate, sanitize, generateCsv, getSourceDisplayName, getSourceColor } from './utils';
+import {
+  cn,
+  formatDate,
+  sanitize,
+  generateCsv,
+  getSourceDisplayName,
+  getSourceColor,
+} from './utils';
 
 describe('cn', () => {
   it('merges class names', () => {
@@ -47,7 +54,13 @@ describe('sanitize', () => {
 
 describe('generateCsv', () => {
   it('produces valid CSV', () => {
-    const csv = generateCsv(['Name', 'Age'], [['Alice', '30'], ['Bob', '25']]);
+    const csv = generateCsv(
+      ['Name', 'Age'],
+      [
+        ['Alice', '30'],
+        ['Bob', '25'],
+      ],
+    );
     expect(csv).toBe('Name,Age\nAlice,30\nBob,25');
   });
 

@@ -31,7 +31,8 @@ export function CopyButton({ text, variant = 'light' }: CopyButtonProps) {
     }
   }, [text]);
 
-  const baseClasses = 'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all';
+  const baseClasses =
+    'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all';
   const variantClasses =
     variant === 'dark'
       ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'

@@ -21,16 +21,19 @@ export function SiteHeader({ position = 'sticky', left, right, mobileLinks }: Si
 
   return (
     <header
-      className={`${position === 'fixed' ? 'fixed' : 'sticky'} top-0 left-0 right-0 z-50 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl`}
+      className={`${position === 'fixed' ? 'fixed' : 'sticky'} top-0 right-0 left-0 z-50 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl`}
     >
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Left: Logo + leftContent */}
-        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-          <Link href="/" className="flex shrink-0 items-center gap-2 transition-opacity hover:opacity-80">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-950">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+          <Link
+            href="/"
+            className="flex shrink-0 items-center gap-2 transition-opacity hover:opacity-80"
+          >
+            <div className="bg-primary-950 flex h-8 w-8 items-center justify-center rounded-lg">
               <Search size={16} strokeWidth={2.5} className="text-accent-400" />
             </div>
-            <span className="hidden sm:inline font-display text-lg font-bold text-primary-950">
+            <span className="font-display text-primary-950 hidden text-lg font-bold sm:inline">
               JobHunter
             </span>
           </Link>
@@ -48,7 +51,7 @@ export function SiteHeader({ position = 'sticky', left, right, mobileLinks }: Si
           {mobileLinks && (
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="ml-1 sm:hidden rounded-lg p-1.5 text-slate-600 hover:bg-slate-100"
+              className="ml-1 rounded-lg p-1.5 text-slate-600 hover:bg-slate-100 sm:hidden"
               aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
             >
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}

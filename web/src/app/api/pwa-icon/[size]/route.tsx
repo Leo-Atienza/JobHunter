@@ -17,30 +17,36 @@ export async function GET(
   const radius = Math.round(size * 0.19);
 
   return new ImageResponse(
-    (
-      <div
-        style={{
-          width: size,
-          height: size,
-          borderRadius: radius,
-          background: '#1e1b4b',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: radius,
+        background: '#1e1b4b',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <svg
+        width={iconSize}
+        height={iconSize}
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
       >
-        <svg
-          width={iconSize}
-          height={iconSize}
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <circle cx="11" cy="11" r="6" stroke="#f59e0b" strokeWidth="2.5" fill="none" />
-          <line x1="15.5" y1="15.5" x2="20" y2="20" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" />
-        </svg>
-      </div>
-    ),
+        <circle cx="11" cy="11" r="6" stroke="#f59e0b" strokeWidth="2.5" fill="none" />
+        <line
+          x1="15.5"
+          y1="15.5"
+          x2="20"
+          y2="20"
+          stroke="#f59e0b"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+      </svg>
+    </div>,
     { width: size, height: size },
   );
 }

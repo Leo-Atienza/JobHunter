@@ -11,22 +11,18 @@ export default function ScraperHealthPage() {
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-
         {/* Breadcrumb */}
         <nav className="mb-6 flex items-center gap-2 text-sm text-slate-400">
-          <Link
-            href="/"
-            className="transition-colors duration-150 hover:text-primary-600"
-          >
+          <Link href="/" className="hover:text-primary-600 transition-colors duration-150">
             Home
           </Link>
           <ChevronRight size={14} aria-hidden="true" />
-          <span className="text-slate-600 font-medium">Scraper Health</span>
+          <span className="font-medium text-slate-600">Scraper Health</span>
         </nav>
 
         {/* Hero header */}
         <div className="animate-hero-in mb-8">
-          <h1 className="font-display text-3xl font-bold text-primary-950 sm:text-4xl">
+          <h1 className="font-display text-primary-950 text-3xl font-bold sm:text-4xl">
             Scraper Health
           </h1>
           <p className="animate-fade-in mt-2 text-slate-500">

@@ -1,10 +1,16 @@
 import type { ScrapeParams, ScrapeResult } from './types';
-import { USER_AGENT, stripHtml, normalizeJobType, parseDate } from './utils';
+import { stripHtml, normalizeJobType, parseDate } from './utils';
+import { stealthFetch, humanDelay } from './anti-detect';
 
 interface JoobleJob {
-  title?: string; company?: string; location?: string;
-  link?: string; snippet?: string; salary?: string;
-  updated?: string; type?: string;
+  title?: string;
+  company?: string;
+  location?: string;
+  link?: string;
+  snippet?: string;
+  salary?: string;
+  updated?: string;
+  type?: string;
 }
 
 export async function scrapeJooble(params: ScrapeParams): Promise<ScrapeResult> {
@@ -17,17 +23,20 @@ export async function scrapeJooble(params: ScrapeParams): Promise<ScrapeResult> 
   const jobs = [];
 
   for (let page = 1; page <= 2; page++) {
+    if (page > 1) await humanDelay(400, 900);
     try {
-      const resp = await fetch(`https://jooble.org/api/${apiKey}`, {
+      const resp = await stealthFetch(`https://jooble.org/api/${apiKey}`, {
+        mode: 'json',
         method: 'POST',
-        headers: { 'User-Agent': USER_AGENT, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ keywords: query, location: params.location, page: String(page) }),
-        signal: AbortSignal.timeout(8000),
+        maxRetries: 1,
+        timeout: 10_000,
       });
       if (!resp.ok) {
         return { source: 'jooble', jobs, error: `Jooble returned ${resp.status}` };
       }
-      const data = await resp.json() as { jobs?: JoobleJob[] };
+      const data = (await resp.json()) as { jobs?: JoobleJob[] };
       const items = data.jobs ?? [];
       if (!items.length) break;
 

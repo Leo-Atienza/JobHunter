@@ -27,8 +27,8 @@ export function BulkActions({ selectedIds, sessionCode, onComplete, onClear }: B
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json', 'X-Session-Code': sessionCode },
             body: JSON.stringify({ status }),
-          })
-        )
+          }),
+        ),
       );
       toast({
         message: `${count} job${count !== 1 ? 's' : ''} marked as ${label}`,
@@ -49,12 +49,10 @@ export function BulkActions({ selectedIds, sessionCode, onComplete, onClear }: B
       style={{ animation: 'slide-in-up 0.25s ease-out' }}
     >
       <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-2xl">
-        <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-primary-950 px-2 text-xs font-bold text-white tabular-nums">
+        <span className="bg-primary-950 flex h-7 min-w-7 items-center justify-center rounded-full px-2 text-xs font-bold text-white tabular-nums">
           {count}
         </span>
-        <span className="text-sm font-medium text-slate-700">
-          selected
-        </span>
+        <span className="text-sm font-medium text-slate-700">selected</span>
 
         <div className="mx-1 h-5 w-px bg-slate-200" />
 

@@ -73,7 +73,10 @@ function parseSkills(raw: string): string[] {
  * Checks how many of the job's listed skills match the resume skills.
  * Uses both exact match and substring containment.
  */
-function scoreSkillOverlap(resumeSkills: string[], jobSkillsRaw: string | null): { score: number; matched: string[] } {
+function scoreSkillOverlap(
+  resumeSkills: string[],
+  jobSkillsRaw: string | null,
+): { score: number; matched: string[] } {
   if (!jobSkillsRaw || resumeSkills.length === 0) return { score: 0, matched: [] };
 
   const jobSkills = parseSkills(jobSkillsRaw);
@@ -100,7 +103,10 @@ function scoreSkillOverlap(resumeSkills: string[], jobSkillsRaw: string | null):
  * Fuzzy match resume job titles against the job's title.
  * Exact substring = 20, word overlap = proportional, none = 0.
  */
-function scoreTitleRelevance(resumeTitles: string[], jobTitle: string): { score: number; bestTitle: string | null } {
+function scoreTitleRelevance(
+  resumeTitles: string[],
+  jobTitle: string,
+): { score: number; bestTitle: string | null } {
   if (resumeTitles.length === 0) return { score: 0, bestTitle: null };
 
   const jobNorm = norm(jobTitle);

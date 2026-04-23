@@ -53,13 +53,18 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
   const inferredCity = extractCity(firstLocation);
 
   // Career page discovery state
-  const [discoveredCareers, setDiscoveredCareers] = useState<Record<string, { url: string | null; loading: boolean; source: string | null }>>({});
+  const [discoveredCareers, setDiscoveredCareers] = useState<
+    Record<string, { url: string | null; loading: boolean; source: string | null }>
+  >({});
 
   const discoverCareers = useCallback(async (companyName: string) => {
     const key = companyName.toLowerCase().trim();
     if (!key || key.length < 2) return;
 
-    setDiscoveredCareers((prev) => ({ ...prev, [key]: { url: null, loading: true, source: null } }));
+    setDiscoveredCareers((prev) => ({
+      ...prev,
+      [key]: { url: null, loading: true, source: null },
+    }));
     try {
       const res = await fetch('/api/discover-careers', {
         method: 'POST',
@@ -67,19 +72,31 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
         body: JSON.stringify({ company: companyName.trim() }),
       });
       if (res.ok) {
-        const data = await res.json() as { url: string | null; source: string | null };
-        setDiscoveredCareers((prev) => ({ ...prev, [key]: { url: data.url, loading: false, source: data.source } }));
+        const data = (await res.json()) as { url: string | null; source: string | null };
+        setDiscoveredCareers((prev) => ({
+          ...prev,
+          [key]: { url: data.url, loading: false, source: data.source },
+        }));
       } else {
-        setDiscoveredCareers((prev) => ({ ...prev, [key]: { url: null, loading: false, source: null } }));
+        setDiscoveredCareers((prev) => ({
+          ...prev,
+          [key]: { url: null, loading: false, source: null },
+        }));
       }
     } catch {
-      setDiscoveredCareers((prev) => ({ ...prev, [key]: { url: null, loading: false, source: null } }));
+      setDiscoveredCareers((prev) => ({
+        ...prev,
+        [key]: { url: null, loading: false, source: null },
+      }));
     }
   }, []);
 
   // Debounced career discovery when companies change
   useEffect(() => {
-    const parsed = companies.split(',').map((c) => c.trim()).filter((c) => c.length >= 2);
+    const parsed = companies
+      .split(',')
+      .map((c) => c.trim())
+      .filter((c) => c.length >= 2);
     const timer = setTimeout(() => {
       for (const company of parsed) {
         const key = company.toLowerCase();
@@ -93,7 +110,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
 
   function toggleSource(source: string) {
     setSelectedSources((prev) =>
-      prev.includes(source) ? prev.filter((s) => s !== source) : [...prev, source]
+      prev.includes(source) ? prev.filter((s) => s !== source) : [...prev, source],
     );
   }
 
@@ -151,9 +168,15 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
     setError(null);
 
     try {
-      const parsedCompanies = companies.split(',').map((c) => c.trim()).filter(Boolean);
+      const parsedCompanies = companies
+        .split(',')
+        .map((c) => c.trim())
+        .filter(Boolean);
       const body: CreateSessionRequest = {
-        keywords: keywords.split(',').map((k) => k.trim()).filter(Boolean),
+        keywords: keywords
+          .split(',')
+          .map((k) => k.trim())
+          .filter(Boolean),
         locations: locations.length > 0 ? locations : undefined,
         sources: selectedSources.length < JOB_SOURCES.length ? selectedSources : undefined,
         include_remote: includeRemote,
@@ -180,7 +203,10 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
         const stored = JSON.parse(localStorage.getItem('jobhunter_sessions') || '[]');
         stored.unshift({
           code: data.code,
-          keywords: keywords.split(',').map((k: string) => k.trim()).filter(Boolean),
+          keywords: keywords
+            .split(',')
+            .map((k: string) => k.trim())
+            .filter(Boolean),
           created_at: new Date().toISOString(),
           expires_at: data.expires_at,
         });
@@ -200,11 +226,9 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
 
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-lg text-left">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-primary-950/5 space-y-5">
+      <div className="shadow-primary-950/5 space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
         <div>
-          <h3 className="font-display text-lg font-bold text-primary-950">
-            Configure Your Search
-          </h3>
+          <h3 className="font-display text-primary-950 text-lg font-bold">Configure Your Search</h3>
           <p className="mt-1 text-sm text-slate-500">
             Set your preferences and search across multiple job boards instantly.
           </p>
@@ -233,8 +257,8 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
             label="Locations"
           />
           {inferredCountry && countryLabel && (
-            <div className="mt-1.5 flex items-center gap-1.5 animate-fade-in">
-              <span className="inline-flex items-center gap-1 rounded-full bg-accent-50 px-2.5 py-0.5 text-xs font-medium text-accent-700 ring-1 ring-inset ring-accent-200">
+            <div className="animate-fade-in mt-1.5 flex items-center gap-1.5">
+              <span className="bg-accent-50 text-accent-700 ring-accent-200 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset">
                 <span>{COUNTRY_FLAGS[inferredCountry] ?? ''}</span>
                 Detected: {countryLabel}
               </span>
@@ -263,12 +287,15 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
           />
           {/* Career page discovery badges */}
           {Object.keys(discoveredCareers).length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5 animate-fade-in">
+            <div className="animate-fade-in mt-2 flex flex-wrap gap-1.5">
               {Object.entries(discoveredCareers).map(([key, state]) => (
-                <span key={key} className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-all">
+                <span
+                  key={key}
+                  className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-all"
+                >
                   {state.loading ? (
                     <>
-                      <span className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-primary-400 border-t-transparent" />
+                      <span className="border-primary-400 h-3 w-3 animate-spin rounded-full border-[1.5px] border-t-transparent" />
                       <span className="text-slate-500 capitalize">{key}</span>
                     </>
                   ) : state.url ? (
@@ -278,7 +305,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
                         href={state.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-emerald-700 hover:underline capitalize"
+                        className="text-emerald-700 capitalize hover:underline"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {key} careers
@@ -301,14 +328,17 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
         <div>
           <label className="block text-sm font-semibold text-slate-700">
             Upload Resume
-            <span className="ml-2 inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600">
+            <span className="ml-2 inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold tracking-wider text-emerald-600 uppercase">
               Optional
             </span>
           </label>
 
           {resumeState === 'idle' && (
             <div
-              onDragOver={(e) => { e.preventDefault(); setResumeDragOver(true); }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setResumeDragOver(true);
+              }}
               onDragLeave={() => setResumeDragOver(false)}
               onDrop={(e) => {
                 e.preventDefault();
@@ -324,7 +354,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
               }`}
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-500">
+                <div className="bg-primary-50 text-primary-500 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
                   <Upload className="h-4 w-4" strokeWidth={1.5} />
                 </div>
                 <div>
@@ -340,10 +370,10 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
           )}
 
           {resumeState === 'extracting' && (
-            <div className="mt-1.5 rounded-lg border border-primary-200 bg-primary-50/50 px-3 py-2.5">
+            <div className="border-primary-200 bg-primary-50/50 mt-1.5 rounded-lg border px-3 py-2.5">
               <div className="flex items-center gap-2">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
-                <p className="text-sm font-medium text-primary-700">Extracting resume text...</p>
+                <div className="border-primary-500 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
+                <p className="text-primary-700 text-sm font-medium">Extracting resume text...</p>
               </div>
             </div>
           )}
@@ -353,7 +383,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-emerald-600" strokeWidth={1.5} />
-                  <p className="text-sm font-medium text-slate-700 truncate max-w-[260px]">
+                  <p className="max-w-[260px] truncate text-sm font-medium text-slate-700">
                     {resumeFileName}
                   </p>
                   <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
@@ -403,7 +433,7 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
         </div>
 
         {/* Include remote jobs toggle */}
-        <label className="flex items-center gap-3 cursor-pointer">
+        <label className="flex cursor-pointer items-center gap-3">
           <button
             type="button"
             role="switch"
@@ -412,7 +442,9 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
               const next = !includeRemote;
               setIncludeRemote(next);
               if (!next) {
-                setSelectedSources((prev) => prev.filter((s) => !(REMOTE_ONLY_SOURCES as readonly string[]).includes(s)));
+                setSelectedSources((prev) =>
+                  prev.filter((s) => !(REMOTE_ONLY_SOURCES as readonly string[]).includes(s)),
+                );
               } else {
                 setSelectedSources((prev) => {
                   const toAdd = REMOTE_ONLY_SOURCES.filter((s) => !prev.includes(s));
@@ -433,7 +465,9 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
           <div>
             <span className="text-sm font-medium text-slate-700">Include remote jobs</span>
             {!includeRemote && (
-              <p className="text-[11px] text-slate-400 animate-fade-in">Only local/hybrid jobs in your cities</p>
+              <p className="animate-fade-in text-[11px] text-slate-400">
+                Only local/hybrid jobs in your cities
+              </p>
             )}
           </div>
         </label>
@@ -445,90 +479,101 @@ export function SearchConfig({ onSessionCreated }: SearchConfigProps) {
             <button
               type="button"
               onClick={toggleAll}
-              className="text-xs font-medium text-primary-600 hover:text-primary-800"
+              className="text-primary-600 hover:text-primary-800 text-xs font-medium"
             >
               {selectedSources.length === JOB_SOURCES.length ? 'Deselect All' : 'Select All'}
             </button>
           </div>
           <div className="relative mt-2">
-            <div className="max-h-[200px] overflow-y-auto rounded-lg border border-slate-100 p-1 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent]">
+            <div className="max-h-[200px] overflow-y-auto rounded-lg border border-slate-100 p-1 [scrollbar-color:#cbd5e1_transparent] [scrollbar-width:thin]">
               <div className="grid grid-cols-2 gap-2">
                 {JOB_SOURCES.map((source) => {
                   const isRemoteOnly = (REMOTE_ONLY_SOURCES as readonly string[]).includes(source);
                   const isDisabled = isRemoteOnly && !includeRemote;
                   return (
-                  <label
-                    key={source}
-                    title={isDisabled ? 'Enable "Include remote jobs" to use this source' : undefined}
-                    className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 transition-all ${
-                      isDisabled
-                        ? 'opacity-50 cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
-                        : selectedSources.includes(source)
-                          ? 'border-primary-300 bg-primary-50 text-primary-800 cursor-pointer'
-                          : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 cursor-pointer'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedSources.includes(source)}
-                      onChange={() => !isDisabled && toggleSource(source)}
-                      disabled={isDisabled}
-                      className="sr-only"
-                    />
-                    <div
-                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                    <label
+                      key={source}
+                      title={
+                        isDisabled ? 'Enable "Include remote jobs" to use this source' : undefined
+                      }
+                      className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 transition-all ${
                         isDisabled
-                          ? 'border-slate-300 bg-slate-200'
+                          ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400 opacity-50'
                           : selectedSources.includes(source)
-                            ? 'border-primary-500 bg-primary-500'
-                            : 'border-slate-300'
+                            ? 'border-primary-300 bg-primary-50 text-primary-800 cursor-pointer'
+                            : 'cursor-pointer border-slate-200 bg-white text-slate-500 hover:border-slate-300'
                       }`}
                     >
-                      {selectedSources.includes(source) && !isDisabled && (
-                        <Check size={10} color="white" strokeWidth={3} />
-                      )}
-                    </div>
-                    <span className="text-sm font-medium">
-                      {SOURCE_LABELS[source] ?? source}
-                      {(['adzuna', 'jooble', 'jobbank', 'firecrawl'].includes(source)) && (
-                        <span className="ml-1 text-xs text-slate-400" title={
-                          source === 'adzuna' ? 'Requires free API key from developer.adzuna.com'
-                            : source === 'jooble' ? 'Requires free API key from jooble.org/api/about'
-                            : source === 'jobbank' ? 'Requires free Apify token from apify.com'
-                            : 'Requires free API key from firecrawl.dev'
-                        }>*</span>
-                      )}
-                    </span>
-                  </label>
+                      <input
+                        type="checkbox"
+                        checked={selectedSources.includes(source)}
+                        onChange={() => !isDisabled && toggleSource(source)}
+                        disabled={isDisabled}
+                        className="sr-only"
+                      />
+                      <div
+                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                          isDisabled
+                            ? 'border-slate-300 bg-slate-200'
+                            : selectedSources.includes(source)
+                              ? 'border-primary-500 bg-primary-500'
+                              : 'border-slate-300'
+                        }`}
+                      >
+                        {selectedSources.includes(source) && !isDisabled && (
+                          <Check size={10} color="white" strokeWidth={3} />
+                        )}
+                      </div>
+                      <span className="text-sm font-medium">
+                        {SOURCE_LABELS[source] ?? source}
+                        {['adzuna', 'jooble', 'jobbank', 'firecrawl'].includes(source) && (
+                          <span
+                            className="ml-1 text-xs text-slate-400"
+                            title={
+                              source === 'adzuna'
+                                ? 'Requires free API key from developer.adzuna.com'
+                                : source === 'jooble'
+                                  ? 'Requires free API key from jooble.org/api/about'
+                                  : source === 'jobbank'
+                                    ? 'Requires free Apify token from apify.com'
+                                    : 'Requires free API key from firecrawl.dev'
+                            }
+                          >
+                            *
+                          </span>
+                        )}
+                      </span>
+                    </label>
                   );
                 })}
               </div>
             </div>
-            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 rounded-b-lg bg-gradient-to-t from-white to-transparent" aria-hidden="true" />
+            <div
+              className="pointer-events-none absolute right-0 bottom-0 left-0 h-8 rounded-b-lg bg-gradient-to-t from-white to-transparent"
+              aria-hidden="true"
+            />
           </div>
           <p className="mt-1.5 text-xs text-slate-400">* Requires free API key</p>
           {selectedSources.includes('firecrawl') && (
-            <div className="mt-2 flex items-center gap-2 animate-fade-in">
+            <div className="animate-fade-in mt-2 flex items-center gap-2">
               <span className="text-xs text-slate-400">Firecrawl:</span>
               <FirecrawlCreditsBadge />
             </div>
           )}
           {selectedSources.includes('jobbank') && (
-            <div className="mt-2 flex items-center gap-2 animate-fade-in">
+            <div className="animate-fade-in mt-2 flex items-center gap-2">
               <span className="text-xs text-slate-400">Apify (JobBank):</span>
               <ApifyCreditsBadge />
             </div>
           )}
         </div>
 
-        {error && (
-          <p className="text-sm font-medium text-error-600 animate-fade-in">{error}</p>
-        )}
+        {error && <p className="text-error-600 animate-fade-in text-sm font-medium">{error}</p>}
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-xl bg-primary-950 px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-primary-950/20 transition-all hover:bg-primary-900 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
+          className="bg-primary-950 shadow-primary-950/20 hover:bg-primary-900 w-full rounded-xl px-6 py-3.5 text-base font-semibold text-white shadow-lg transition-all hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">

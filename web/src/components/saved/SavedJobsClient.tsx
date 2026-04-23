@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import useSWR from 'swr';
 import Link from 'next/link';
 import { BarChart3, Home, List, LayoutGrid, Bookmark, Search, Download } from 'lucide-react';
@@ -12,25 +12,29 @@ import { JobDetailModal } from '@/components/dashboard/JobDetailModal';
 import { PipelineView } from './PipelineView';
 import { SavedExportButton } from './SavedExportButton';
 import { SiteHeader } from '@/components/layout/SiteHeader';
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+import { fetcher } from '@/lib/utils';
 
 export function SavedJobsClient() {
   const { data, mutate } = useSWR<{ jobs: Job[] }>('/api/user/saved-jobs', fetcher, {
     revalidateOnFocus: true,
   });
 
-  const [trackerView, setTrackerView] = useState<'pipeline' | 'list'>(() => {
-    if (typeof window === 'undefined') return 'pipeline';
-    return (localStorage.getItem('jobhunter_tracker_view') as 'pipeline' | 'list') ?? 'pipeline';
-  });
+  // SSR-safe defaults; hydrate from localStorage in useEffect to avoid mismatches.
+  const [trackerView, setTrackerView] = useState<'pipeline' | 'list'>('pipeline');
   const [searchQuery, setSearchQuery] = useState('');
   const [sourceFilter, setSourceFilter] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>(() => {
-    if (typeof window === 'undefined') return 'cards';
-    return (localStorage.getItem('jobhunter_view_mode') as 'table' | 'cards')
-      ?? (window.innerWidth < 640 ? 'cards' : 'cards');
-  });
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
+
+  useEffect(() => {
+    const storedTracker = localStorage.getItem('jobhunter_tracker_view');
+    if (storedTracker === 'pipeline' || storedTracker === 'list') {
+      setTrackerView(storedTracker);
+    }
+    const storedView = localStorage.getItem('jobhunter_view_mode');
+    if (storedView === 'table' || storedView === 'cards') {
+      setViewMode(storedView);
+    }
+  }, []);
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [sortField, setSortField] = useState<keyof Job>('scraped_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -77,29 +81,35 @@ export function SavedJobsClient() {
     setSelectedJobId(jobId);
   }, []);
 
-  const handleSort = useCallback((field: keyof Job) => {
-    if (field === sortField) {
-      setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortField(field);
-      setSortDirection('desc');
-    }
-  }, [sortField]);
-
-  const handleStatusChange = useCallback(async (jobId: number, sessionCode: string, newStatus: JobStatus) => {
-    try {
-      const res = await fetch(`/api/jobs/${jobId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'X-Session-Code': sessionCode },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (res.ok) {
-        mutate();
+  const handleSort = useCallback(
+    (field: keyof Job) => {
+      if (field === sortField) {
+        setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
+      } else {
+        setSortField(field);
+        setSortDirection('desc');
       }
-    } catch {
-      // Will reflect actual state on next revalidation
-    }
-  }, [mutate]);
+    },
+    [sortField],
+  );
+
+  const handleStatusChange = useCallback(
+    async (jobId: number, sessionCode: string, newStatus: JobStatus) => {
+      try {
+        const res = await fetch(`/api/jobs/${jobId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'X-Session-Code': sessionCode },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        if (res.ok) {
+          mutate();
+        }
+      } catch {
+        // Will reflect actual state on next revalidation
+      }
+    },
+    [mutate],
+  );
 
   const selectedJob = useMemo(
     () => filteredJobs.find((j) => j.id === selectedJobId) ?? null,
@@ -107,13 +117,16 @@ export function SavedJobsClient() {
   );
   const selectedIndex = selectedJob ? filteredJobs.indexOf(selectedJob) : -1;
 
-  const handleModalNavigate = useCallback((direction: 'prev' | 'next') => {
-    if (selectedIndex === -1) return;
-    const newIndex = direction === 'prev' ? selectedIndex - 1 : selectedIndex + 1;
-    if (newIndex >= 0 && newIndex < filteredJobs.length) {
-      setSelectedJobId(filteredJobs[newIndex].id);
-    }
-  }, [selectedIndex, filteredJobs]);
+  const handleModalNavigate = useCallback(
+    (direction: 'prev' | 'next') => {
+      if (selectedIndex === -1) return;
+      const newIndex = direction === 'prev' ? selectedIndex - 1 : selectedIndex + 1;
+      if (newIndex >= 0 && newIndex < filteredJobs.length) {
+        setSelectedJobId(filteredJobs[newIndex].id);
+      }
+    },
+    [selectedIndex, filteredJobs],
+  );
 
   const isLoading = data === undefined;
 
@@ -121,9 +134,9 @@ export function SavedJobsClient() {
     <div className="min-h-screen overflow-x-hidden bg-slate-50">
       <SiteHeader
         left={
-          <div className="flex items-center gap-1.5 rounded-lg bg-primary-50 px-2.5 py-1.5">
+          <div className="bg-primary-50 flex items-center gap-1.5 rounded-lg px-2.5 py-1.5">
             <BarChart3 size={14} className="text-primary-600" />
-            <span className="font-display text-sm font-bold text-primary-800">Tracker</span>
+            <span className="font-display text-primary-800 text-sm font-bold">Tracker</span>
           </div>
         }
         right={
@@ -131,7 +144,7 @@ export function SavedJobsClient() {
             <SavedExportButton disabled={jobs.length === 0} />
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-300"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition-all hover:border-slate-300 hover:bg-slate-50"
             >
               <Home size={14} />
               <span className="hidden sm:inline">My Sessions</span>
@@ -142,10 +155,10 @@ export function SavedJobsClient() {
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
         {/* Hero + view toggle */}
-        <div className="flex flex-col gap-4 mb-6 sm:mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div className="mb-6 flex flex-col gap-4 sm:mb-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="font-display text-2xl font-extrabold text-primary-950 sm:text-3xl">
+              <h1 className="font-display text-primary-950 text-2xl font-extrabold sm:text-3xl">
                 Application Tracker
               </h1>
               <p className="mt-1 text-sm text-slate-500">
@@ -164,10 +177,13 @@ export function SavedJobsClient() {
             <div className="flex items-center justify-between">
               <div className="inline-flex rounded-lg bg-slate-100/60 p-0.5">
                 <button
-                  onClick={() => { setTrackerView('pipeline'); localStorage.setItem('jobhunter_tracker_view', 'pipeline'); }}
+                  onClick={() => {
+                    setTrackerView('pipeline');
+                    localStorage.setItem('jobhunter_tracker_view', 'pipeline');
+                  }}
                   className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all ${
                     trackerView === 'pipeline'
-                      ? 'bg-white text-primary-800 shadow-sm'
+                      ? 'text-primary-800 bg-white shadow-sm'
                       : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
@@ -175,10 +191,13 @@ export function SavedJobsClient() {
                   Pipeline
                 </button>
                 <button
-                  onClick={() => { setTrackerView('list'); localStorage.setItem('jobhunter_tracker_view', 'list'); }}
+                  onClick={() => {
+                    setTrackerView('list');
+                    localStorage.setItem('jobhunter_tracker_view', 'list');
+                  }}
                   className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all ${
                     trackerView === 'list'
-                      ? 'bg-white text-primary-800 shadow-sm'
+                      ? 'text-primary-800 bg-white shadow-sm'
                       : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
@@ -197,17 +216,20 @@ export function SavedJobsClient() {
             ))}
           </div>
         ) : jobs.length === 0 ? (
-          <div className="mt-16 text-center animate-fade-in">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary-100 to-accent-100">
+          <div className="animate-fade-in mt-16 text-center">
+            <div className="from-primary-100 to-accent-100 mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br">
               <BarChart3 size={36} className="text-primary-500" />
             </div>
-            <h2 className="mt-6 font-display text-2xl font-extrabold text-primary-950">No tracked jobs yet</h2>
-            <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
-              Save jobs from any search session to build your application pipeline. Track status from saved through interview to offer.
+            <h2 className="font-display text-primary-950 mt-6 text-2xl font-extrabold">
+              No tracked jobs yet
+            </h2>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500">
+              Save jobs from any search session to build your application pipeline. Track status
+              from saved through interview to offer.
             </p>
             <Link
               href="/"
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary-950 px-6 py-3 font-semibold text-white shadow-lg shadow-primary-950/20 transition-all hover:bg-primary-900 hover:-translate-y-0.5"
+              className="bg-primary-950 shadow-primary-950/20 hover:bg-primary-900 mt-6 inline-flex items-center gap-2 rounded-xl px-6 py-3 font-semibold text-white shadow-lg transition-all hover:-translate-y-0.5"
             >
               <Search size={16} />
               Search for Jobs
@@ -236,14 +258,14 @@ export function SavedJobsClient() {
         ) : (
           <>
             {/* Source filter pills + view toggle */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   onClick={() => setSourceFilter(null)}
                   className={`rounded-full px-3 py-1 text-xs font-semibold transition-all ${
                     !sourceFilter
                       ? 'bg-primary-950 text-white shadow-sm'
-                      : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'
+                      : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                   }`}
                 >
                   All ({jobs.length})
@@ -255,7 +277,7 @@ export function SavedJobsClient() {
                     className={`rounded-full px-3 py-1 text-xs font-semibold capitalize transition-all ${
                       sourceFilter === source
                         ? 'bg-primary-950 text-white shadow-sm'
-                        : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'
+                        : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                     }`}
                   >
                     {source} ({count})
@@ -264,14 +286,20 @@ export function SavedJobsClient() {
               </div>
               <div className="flex items-center rounded-lg border border-slate-200 bg-white p-0.5">
                 <button
-                  onClick={() => { setViewMode('table'); localStorage.setItem('jobhunter_view_mode', 'table'); }}
+                  onClick={() => {
+                    setViewMode('table');
+                    localStorage.setItem('jobhunter_view_mode', 'table');
+                  }}
                   className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${viewMode === 'table' ? 'bg-primary-950 text-white' : 'text-slate-500 hover:text-slate-700'}`}
                   title="Table view"
                 >
                   <List size={14} />
                 </button>
                 <button
-                  onClick={() => { setViewMode('cards'); localStorage.setItem('jobhunter_view_mode', 'cards'); }}
+                  onClick={() => {
+                    setViewMode('cards');
+                    localStorage.setItem('jobhunter_view_mode', 'cards');
+                  }}
                   className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${viewMode === 'cards' ? 'bg-primary-950 text-white' : 'text-slate-500 hover:text-slate-700'}`}
                   title="Card view"
                 >
@@ -281,9 +309,9 @@ export function SavedJobsClient() {
             </div>
 
             {/* Results count */}
-            <p className="text-sm text-slate-500 mb-4">
-              Showing <span className="font-semibold text-primary-800">{filteredJobs.length}</span> of{' '}
-              <span className="font-semibold">{jobs.length}</span> tracked jobs
+            <p className="mb-4 text-sm text-slate-500">
+              Showing <span className="text-primary-800 font-semibold">{filteredJobs.length}</span>{' '}
+              of <span className="font-semibold">{jobs.length}</span> tracked jobs
             </p>
 
             {/* Jobs list */}
@@ -298,7 +326,7 @@ export function SavedJobsClient() {
                 sessionCode=""
               />
             ) : (
-              <div className="grid gap-3 grid-cols-1 min-[500px]:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 min-[500px]:grid-cols-2 lg:grid-cols-3">
                 {filteredJobs.map((job) => (
                   <LazyJobCard
                     key={job.id}

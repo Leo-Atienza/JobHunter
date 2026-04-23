@@ -20,7 +20,15 @@ interface JobDetailModalProps {
   sessionCode: string;
 }
 
-export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, hasNext, sessionCode }: JobDetailModalProps) {
+export function JobDetailModal({
+  job,
+  onClose,
+  onUpdate,
+  onNavigate,
+  hasPrev,
+  hasNext,
+  sessionCode,
+}: JobDetailModalProps) {
   const [notes, setNotes] = useState(job.notes ?? '');
   const [aiSummary, setAiSummary] = useState<string | null>(job.ai_summary ?? null);
   const [summaryLoading, setSummaryLoading] = useState(false);
@@ -36,7 +44,9 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
   }, [onClose]);
 
   // SSR guard — createPortal needs document.body
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Focus trap — focus panel on mount, trap Tab within it, restore focus on unmount
   useEffect(() => {
@@ -49,7 +59,7 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
     function handleTab(e: KeyboardEvent) {
       if (e.key !== 'Tab' || !panel) return;
       const focusable = panel.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        'button:not([disabled]), a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
       );
       if (focusable.length === 0) return;
       const first = focusable[0];
@@ -70,12 +80,15 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
     };
   }, []);
 
-  // Reset state when job changes
+  // Reset state when the user navigates to a different job. We intentionally
+  // depend only on job.id — including job.notes or job.ai_summary would wipe
+  // the user's in-progress typing every time SWR refreshes the jobs list.
   useEffect(() => {
     setNotes(job.notes ?? '');
     setAiSummary(job.ai_summary ?? null);
     summaryFetchedRef.current = false;
-  }, [job.id, job.notes, job.ai_summary]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [job.id]);
 
   // Fetch AI summary
   useEffect(() => {
@@ -97,7 +110,10 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
         // Only allow Escape in form fields
-        if (e.key === 'Escape') { (e.target as HTMLElement).blur(); handleClose(); }
+        if (e.key === 'Escape') {
+          (e.target as HTMLElement).blur();
+          handleClose();
+        }
         return;
       }
       if (e.key === 'Escape') handleClose();
@@ -111,7 +127,9 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
   // Lock body scroll
   useEffect(() => {
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, []);
 
   const saveNotes = useCallback(
@@ -127,7 +145,7 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
         } catch {}
       }, 800);
     },
-    [job.id],
+    [job.id, sessionCode],
   );
 
   function handleNotesChange(value: string) {
@@ -140,7 +158,12 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
   const sourceColors = getSourceColor(job.source);
 
   const modal = (
-    <div className="fixed inset-0 z-50 flex items-start justify-end" role="dialog" aria-modal="true" aria-labelledby="job-modal-title">
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-end"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="job-modal-title"
+    >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={handleClose} />
 
@@ -153,11 +176,11 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div className="flex items-center gap-2">
             {onNavigate && (
-              <div className="flex items-center gap-1 mr-2">
+              <div className="mr-2 flex items-center gap-1">
                 <button
                   onClick={() => onNavigate('prev')}
                   disabled={!hasPrev}
-                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-30"
                   title="Previous job (Left arrow)"
                   aria-label="Previous job"
                 >
@@ -166,7 +189,7 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
                 <button
                   onClick={() => onNavigate('next')}
                   disabled={!hasNext}
-                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-30"
                   title="Next job (Right arrow)"
                   aria-label="Next job"
                 >
@@ -174,11 +197,16 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
                 </button>
               </div>
             )}
-            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${sourceColors.bg} ${sourceColors.text}`}>
+            <span
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${sourceColors.bg} ${sourceColors.text}`}
+            >
               {getSourceDisplayName(job.source)}
             </span>
             {job.also_on && job.also_on.length > 0 && (
-              <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500" title={`Also on: ${job.also_on.map(getSourceDisplayName).join(', ')}`}>
+              <span
+                className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500"
+                title={`Also on: ${job.also_on.map(getSourceDisplayName).join(', ')}`}
+              >
                 +{job.also_on.length} source{job.also_on.length > 1 ? 's' : ''}
               </span>
             )}
@@ -199,10 +227,12 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
+        <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
           {/* Title + company */}
           <div>
-            <h2 id="job-modal-title" className="text-xl font-bold text-primary-950 leading-tight">{job.title}</h2>
+            <h2 id="job-modal-title" className="text-primary-950 text-xl leading-tight font-bold">
+              {job.title}
+            </h2>
             {job.company && (
               <p className="mt-1 text-sm font-medium text-slate-600">{job.company}</p>
             )}
@@ -212,34 +242,49 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
           <div className="grid grid-cols-1 gap-2 min-[400px]:grid-cols-2 sm:grid-cols-3 sm:gap-3">
             {job.location && (
               <div className="rounded-lg bg-slate-50 p-3">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Location</p>
+                <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                  Location
+                </p>
                 <p className="text-sm font-medium text-slate-700">{job.location}</p>
               </div>
             )}
             {job.salary && (
               <div className="rounded-lg bg-emerald-50 p-3">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 mb-1">Salary</p>
+                <p className="mb-1 text-[10px] font-semibold tracking-wider text-emerald-600 uppercase">
+                  Salary
+                </p>
                 <p className="text-sm font-semibold text-emerald-700">{job.salary}</p>
               </div>
             )}
             {job.job_type && (
               <div className="rounded-lg bg-blue-50 p-3">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-500 mb-1">Type</p>
+                <p className="mb-1 text-[10px] font-semibold tracking-wider text-blue-500 uppercase">
+                  Type
+                </p>
                 <p className="text-sm font-medium text-blue-700">{job.job_type}</p>
               </div>
             )}
             {job.experience_level && (
               <div className="rounded-lg bg-purple-50 p-3">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-purple-500 mb-1">Level</p>
+                <p className="mb-1 text-[10px] font-semibold tracking-wider text-purple-500 uppercase">
+                  Level
+                </p>
                 <p className="text-sm font-medium text-purple-700">{job.experience_level}</p>
               </div>
             )}
             {job.relevance_score > 0 && (
-              <div className={`rounded-lg p-3 ${
-                job.relevance_score >= 80 ? 'bg-green-50' :
-                job.relevance_score >= 50 ? 'bg-amber-50' : 'bg-orange-50'
-              }`}>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Match</p>
+              <div
+                className={`rounded-lg p-3 ${
+                  job.relevance_score >= 80
+                    ? 'bg-green-50'
+                    : job.relevance_score >= 50
+                      ? 'bg-amber-50'
+                      : 'bg-orange-50'
+                }`}
+              >
+                <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
+                  Match
+                </p>
                 <MatchScorePopover
                   score={job.relevance_score}
                   breakdown={job.score_breakdown ?? null}
@@ -248,54 +293,74 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
               </div>
             )}
             <div className="rounded-lg bg-slate-50 p-3">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Posted</p>
-              <p className="text-sm font-medium text-slate-700">{job.posted_date ?? formatDate(job.scraped_at)}</p>
+              <p className="mb-1 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                Posted
+              </p>
+              <p className="text-sm font-medium text-slate-700">
+                {job.posted_date ?? formatDate(job.scraped_at)}
+              </p>
             </div>
           </div>
 
           {/* Status */}
           <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Status:</span>
-            <StatusSelect jobId={job.id} currentStatus={job.status} onUpdate={onUpdate} sessionCode={sessionCode} />
+            <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
+              Status:
+            </span>
+            <StatusSelect
+              jobId={job.id}
+              currentStatus={job.status}
+              onUpdate={onUpdate}
+              sessionCode={sessionCode}
+            />
           </div>
 
           {/* AI Summary */}
           {(aiSummary || summaryLoading) && (
-            <div className="rounded-xl border border-primary-200 bg-primary-50/50 p-4">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="border-primary-200 bg-primary-50/50 rounded-xl border p-4">
+              <div className="mb-2 flex items-center gap-2">
                 <Sparkles size={14} className="text-primary-600" />
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-primary-600">AI Summary</h4>
+                <h4 className="text-primary-600 text-xs font-semibold tracking-wider uppercase">
+                  AI Summary
+                </h4>
               </div>
               {summaryLoading ? (
-                <div className="flex items-center gap-2 text-sm text-primary-500">
+                <div className="text-primary-500 flex items-center gap-2 text-sm">
                   <RefreshCw size={16} className="animate-spin" />
                   Generating summary...
                 </div>
               ) : (
-                <p className="text-sm leading-relaxed text-primary-900">{aiSummary}</p>
+                <p className="text-primary-900 text-sm leading-relaxed">{aiSummary}</p>
               )}
             </div>
           )}
 
           {/* Description */}
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Description</h4>
+            <h4 className="mb-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">
+              Description
+            </h4>
             {formattedDescription ? (
-              <div className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap">
+              <div className="text-sm leading-relaxed whitespace-pre-wrap text-slate-600">
                 {formattedDescription}
               </div>
             ) : (
-              <p className="text-sm italic text-slate-400">No description available</p>
+              <p className="text-sm text-slate-400 italic">No description available</p>
             )}
           </div>
 
           {/* Skills */}
           {job.skills && (
             <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Skills</h4>
+              <h4 className="mb-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                Skills
+              </h4>
               <div className="flex flex-wrap gap-1.5">
                 {job.skills.split(',').map((skill) => (
-                  <span key={skill.trim()} className="inline-flex rounded-md bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 border border-primary-200">
+                  <span
+                    key={skill.trim()}
+                    className="bg-primary-50 text-primary-700 border-primary-200 inline-flex rounded-md border px-2.5 py-1 text-xs font-medium"
+                  >
                     {skill.trim()}
                   </span>
                 ))}
@@ -306,39 +371,41 @@ export function JobDetailModal({ job, onClose, onUpdate, onNavigate, hasPrev, ha
           {/* Benefits */}
           {job.benefits && (
             <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Benefits</h4>
+              <h4 className="mb-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                Benefits
+              </h4>
               <p className="text-sm leading-relaxed text-slate-600">{job.benefits}</p>
             </div>
           )}
 
           {/* Notes */}
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Your Notes</h4>
+            <h4 className="mb-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">
+              Your Notes
+            </h4>
             <textarea
               value={notes}
               onChange={(e) => handleNotesChange(e.target.value)}
               placeholder="Add your notes about this position..."
               rows={4}
-              className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700 placeholder-slate-400 outline-none transition-all focus:border-primary-400 focus:ring-2 focus:ring-primary-100 resize-none"
+              className="focus:border-primary-400 focus:ring-primary-100 w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700 placeholder-slate-400 transition-all outline-none focus:ring-2"
             />
             <p className="mt-1 text-xs text-slate-400">Auto-saved as you type</p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="border-t border-slate-200 px-5 py-3 flex items-center justify-between">
+        <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3">
           <a
             href={job.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-950 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-800"
+            className="bg-primary-950 hover:bg-primary-800 inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors"
           >
             View original listing
             <ExternalLink size={14} />
           </a>
-          <p className="text-xs text-slate-400">
-            Use arrow keys to navigate
-          </p>
+          <p className="text-xs text-slate-400">Use arrow keys to navigate</p>
         </div>
       </div>
     </div>

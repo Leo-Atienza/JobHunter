@@ -1,20 +1,33 @@
 import type { ScrapeParams, ScrapeResult } from './types';
-import { fetchJson } from './utils';
+import { stealthFetchJson, humanDelay } from './anti-detect';
 
 interface HimalayasJob {
-  title?: string; companyName?: string; companySlug?: string;
-  slug?: string; applicationLink?: string;
+  title?: string;
+  companyName?: string;
+  companySlug?: string;
+  slug?: string;
+  applicationLink?: string;
   locationRestrictions?: string | string[];
-  minSalary?: number; maxSalary?: number;
-  pubDate?: string; publishedDate?: string;
-  excerpt?: string; description?: string;
+  minSalary?: number;
+  maxSalary?: number;
+  pubDate?: string;
+  publishedDate?: string;
+  excerpt?: string;
+  description?: string;
   seniority?: string | string[];
 }
 
 const SENIORITY_MAP: Record<string, string> = {
-  entry_level: 'Entry', entry: 'Entry', mid_level: 'Mid', mid: 'Mid',
-  senior_level: 'Senior', senior: 'Senior', lead: 'Lead',
-  principal: 'Principal', intern: 'Intern', internship: 'Intern',
+  entry_level: 'Entry',
+  entry: 'Entry',
+  mid_level: 'Mid',
+  mid: 'Mid',
+  senior_level: 'Senior',
+  senior: 'Senior',
+  lead: 'Lead',
+  principal: 'Principal',
+  intern: 'Intern',
+  internship: 'Intern',
 };
 
 export async function scrapeHimalayas(params: ScrapeParams): Promise<ScrapeResult> {
@@ -23,9 +36,10 @@ export async function scrapeHimalayas(params: ScrapeParams): Promise<ScrapeResul
   let failedPages = 0;
 
   for (let page = 0; page < 3; page++) {
-    const data = await fetchJson<{ jobs?: HimalayasJob[] }>(
-      `https://himalayas.app/jobs/api?q=${encodeURIComponent(query)}&offset=${page * 20}&limit=20&sort=recent`
+    const data = await stealthFetchJson<{ jobs?: HimalayasJob[] }>(
+      `https://himalayas.app/jobs/api?q=${encodeURIComponent(query)}&offset=${page * 20}&limit=20&sort=recent`,
     );
+    if (page > 0) await humanDelay(300, 800);
     if (data === null) {
       failedPages++;
       if (jobs.length === 0 && page === 0) {
@@ -53,18 +67,23 @@ export async function scrapeHimalayas(params: ScrapeParams): Promise<ScrapeResul
       if (!url) continue;
 
       let salary: string | undefined;
-      if (item.minSalary && item.maxSalary) salary = `$${item.minSalary.toLocaleString()} - $${item.maxSalary.toLocaleString()}`;
+      if (item.minSalary && item.maxSalary)
+        salary = `$${item.minSalary.toLocaleString()} - $${item.maxSalary.toLocaleString()}`;
       else if (item.minSalary) salary = `From $${item.minSalary.toLocaleString()}`;
       else if (item.maxSalary) salary = `Up to $${item.maxSalary.toLocaleString()}`;
 
       const rawSeniority = Array.isArray(item.seniority) ? item.seniority[0] : item.seniority;
       const seniority = rawSeniority?.toLowerCase().trim();
       jobs.push({
-        title, company: item.companyName?.trim() || undefined,
-        location, url, source: 'himalayas' as const,
-        salary, description: item.excerpt || item.description || undefined,
+        title,
+        company: item.companyName?.trim() || undefined,
+        location,
+        url,
+        source: 'himalayas' as const,
+        salary,
+        description: item.excerpt || item.description || undefined,
         posted_date: item.pubDate || item.publishedDate || undefined,
-        experience_level: seniority ? SENIORITY_MAP[seniority] ?? seniority : undefined,
+        experience_level: seniority ? (SENIORITY_MAP[seniority] ?? seniority) : undefined,
       });
     }
     if (items.length < 20) break;
@@ -73,6 +92,8 @@ export async function scrapeHimalayas(params: ScrapeParams): Promise<ScrapeResul
   return {
     source: 'himalayas',
     jobs,
-    ...(failedPages > 0 ? { error: `${failedPages} of 3 pages failed (${jobs.length} jobs from successful pages)` } : {}),
+    ...(failedPages > 0
+      ? { error: `${failedPages} of 3 pages failed (${jobs.length} jobs from successful pages)` }
+      : {}),
   };
 }

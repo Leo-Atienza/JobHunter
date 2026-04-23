@@ -18,9 +18,7 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://jobhunter.vercel.app',
-  ),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://jobhunter.vercel.app'),
   title: 'JobHunter — Your Job Search Command Center',
   description:
     'Aggregate job listings from Job Bank, LinkedIn, Remotive, and more into one unified dashboard. AI-powered summaries, smart deduplication, and advanced filters.',
@@ -32,32 +30,33 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'JobHunter — Your Job Search Command Center',
-    description:
-      'Aggregate job listings from multiple boards into one unified dashboard.',
+    description: 'Aggregate job listings from multiple boards into one unified dashboard.',
     type: 'website',
     url: '/',
-    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'JobHunter — Your Job Search Command Center' }],
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'JobHunter — Your Job Search Command Center',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'JobHunter — Your Job Search Command Center',
-    description:
-      'Aggregate job listings from multiple boards into one unified dashboard.',
+    description: 'Aggregate job listings from multiple boards into one unified dashboard.',
     images: ['/opengraph-image'],
   },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${outfit.variable} ${plusJakarta.variable}`}>
       <body className="min-h-screen bg-white antialiased">
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-xl focus:bg-primary-950 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg"
+          className="focus:bg-primary-950 sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-xl focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg"
         >
           Skip to content
         </a>

@@ -12,7 +12,7 @@ export async function GET() {
 
   try {
     const sql = getDb();
-    const rows = await sql(
+    const rows = (await sql(
       `SELECT j.title, j.company, j.location, j.source, j.salary,
               j.posted_date, j.status, j.url, j.notes
        FROM jobs j
@@ -22,10 +22,31 @@ export async function GET() {
          AND j.duplicate_of IS NULL
        ORDER BY j.status_changed_at DESC NULLS LAST, j.scraped_at DESC
        LIMIT 500`,
-      [session.user.id]
-    ) as Pick<Job, 'title' | 'company' | 'location' | 'source' | 'salary' | 'posted_date' | 'status' | 'url' | 'notes'>[];
+      [session.user.id],
+    )) as Pick<
+      Job,
+      | 'title'
+      | 'company'
+      | 'location'
+      | 'source'
+      | 'salary'
+      | 'posted_date'
+      | 'status'
+      | 'url'
+      | 'notes'
+    >[];
 
-    const headers = ['Title', 'Company', 'Location', 'Source', 'Salary', 'Posted Date', 'Status', 'URL', 'Notes'];
+    const headers = [
+      'Title',
+      'Company',
+      'Location',
+      'Source',
+      'Salary',
+      'Posted Date',
+      'Status',
+      'URL',
+      'Notes',
+    ];
     const csvRows = rows.map((row) => [
       row.title ?? '',
       row.company ?? '',

@@ -41,7 +41,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (!resumeProfile) {
-      return NextResponse.json({ error: 'No resume profile found for this session' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'No resume profile found for this session' },
+        { status: 400 },
+      );
     }
 
     // Find jobs that need backfill, capped at 200 per call to stay within timeout
@@ -69,10 +72,11 @@ export async function POST(request: NextRequest) {
         description: job.description,
         experience_level: job.experience_level,
       });
-      await sql(
-        'UPDATE jobs SET relevance_score = $1, score_breakdown = $2 WHERE id = $3',
-        [breakdown.total, JSON.stringify(breakdown), job.id],
-      );
+      await sql('UPDATE jobs SET relevance_score = $1, score_breakdown = $2 WHERE id = $3', [
+        breakdown.total,
+        JSON.stringify(breakdown),
+        job.id,
+      ]);
       updated++;
     }
 

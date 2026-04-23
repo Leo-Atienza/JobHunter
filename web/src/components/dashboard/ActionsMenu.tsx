@@ -14,7 +14,13 @@ interface ActionsMenuProps {
   onRescanComplete: () => void;
 }
 
-export function ActionsMenu({ code, hasJobs, jobCount, onRescanStart, onRescanComplete }: ActionsMenuProps) {
+export function ActionsMenu({
+  code,
+  hasJobs,
+  jobCount,
+  onRescanStart,
+  onRescanComplete,
+}: ActionsMenuProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
@@ -52,7 +58,9 @@ export function ActionsMenu({ code, hasJobs, jobCount, onRescanStart, onRescanCo
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ session_code: code }),
         });
-      } catch { /* silent */ }
+      } catch {
+        /* silent */
+      }
       setScanDone((prev) => prev + 1);
     });
 
@@ -70,13 +78,17 @@ export function ActionsMenu({ code, hasJobs, jobCount, onRescanStart, onRescanCo
       try {
         await navigator.share({ title: 'JobHunter Results', text, url });
         return;
-      } catch { /* cancelled */ }
+      } catch {
+        /* cancelled */
+      }
     }
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch { /* clipboard unavailable */ }
+    } catch {
+      /* clipboard unavailable */
+    }
   }
 
   function handleExport() {
@@ -101,7 +113,9 @@ export function ActionsMenu({ code, hasJobs, jobCount, onRescanStart, onRescanCo
         const stored = JSON.parse(localStorage.getItem('jobhunter_sessions') || '[]');
         const filtered = stored.filter((s: { code: string }) => s.code !== code);
         localStorage.setItem('jobhunter_sessions', JSON.stringify(filtered));
-      } catch { /* localStorage unavailable */ }
+      } catch {
+        /* localStorage unavailable */
+      }
       router.push('/');
     } catch {
       setDeleting(false);
@@ -120,12 +134,12 @@ export function ActionsMenu({ code, hasJobs, jobCount, onRescanStart, onRescanCo
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-slate-200 bg-white py-1 shadow-xl animate-fade-in z-50">
+        <div className="animate-fade-in absolute top-full right-0 z-50 mt-1 w-48 rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
           <button
             onClick={handleRescan}
             disabled={scanning}
             className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors ${
-              scanning ? 'text-slate-400 cursor-not-allowed' : 'text-slate-700 hover:bg-slate-50'
+              scanning ? 'cursor-not-allowed text-slate-400' : 'text-slate-700 hover:bg-slate-50'
             }`}
           >
             <RefreshCw size={15} className={scanning ? 'animate-spin' : ''} />
@@ -135,7 +149,7 @@ export function ActionsMenu({ code, hasJobs, jobCount, onRescanStart, onRescanCo
             onClick={handleShare}
             disabled={!hasJobs}
             className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors ${
-              hasJobs ? 'text-slate-700 hover:bg-slate-50' : 'text-slate-300 cursor-not-allowed'
+              hasJobs ? 'text-slate-700 hover:bg-slate-50' : 'cursor-not-allowed text-slate-300'
             }`}
           >
             <Share2 size={15} />
@@ -145,7 +159,7 @@ export function ActionsMenu({ code, hasJobs, jobCount, onRescanStart, onRescanCo
             onClick={handleExport}
             disabled={!hasJobs}
             className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors ${
-              hasJobs ? 'text-slate-700 hover:bg-slate-50' : 'text-slate-300 cursor-not-allowed'
+              hasJobs ? 'text-slate-700 hover:bg-slate-50' : 'cursor-not-allowed text-slate-300'
             }`}
           >
             <Download size={15} />
@@ -163,7 +177,9 @@ export function ActionsMenu({ code, hasJobs, jobCount, onRescanStart, onRescanCo
         </div>
       )}
       {deleteError && (
-        <p className="absolute right-0 top-full mt-1 whitespace-nowrap text-xs text-red-500">{deleteError}</p>
+        <p className="absolute top-full right-0 mt-1 text-xs whitespace-nowrap text-red-500">
+          {deleteError}
+        </p>
       )}
       <ConfirmDialog
         open={showDeleteConfirm}

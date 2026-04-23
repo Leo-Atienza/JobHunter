@@ -4,24 +4,18 @@ import { tryHeuristicUrls, discoverViaFirecrawl } from '@/lib/career-discovery';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json() as { company?: string };
+    const body = (await request.json()) as { company?: string };
     const company = body.company?.trim();
 
     if (!company || company.length < 2 || company.length > 100) {
-      return NextResponse.json(
-        { error: 'Company name must be 2-100 characters' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Company name must be 2-100 characters' }, { status: 400 });
     }
 
     // Rate limit: 10 discoveries per hour per IP
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
     const allowed = await checkRateLimit(`career-discovery:${ip}`, 10, 3600000);
     if (!allowed) {
-      return NextResponse.json(
-        { error: 'Rate limit exceeded. Try again later.' },
-        { status: 429 }
-      );
+      return NextResponse.json({ error: 'Rate limit exceeded. Try again later.' }, { status: 429 });
     }
 
     // 1. Try heuristic URL patterns first (free)
@@ -39,9 +33,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: null, source: null });
   } catch (err) {
     console.error('Career discovery error:', err);
-    return NextResponse.json(
-      { error: 'Failed to discover career page' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to discover career page' }, { status: 500 });
   }
 }

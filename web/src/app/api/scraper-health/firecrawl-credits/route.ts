@@ -11,14 +11,14 @@ export async function GET() {
          COUNT(*) FILTER (WHERE credits_used IS NULL)::int AS untracked_runs
        FROM scrape_logs
        WHERE source = 'firecrawl'
-         AND scraped_at >= date_trunc('month', NOW())`
+         AND scraped_at >= date_trunc('month', NOW())`,
     );
 
     const runsThisMonth = (row?.runs_this_month as number) ?? 0;
     const actualUsed = (row?.actual_used as number) ?? 0;
     const untrackedRuns = (row?.untracked_runs as number) ?? 0;
     // For pre-migration rows without credits_used, fall back to estimation
-    const totalUsed = actualUsed + (untrackedRuns * 15);
+    const totalUsed = actualUsed + untrackedRuns * 15;
     const remaining = Math.max(0, 500 - totalUsed);
     const percentUsed = Math.min(100, Math.round((totalUsed / 500) * 100));
 

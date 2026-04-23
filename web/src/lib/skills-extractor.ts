@@ -6,25 +6,84 @@
 // Common tech skills to look for in descriptions
 const KNOWN_SKILLS = [
   // Languages
-  'JavaScript', 'TypeScript', 'Python', 'Java', 'C#', 'C\\+\\+', 'Go', 'Rust', 'Ruby', 'PHP', 'Swift', 'Kotlin', 'Scala', 'R',
+  'JavaScript',
+  'TypeScript',
+  'Python',
+  'Java',
+  'C#',
+  'C\\+\\+',
+  'Go',
+  'Rust',
+  'Ruby',
+  'PHP',
+  'Swift',
+  'Kotlin',
+  'Scala',
+  'R',
   // Frontend
-  'React', 'Angular', 'Vue', 'Next\\.js', 'Svelte', 'HTML', 'CSS', 'Tailwind', 'SASS', 'LESS',
+  'React',
+  'Angular',
+  'Vue',
+  'Next\\.js',
+  'Svelte',
+  'HTML',
+  'CSS',
+  'Tailwind',
+  'SASS',
+  'LESS',
   // Backend
-  'Node\\.js', 'Express', 'Django', 'Flask', 'Spring', 'Rails', 'FastAPI', 'ASP\\.NET', 'Laravel',
+  'Node\\.js',
+  'Express',
+  'Django',
+  'Flask',
+  'Spring',
+  'Rails',
+  'FastAPI',
+  'ASP\\.NET',
+  'Laravel',
   // Data
-  'SQL', 'PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'Elasticsearch', 'Kafka', 'GraphQL',
+  'SQL',
+  'PostgreSQL',
+  'MySQL',
+  'MongoDB',
+  'Redis',
+  'Elasticsearch',
+  'Kafka',
+  'GraphQL',
   // Cloud/DevOps
-  'AWS', 'Azure', 'GCP', 'Docker', 'Kubernetes', 'Terraform', 'CI/CD', 'Jenkins', 'GitHub Actions',
+  'AWS',
+  'Azure',
+  'GCP',
+  'Docker',
+  'Kubernetes',
+  'Terraform',
+  'CI/CD',
+  'Jenkins',
+  'GitHub Actions',
   // AI/ML
-  'Machine Learning', 'Deep Learning', 'NLP', 'Computer Vision', 'TensorFlow', 'PyTorch', 'LLM',
+  'Machine Learning',
+  'Deep Learning',
+  'NLP',
+  'Computer Vision',
+  'TensorFlow',
+  'PyTorch',
+  'LLM',
   // General
-  'REST', 'API', 'Microservices', 'Agile', 'Scrum', 'Git', 'Linux', 'Figma',
+  'REST',
+  'API',
+  'Microservices',
+  'Agile',
+  'Scrum',
+  'Git',
+  'Linux',
+  'Figma',
 ];
 
-const SKILLS_SECTION_PATTERN = /(?:requirements|qualifications|skills|what you(?:'|')ll need|must have|what you bring|tech stack|technologies|preferred qualifications|key skills|technical skills|required skills)\s*[:—\-\n]/i;
+const SKILLS_SECTION_PATTERN =
+  /(?:requirements|qualifications|skills|what you(?:'|')ll need|must have|what you bring|tech stack|technologies|preferred qualifications|key skills|technical skills|required skills)\s*[:—\-\n]/i;
 
-const BENEFITS_SECTION_PATTERN = /(?:benefits|perks|what we offer|why join|compensation|we offer|our benefits|employee benefits|what's in it for you)\s*[:—\-\n]/i;
-
+const BENEFITS_SECTION_PATTERN =
+  /(?:benefits|perks|what we offer|why join|compensation|we offer|our benefits|employee benefits|what's in it for you)\s*[:—\-\n]/i;
 
 /**
  * Extract skills from a job description.
@@ -41,7 +100,9 @@ export function extractSkills(description: string | null | undefined): string | 
     const sectionStart = skillsMatch.index + skillsMatch[0].length;
     // Grab text until next section header or end (max 2000 chars)
     const sectionText = description.slice(sectionStart, sectionStart + 2000);
-    const nextSection = sectionText.search(/\n\s*(?:about|responsibilities|duties|description|role|benefits|perks|what we offer|who you are|how to apply|salary|compensation|location)\s*[:—\-\n]/i);
+    const nextSection = sectionText.search(
+      /\n\s*(?:about|responsibilities|duties|description|role|benefits|perks|what we offer|who you are|how to apply|salary|compensation|location)\s*[:—\-\n]/i,
+    );
     const relevantText = nextSection > 0 ? sectionText.slice(0, nextSection) : sectionText;
 
     // Extract bullet items from the section
@@ -99,7 +160,9 @@ export function extractBenefits(description: string | null | undefined): string 
   const sectionText = description.slice(sectionStart, sectionStart + 2000);
 
   // Find end of benefits section
-  const nextSection = sectionText.search(/\n\s*(?:about|requirements|qualifications|responsibilities|skills|description|role|who you are|how to apply|location)\s*[:—\-\n]/i);
+  const nextSection = sectionText.search(
+    /\n\s*(?:about|requirements|qualifications|responsibilities|skills|description|role|who you are|how to apply|location)\s*[:—\-\n]/i,
+  );
   const relevantText = nextSection > 0 ? sectionText.slice(0, nextSection) : sectionText;
 
   // Extract bullet items
@@ -115,7 +178,10 @@ export function extractBenefits(description: string | null | undefined): string 
 
   if (bullets.length === 0) {
     // Fall back to splitting by newlines for non-bulleted lists
-    const lines = relevantText.split('\n').map((l) => l.trim()).filter((l) => l.length > 10 && l.length < 200);
+    const lines = relevantText
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.length > 10 && l.length < 200);
     if (lines.length > 0 && lines.length <= 15) {
       return lines.slice(0, 10).join('; ');
     }

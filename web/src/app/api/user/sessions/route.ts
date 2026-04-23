@@ -16,7 +16,7 @@ export async function GET() {
      WHERE s.user_id = $1
      ORDER BY s.created_at DESC
      LIMIT 20`,
-    [session.user.id]
+    [session.user.id],
   );
 
   return NextResponse.json({ sessions: rows });

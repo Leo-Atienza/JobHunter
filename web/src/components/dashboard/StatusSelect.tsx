@@ -68,7 +68,7 @@ export function StatusSelect({ jobId, currentStatus, onUpdate, sessionCode }: St
       value={currentStatus}
       onChange={(e) => void handleChange(e.target.value)}
       disabled={loading}
-      className={`rounded-lg border px-2.5 py-1 text-xs font-semibold outline-none transition-all cursor-pointer focus:ring-2 focus:ring-primary-100 disabled:opacity-50 animate-fade-in ${statusStyles[currentStatus]}`}
+      className={`focus:ring-primary-100 animate-fade-in cursor-pointer rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all outline-none focus:ring-2 disabled:opacity-50 ${statusStyles[currentStatus]}`}
     >
       {JOB_STATUSES.map((status) => (
         <option key={status} value={status}>

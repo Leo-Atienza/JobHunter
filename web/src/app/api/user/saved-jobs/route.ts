@@ -18,7 +18,7 @@ export async function GET() {
        AND j.duplicate_of IS NULL
      ORDER BY j.status_changed_at DESC NULLS LAST, j.scraped_at DESC
      LIMIT 500`,
-    [session.user.id]
+    [session.user.id],
   );
 
   return NextResponse.json({ jobs });

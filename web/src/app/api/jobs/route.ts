@@ -10,12 +10,12 @@ import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json() as { session_code?: string; jobs?: JobInput[] };
+    const body = (await request.json()) as { session_code?: string; jobs?: JobInput[] };
 
     if (!body.session_code || !body.jobs || !Array.isArray(body.jobs)) {
       return NextResponse.json(
         { error: 'Missing required fields: session_code and jobs array' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -26,24 +26,18 @@ export async function POST(request: NextRequest) {
     }
 
     if (jobs.length > 500) {
-      return NextResponse.json(
-        { error: 'Maximum 500 jobs per request' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Maximum 500 jobs per request' }, { status: 400 });
     }
 
     const exists = await sessionExists(session_code);
     if (!exists) {
-      return NextResponse.json(
-        { error: 'Session not found or expired' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Session not found or expired' }, { status: 404 });
     }
 
     if (!(await checkRateLimit(`jobs:${session_code}`, 500, 3600000))) {
       return NextResponse.json(
         { error: 'Rate limit exceeded. Max 500 jobs per session per hour.' },
-        { status: 429 }
+        { status: 429 },
       );
     }
 
@@ -68,7 +62,10 @@ export async function POST(request: NextRequest) {
       const experience_level = job.experience_level ? sanitize(job.experience_level, 50) : null;
       const skills = job.skills ? sanitize(job.skills, 5000) : null;
       const benefits = job.benefits ? sanitize(job.benefits, 5000) : null;
-      const relevance_score = typeof job.relevance_score === 'number' ? Math.min(Math.max(Math.round(job.relevance_score), 0), 100) : 0;
+      const relevance_score =
+        typeof job.relevance_score === 'number'
+          ? Math.min(Math.max(Math.round(job.relevance_score), 0), 100)
+          : 0;
       const country = job.country ? sanitize(job.country, 100) : null;
 
       try {
@@ -77,15 +74,34 @@ export async function POST(request: NextRequest) {
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
            ON CONFLICT (session_code, url) DO NOTHING
            RETURNING id`,
-          [session_code, title, company, location, url, source, salary, description, posted_date, job_type, experience_level, skills, benefits, relevance_score, country]
+          [
+            session_code,
+            title,
+            company,
+            location,
+            url,
+            source,
+            salary,
+            description,
+            posted_date,
+            job_type,
+            experience_level,
+            skills,
+            benefits,
+            relevance_score,
+            country,
+          ],
         );
         if (result.length > 0) {
           inserted++;
         } else {
           duplicates++;
         }
-      } catch {
-        duplicates++;
+      } catch (err) {
+        // Don't lie about the outcome — a real DB error is neither an insert
+        // nor a duplicate. Logging surfaces genuine bugs instead of inflating
+        // the duplicate counter and hiding them.
+        console.error('[api/jobs] insert failed', { url, title }, err);
       }
     }
 
@@ -142,10 +158,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ inserted, duplicates });
   } catch (error) {
     console.error('Jobs POST error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -157,23 +170,17 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
 
     if (!sessionCode) {
-      return NextResponse.json(
-        { error: 'Missing session parameter' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing session parameter' }, { status: 400 });
     }
 
     const session = await getSession(sessionCode);
     if (!session) {
-      return NextResponse.json(
-        { error: 'Session not found or expired' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Session not found or expired' }, { status: 404 });
     }
 
     const sql = getDb();
     let query = 'SELECT * FROM jobs WHERE session_code = $1';
-    const params: (string)[] = [sessionCode];
+    const params: string[] = [sessionCode];
     let paramIndex = 2;
 
     if (source) {
@@ -195,16 +202,16 @@ export async function GET(request: NextRequest) {
     // Filter by city — drop jobs outside the user's chosen cities
     const effectiveLocations = session.locations ?? (session.location ? [session.location] : []);
     const includeRemote = session.include_remote !== false;
-    const jobs = effectiveLocations.length > 0
-      ? (rows as Job[]).filter((job) => matchesAnyCity(job.location, effectiveLocations, session.remote, includeRemote))
-      : (rows as Job[]);
+    const jobs =
+      effectiveLocations.length > 0
+        ? (rows as Job[]).filter((job) =>
+            matchesAnyCity(job.location, effectiveLocations, session.remote, includeRemote),
+          )
+        : (rows as Job[]);
 
     return NextResponse.json(jobs);
   } catch (error) {
     console.error('Jobs GET error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -18,7 +18,7 @@ interface KeyboardShortcutsOverlayProps {
 export function KeyboardShortcutsOverlay({ onClose }: KeyboardShortcutsOverlayProps) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in"
+      className="animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
@@ -26,11 +26,11 @@ export function KeyboardShortcutsOverlay({ onClose }: KeyboardShortcutsOverlayPr
         style={{ animation: 'slide-in-up 0.25s ease-out' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="font-display text-lg font-bold text-primary-950">Keyboard Shortcuts</h2>
+        <div className="mb-5 flex items-center justify-between">
+          <h2 className="font-display text-primary-950 text-lg font-bold">Keyboard Shortcuts</h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
             aria-label="Close"
           >
             <X size={16} />
@@ -40,7 +40,7 @@ export function KeyboardShortcutsOverlay({ onClose }: KeyboardShortcutsOverlayPr
           {shortcuts.map((s) => (
             <div key={s.key} className="flex items-center justify-between py-1.5">
               <span className="text-sm text-slate-600">{s.description}</span>
-              <kbd className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-mono font-semibold text-slate-700">
+              <kbd className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs font-semibold text-slate-700">
                 {s.key}
               </kbd>
             </div>

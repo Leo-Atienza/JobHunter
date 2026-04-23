@@ -1,23 +1,46 @@
 import type { ScrapeParams, ScrapeResult } from './types';
-import { fetchJson, normalizeJobType, parseDate } from './utils';
+import { normalizeJobType, parseDate } from './utils';
+import { stealthFetchJson } from './anti-detect';
 
 const INDUSTRY_MAP: Record<string, string> = {
-  software: 'dev-engineering', developer: 'dev-engineering', engineer: 'dev-engineering',
-  devops: 'dev-engineering', data: 'data-science', analytics: 'data-science',
-  design: 'design-multimedia', marketing: 'marketing', product: 'product-management',
-  finance: 'finance-legal', hr: 'hr', sales: 'sales',
-  customer: 'customer-success', writing: 'copywriting', qa: 'testing-qa',
+  software: 'dev-engineering',
+  developer: 'dev-engineering',
+  engineer: 'dev-engineering',
+  devops: 'dev-engineering',
+  data: 'data-science',
+  analytics: 'data-science',
+  design: 'design-multimedia',
+  marketing: 'marketing',
+  product: 'product-management',
+  finance: 'finance-legal',
+  hr: 'hr',
+  sales: 'sales',
+  customer: 'customer-success',
+  writing: 'copywriting',
+  qa: 'testing-qa',
 };
 
 const GEO_MAP: Record<string, string> = {
-  ca: 'canada', us: 'usa', uk: 'uk', au: 'australia', de: 'germany', fr: 'france',
+  ca: 'canada',
+  us: 'usa',
+  uk: 'uk',
+  au: 'australia',
+  de: 'germany',
+  fr: 'france',
 };
 
 interface JobicyJob {
-  jobTitle?: string; companyName?: string; jobGeo?: string;
-  url?: string; annualSalaryMin?: number; annualSalaryMax?: number;
-  salaryCurrency?: string; jobType?: string; jobLevel?: string;
-  jobExcerpt?: string; pubDate?: string;
+  jobTitle?: string;
+  companyName?: string;
+  jobGeo?: string;
+  url?: string;
+  annualSalaryMin?: number;
+  annualSalaryMax?: number;
+  salaryCurrency?: string;
+  jobType?: string;
+  jobLevel?: string;
+  jobExcerpt?: string;
+  pubDate?: string;
 }
 
 export async function scrapeJobicy(params: ScrapeParams): Promise<ScrapeResult> {
@@ -26,7 +49,10 @@ export async function scrapeJobicy(params: ScrapeParams): Promise<ScrapeResult> 
 
   let industry: string | undefined;
   for (const [token, slug] of Object.entries(INDUSTRY_MAP)) {
-    if (combined.includes(token)) { industry = slug; break; }
+    if (combined.includes(token)) {
+      industry = slug;
+      break;
+    }
   }
 
   const geo = params.country ? GEO_MAP[params.country.toLowerCase()] : undefined;
@@ -39,31 +65,39 @@ export async function scrapeJobicy(params: ScrapeParams): Promise<ScrapeResult> 
   };
 
   const parseJobs = (items: JobicyJob[]) =>
-    items.filter((i) => i.jobTitle?.trim() && i.url?.trim()).map((item) => {
-      let salary: string | undefined;
-      if (item.annualSalaryMin && item.annualSalaryMax) {
-        const sym = item.salaryCurrency === 'USD' || item.salaryCurrency === 'CAD' ? '$' : `${item.salaryCurrency ?? ''} `;
-        salary = `${sym}${item.annualSalaryMin.toLocaleString()} - ${sym}${item.annualSalaryMax.toLocaleString()}/yr`;
-      }
-      return {
-        title: item.jobTitle!.trim(), company: item.companyName?.trim() || undefined,
-        location: item.jobGeo?.trim() || 'Remote', url: item.url!.trim(),
-        source: 'jobicy' as const, salary,
-        description: item.jobExcerpt?.trim() || undefined,
-        posted_date: parseDate(item.pubDate),
-        job_type: normalizeJobType(item.jobType),
-        experience_level: item.jobLevel?.trim() || undefined,
-      };
-    });
+    items
+      .filter((i) => i.jobTitle?.trim() && i.url?.trim())
+      .map((item) => {
+        let salary: string | undefined;
+        if (item.annualSalaryMin && item.annualSalaryMax) {
+          const sym =
+            item.salaryCurrency === 'USD' || item.salaryCurrency === 'CAD'
+              ? '$'
+              : `${item.salaryCurrency ?? ''} `;
+          salary = `${sym}${item.annualSalaryMin.toLocaleString()} - ${sym}${item.annualSalaryMax.toLocaleString()}/yr`;
+        }
+        return {
+          title: item.jobTitle!.trim(),
+          company: item.companyName?.trim() || undefined,
+          location: item.jobGeo?.trim() || 'Remote',
+          url: item.url!.trim(),
+          source: 'jobicy' as const,
+          salary,
+          description: item.jobExcerpt?.trim() || undefined,
+          posted_date: parseDate(item.pubDate),
+          job_type: normalizeJobType(item.jobType),
+          experience_level: item.jobLevel?.trim() || undefined,
+        };
+      });
 
   // Try with industry filter first
-  const resp = await fetchJson<{ jobs?: JobicyJob[] }>(buildUrl(true));
+  const resp = await stealthFetchJson<{ jobs?: JobicyJob[] }>(buildUrl(true));
   const items = resp?.jobs ?? [];
   let jobs = parseJobs(items);
   let allFailed = resp === null;
 
   if (!jobs.length && industry) {
-    const fallback = await fetchJson<{ jobs?: JobicyJob[] }>(buildUrl(false));
+    const fallback = await stealthFetchJson<{ jobs?: JobicyJob[] }>(buildUrl(false));
     if (fallback !== null) allFailed = false;
     jobs = parseJobs(fallback?.jobs ?? []);
   }

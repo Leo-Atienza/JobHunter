@@ -67,10 +67,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Always save to session for immediate scoring
-    await sql(
-      'UPDATE sessions SET resume_skills = $1 WHERE code = $2',
-      [JSON.stringify(profile), body.session_code],
-    );
+    await sql('UPDATE sessions SET resume_skills = $1 WHERE code = $2', [
+      JSON.stringify(profile),
+      body.session_code,
+    ]);
 
     // Batch-score all jobs in this session
     const jobs = await sql(
@@ -88,10 +88,11 @@ export async function POST(request: NextRequest) {
       });
 
       if (breakdown.total > 0) {
-        await sql(
-          'UPDATE jobs SET relevance_score = $1, score_breakdown = $2 WHERE id = $3',
-          [breakdown.total, JSON.stringify(breakdown), job.id],
-        );
+        await sql('UPDATE jobs SET relevance_score = $1, score_breakdown = $2 WHERE id = $3', [
+          breakdown.total,
+          JSON.stringify(breakdown),
+          job.id,
+        ]);
         scored++;
       }
     }

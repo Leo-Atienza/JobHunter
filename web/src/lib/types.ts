@@ -38,9 +38,24 @@ export interface Job {
   also_on?: string[];
 }
 
-export type JobStatus = 'new' | 'saved' | 'applied' | 'interview' | 'offer' | 'rejected' | 'dismissed';
+export type JobStatus =
+  | 'new'
+  | 'saved'
+  | 'applied'
+  | 'interview'
+  | 'offer'
+  | 'rejected'
+  | 'dismissed';
 
-export const JOB_STATUSES: JobStatus[] = ['new', 'saved', 'applied', 'interview', 'offer', 'rejected', 'dismissed'];
+export const JOB_STATUSES: JobStatus[] = [
+  'new',
+  'saved',
+  'applied',
+  'interview',
+  'offer',
+  'rejected',
+  'dismissed',
+];
 
 export interface Session {
   code: string;
@@ -120,7 +135,24 @@ export interface ResumeProfile {
   summary: string;
 }
 
-export const JOB_SOURCES = ['jobbank', 'linkedin-public', 'remotive', 'adzuna', 'himalayas', 'lever', 'greenhouse', 'jooble', 'jobicy', 'devitjobs', 'firecrawl', 'remoteok', 'weworkremotely', 'indeed-rss', 'careerjet', 'talent'] as const;
+export const JOB_SOURCES = [
+  'jobbank',
+  'linkedin-public',
+  'remotive',
+  'adzuna',
+  'himalayas',
+  'lever',
+  'greenhouse',
+  'jooble',
+  'jobicy',
+  'devitjobs',
+  'firecrawl',
+  'remoteok',
+  'weworkremotely',
+  'indeed-rss',
+  'careerjet',
+  'talent',
+] as const;
 export type JobSource = (typeof JOB_SOURCES)[number];
 
 /** Scrapers that only return remote jobs — auto-deselected when "Include remote" is OFF. */

@@ -4,16 +4,13 @@ import { auth } from '@/lib/auth';
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ code: string }> }
+  { params }: { params: Promise<{ code: string }> },
 ) {
   try {
     const { code } = await params;
 
     if (!isValidCodeFormat(code)) {
-      return NextResponse.json(
-        { error: 'Invalid session code format' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid session code format' }, { status: 400 });
     }
 
     const authSession = await auth().catch(() => null);
@@ -21,18 +18,12 @@ export async function GET(
 
     const allowed = await isSessionOwner(code, userId);
     if (!allowed) {
-      return NextResponse.json(
-        { error: 'Session not found or expired' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Session not found or expired' }, { status: 404 });
     }
 
     const session = await getSession(code);
     if (!session) {
-      return NextResponse.json(
-        { error: 'Session not found or expired' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Session not found or expired' }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -50,25 +41,19 @@ export async function GET(
     });
   } catch (error) {
     console.error('Session GET error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: Promise<{ code: string }> }
+  { params }: { params: Promise<{ code: string }> },
 ) {
   try {
     const { code } = await params;
 
     if (!isValidCodeFormat(code)) {
-      return NextResponse.json(
-        { error: 'Invalid session code format' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid session code format' }, { status: 400 });
     }
 
     const authSession = await auth().catch(() => null);
@@ -76,10 +61,7 @@ export async function DELETE(
 
     const allowed = await isSessionOwner(code, userId);
     if (!allowed) {
-      return NextResponse.json(
-        { error: 'Session not found or expired' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Session not found or expired' }, { status: 404 });
     }
 
     const { getDb } = await import('@/lib/db');
@@ -89,9 +71,6 @@ export async function DELETE(
     return NextResponse.json({ deleted: true });
   } catch (error) {
     console.error('Session DELETE error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

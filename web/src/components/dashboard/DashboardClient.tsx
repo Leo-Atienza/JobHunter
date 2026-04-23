@@ -16,7 +16,7 @@ import { ScrapeProgress } from './ScrapeProgress';
 import { Pagination } from './Pagination';
 import { JobDetailModal } from './JobDetailModal';
 import { CopyButton } from '@/components/ui/CopyButton';
-import { formatTimestamp, formatDate } from '@/lib/utils';
+import { formatTimestamp, formatDate, fetcher } from '@/lib/utils';
 import { extractCity, expandCity } from '@/lib/city-filter';
 import { expandWithSynonyms } from '@/lib/synonyms';
 import { ActionsMenu } from './ActionsMenu';
@@ -37,29 +37,46 @@ interface DashboardClientProps {
   expiresAt: string;
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
-
 export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
   const {
-    sourceFilter, setSourceFilter,
-    statusFilter, setStatusFilter,
-    remoteFilter, setRemoteFilter,
-    experienceFilter, setExperienceFilter,
-    jobTypeFilter, setJobTypeFilter,
-    salaryMin, setSalaryMin,
-    salaryMax, setSalaryMax,
-    freshnessFilter, setFreshnessFilter,
-    hideGhosts, setHideGhosts,
-    companyFilter, setCompanyFilter,
-    locationFilter, setLocationFilter,
-    searchQuery, setSearchQuery,
+    sourceFilter,
+    setSourceFilter,
+    statusFilter,
+    setStatusFilter,
+    remoteFilter,
+    setRemoteFilter,
+    experienceFilter,
+    setExperienceFilter,
+    jobTypeFilter,
+    setJobTypeFilter,
+    salaryMin,
+    setSalaryMin,
+    salaryMax,
+    setSalaryMax,
+    freshnessFilter,
+    setFreshnessFilter,
+    hideGhosts,
+    setHideGhosts,
+    companyFilter,
+    setCompanyFilter,
+    locationFilter,
+    setLocationFilter,
+    searchQuery,
+    setSearchQuery,
     clearAll: clearUrlFilters,
   } = useUrlFilters();
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>(() => {
-    if (typeof window === 'undefined') return 'table';
-    return (localStorage.getItem('jobhunter_view_mode') as 'table' | 'cards')
-      ?? (window.innerWidth < 640 ? 'cards' : 'table');
-  });
+  // Start with a stable SSR-safe default, then hydrate from localStorage/viewport
+  // in useEffect below. Using `typeof window` in the initializer causes hydration
+  // mismatches because server renders 'table' while client may render 'cards'.
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  useEffect(() => {
+    const stored = localStorage.getItem('jobhunter_view_mode') as 'table' | 'cards' | null;
+    if (stored === 'table' || stored === 'cards') {
+      setViewMode(stored);
+    } else if (window.innerWidth < 640) {
+      setViewMode('cards');
+    }
+  }, []);
   const [sortField, setSortField] = useState<keyof Job>('relevance_score');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -70,7 +87,8 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
   const toggleSelect = useCallback((id: number) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }, []);
@@ -94,18 +112,15 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
     revalidateOnFocus: true,
   });
 
-  const { data: stats } = useSWR<JobStats>(
-    `/api/jobs/stats?session=${code}`,
-    fetcher,
-    { refreshInterval, revalidateOnFocus: true }
-  );
+  const { data: stats } = useSWR<JobStats>(`/api/jobs/stats?session=${code}`, fetcher, {
+    refreshInterval,
+    revalidateOnFocus: true,
+  });
 
   // Fetch session preferences (for auto-scraping source list)
-  const { data: session } = useSWR<Session>(
-    `/api/session/${code}`,
-    fetcher,
-    { revalidateOnFocus: false }
-  );
+  const { data: session } = useSWR<Session>(`/api/session/${code}`, fetcher, {
+    revalidateOnFocus: false,
+  });
 
   // Adaptive polling — slow down when nothing changes, show banner on new jobs
   useEffect(() => {
@@ -145,7 +160,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
       }
       setCurrentPage(1);
     },
-    [sortField]
+    [sortField],
   );
 
   const handleJobUpdate = useCallback(() => {
@@ -186,19 +201,29 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
 
   // Detect distinct cities and provinces from job data
   const detectedCities = useMemo(() => {
-    const REMOTE_RE = /\bremote\b|\bwork from home\b|\bwfh\b|\banywhere\b|\bworldwide\b|\bdistributed\b|\bglobal\b/i;
+    const REMOTE_RE =
+      /\bremote\b|\bwork from home\b|\bwfh\b|\banywhere\b|\bworldwide\b|\bdistributed\b|\bglobal\b/i;
     const cityMap = new Map<string, number>();
     let remoteCount = 0;
     for (const job of primaryJobs) {
       const loc = job.location ?? '';
-      if (REMOTE_RE.test(loc)) { remoteCount++; continue; }
+      if (REMOTE_RE.test(loc)) {
+        remoteCount++;
+        continue;
+      }
       // Normalize separators before extracting — some locations use ";", " - ", "–"
       const normalized = loc.replace(/\s*[;–—]\s*/g, ', ').replace(/\s+-\s+/g, ', ');
       const city = extractCity(normalized);
       // Skip noisy entries: too long, contain numbers, country names, or "CA-" prefixed codes
-      if (!city || city.length > 25 || city.length < 3 || /\d/.test(city) ||
-          /\bcanada\b|\bunited\b|\bstates\b/i.test(city) ||
-          /^(ca|us|uk)\b/i.test(city)) continue;
+      if (
+        !city ||
+        city.length > 25 ||
+        city.length < 3 ||
+        /\d/.test(city) ||
+        /\bcanada\b|\bunited\b|\bstates\b/i.test(city) ||
+        /^(ca|us|uk)\b/i.test(city)
+      )
+        continue;
       const display = city.replace(/\b\w/g, (c) => c.toUpperCase());
       cityMap.set(display, (cityMap.get(display) || 0) + 1);
     }
@@ -221,7 +246,15 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
         const level = job.experience_level?.toLowerCase() ?? '';
         if (!level) return false;
         const aliases: Record<string, string[]> = {
-          entry: ['entry', 'entry level', 'entry-level', 'junior', 'junior/entry', 'associate', 'new grad'],
+          entry: [
+            'entry',
+            'entry level',
+            'entry-level',
+            'junior',
+            'junior/entry',
+            'associate',
+            'new grad',
+          ],
           intern: ['intern', 'internship', 'co-op', 'coop'],
           mid: ['mid', 'mid-level', 'mid level', 'intermediate', 'regular', 'middle'],
           senior: ['senior', 'senior level', 'sr', 'sr.', 'experienced'],
@@ -283,11 +316,15 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
       .filter((job) => {
         if (!searchQuery) return true;
         // Split on " OR " (case-insensitive) for multi-term search
-        const terms = searchQuery.split(/\s+OR\s+/i).map((t) => t.trim().toLowerCase()).filter(Boolean);
+        const terms = searchQuery
+          .split(/\s+OR\s+/i)
+          .map((t) => t.trim().toLowerCase())
+          .filter(Boolean);
         // Expand each term with synonyms
         const expanded = terms.flatMap(expandWithSynonyms);
-        const fields = [job.title, job.company, job.location, job.salary, job.description]
-          .map((f) => (f ?? '').toLowerCase());
+        const fields = [job.title, job.company, job.location, job.salary, job.description].map(
+          (f) => (f ?? '').toLowerCase(),
+        );
         return expanded.some((term) => fields.some((field) => field.includes(term)));
       })
       .sort((a, b) => {
@@ -298,7 +335,21 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
         const cmp = String(aVal).localeCompare(String(bVal), undefined, { numeric: true });
         return sortDirection === 'asc' ? cmp : -cmp;
       });
-  }, [primaryJobs, remoteFilter, experienceFilter, jobTypeFilter, salaryMin, salaryMax, freshnessFilter, hideGhosts, companyFilter, locationFilter, session, searchQuery, sortField, sortDirection]);
+  }, [
+    primaryJobs,
+    remoteFilter,
+    experienceFilter,
+    jobTypeFilter,
+    salaryMin,
+    salaryMax,
+    freshnessFilter,
+    hideGhosts,
+    companyFilter,
+    locationFilter,
+    searchQuery,
+    sortField,
+    sortDirection,
+  ]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
@@ -330,7 +381,9 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
 
   const handleJobClick = useCallback((jobId: number) => {
     if ('startViewTransition' in document) {
-      (document as unknown as { startViewTransition: (cb: () => void) => void }).startViewTransition(() => {
+      (
+        document as unknown as { startViewTransition: (cb: () => void) => void }
+      ).startViewTransition(() => {
         setSelectedJobId(jobId);
       });
     } else {
@@ -338,16 +391,19 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
     }
   }, []);
 
-  const handleModalNavigate = useCallback((direction: 'prev' | 'next') => {
-    if (selectedIndex === -1) return;
-    const newIndex = direction === 'prev' ? selectedIndex - 1 : selectedIndex + 1;
-    if (newIndex >= 0 && newIndex < filteredJobs.length) {
-      setSelectedJobId(filteredJobs[newIndex].id);
-      // If navigating beyond current page, update page
-      const newPage = Math.floor(newIndex / pageSize) + 1;
-      if (newPage !== safePage) setCurrentPage(newPage);
-    }
-  }, [selectedIndex, filteredJobs, pageSize, safePage]);
+  const handleModalNavigate = useCallback(
+    (direction: 'prev' | 'next') => {
+      if (selectedIndex === -1) return;
+      const newIndex = direction === 'prev' ? selectedIndex - 1 : selectedIndex + 1;
+      if (newIndex >= 0 && newIndex < filteredJobs.length) {
+        setSelectedJobId(filteredJobs[newIndex].id);
+        // If navigating beyond current page, update page
+        const newPage = Math.floor(newIndex / pageSize) + 1;
+        if (newPage !== safePage) setCurrentPage(newPage);
+      }
+    },
+    [selectedIndex, filteredJobs, pageSize, safePage],
+  );
 
   const handlePageSizeChange = useCallback((size: number) => {
     setPageSize(size);
@@ -367,23 +423,26 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
     });
   }, [stats, hideGhosts, toast]);
 
-  const handleToggleSave = useCallback(async (jobId: number) => {
-    const job = filteredJobs.find((j) => j.id === jobId);
-    if (!job) return;
-    const newStatus = job.status === 'saved' ? 'new' : 'saved';
-    await fetch(`/api/jobs/${jobId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'X-Session-Code': code },
-      body: JSON.stringify({ status: newStatus }),
-    });
-    void mutateJobs();
-    toast({
-      message: newStatus === 'saved' ? 'Saved to Tracker' : 'Removed from Tracker',
-      type: 'success',
-      duration: 2500,
-      ...(newStatus === 'saved' ? { action: { label: 'View', href: '/saved' } } : {}),
-    });
-  }, [filteredJobs, code, mutateJobs, toast]);
+  const handleToggleSave = useCallback(
+    async (jobId: number) => {
+      const job = filteredJobs.find((j) => j.id === jobId);
+      if (!job) return;
+      const newStatus = job.status === 'saved' ? 'new' : 'saved';
+      await fetch(`/api/jobs/${jobId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'X-Session-Code': code },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      void mutateJobs();
+      toast({
+        message: newStatus === 'saved' ? 'Saved to Tracker' : 'Removed from Tracker',
+        type: 'success',
+        duration: 2500,
+        ...(newStatus === 'saved' ? { action: { label: 'View', href: '/saved' } } : {}),
+      });
+    },
+    [filteredJobs, code, mutateJobs, toast],
+  );
 
   const { focusedJobId, showShortcuts, setShowShortcuts } = useKeyboardNav({
     jobs: paginatedJobs,
@@ -404,7 +463,9 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
       <SiteHeader
         left={
           <div className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 sm:gap-2 sm:px-3">
-            <span className="font-mono text-xs font-semibold text-primary-800 sm:text-sm">{code}</span>
+            <span className="text-primary-800 font-mono text-xs font-semibold sm:text-sm">
+              {code}
+            </span>
             <CopyButton text={code} />
           </div>
         }
@@ -412,7 +473,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
           <>
             <Link
               href="/saved"
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-300"
+              className="hidden items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition-all hover:border-slate-300 hover:bg-slate-50 sm:inline-flex"
             >
               <BarChart3 size={14} />
               Tracker
@@ -422,14 +483,16 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 </span>
               )}
             </Link>
-            <div className="hidden lg:block text-right">
-              <p className="text-xs text-slate-400">
-                Expires {formatTimestamp(expiresAt)}
-              </p>
+            <div className="hidden text-right lg:block">
+              <p className="text-xs text-slate-400">Expires {formatTimestamp(expiresAt)}</p>
             </div>
             {/* Desktop: show individual buttons */}
-            <div className="hidden sm:flex items-center gap-2">
-              <RescanButton code={code} onRescanStart={handleRescanStart} onComplete={handleJobUpdate} />
+            <div className="hidden items-center gap-2 sm:flex">
+              <RescanButton
+                code={code}
+                onRescanStart={handleRescanStart}
+                onComplete={handleJobUpdate}
+              />
               <ShareButton code={code} jobCount={stats?.total ?? 0} disabled={!hasJobs} />
               <ExportButton code={code} disabled={!hasJobs} />
               <DeleteButton code={code} />
@@ -453,44 +516,50 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
         <div className="mb-5">
           {session ? (
             <div className="animate-hero-in flex items-start gap-3 sm:gap-4">
-              <div className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 shadow-lg shadow-primary-500/20">
+              <div className="from-primary-500 to-primary-700 shadow-primary-500/20 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br shadow-lg sm:h-12 sm:w-12">
                 <Search size={20} className="text-white" />
               </div>
               <div className="min-w-0 pt-0.5">
-                <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-primary-950 tracking-tight leading-tight">
+                <h1 className="font-display text-primary-950 text-xl leading-tight font-bold tracking-tight sm:text-2xl lg:text-3xl">
                   {session.keywords && session.keywords.length > 0
                     ? session.keywords.join(', ')
                     : 'Job Search'}
                 </h1>
                 <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-slate-500">
-                  {(session.locations ?? (session.location ? [session.location] : [])).map((loc) => (
-                    <span key={loc} className="inline-flex items-center gap-1">
-                      <MapPin size={13} className="text-slate-400" />
-                      {loc}
-                    </span>
-                  ))}
+                  {(session.locations ?? (session.location ? [session.location] : [])).map(
+                    (loc) => (
+                      <span key={loc} className="inline-flex items-center gap-1">
+                        <MapPin size={13} className="text-slate-400" />
+                        {loc}
+                      </span>
+                    ),
+                  )}
                   {session.remote && (
-                    <span className="inline-flex items-center rounded-full bg-accent-100 px-2 py-0.5 text-xs font-medium text-accent-600">
+                    <span className="bg-accent-100 text-accent-600 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium">
                       Remote
                     </span>
                   )}
                   {stats && (
                     <>
-                      <span className="hidden sm:inline text-slate-300">&middot;</span>
-                      <span>{stats.total} jobs across {Object.keys(stats.by_source).length} sources</span>
+                      <span className="hidden text-slate-300 sm:inline">&middot;</span>
+                      <span>
+                        {stats.total} jobs across {Object.keys(stats.by_source).length} sources
+                      </span>
                     </>
                   )}
                   {stats?.last_updated && (
                     <>
-                      <span className="hidden sm:inline text-slate-300">&middot;</span>
-                      <span className="text-slate-400">Updated {formatDate(stats.last_updated)}</span>
+                      <span className="hidden text-slate-300 sm:inline">&middot;</span>
+                      <span className="text-slate-400">
+                        Updated {formatDate(stats.last_updated)}
+                      </span>
                     </>
                   )}
                 </div>
               </div>
             </div>
           ) : (
-            <div className="flex items-start gap-4 animate-pulse">
+            <div className="flex animate-pulse items-start gap-4">
               <div className="h-12 w-12 rounded-2xl bg-slate-200" />
               <div className="space-y-2.5 pt-1">
                 <div className="h-7 w-48 rounded-lg bg-slate-200" />
@@ -504,7 +573,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
         {stats ? (
           <StatsBar stats={stats} />
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="h-24 animate-pulse rounded-xl bg-slate-200" />
             ))}
@@ -514,23 +583,25 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
         {/* New jobs found banner */}
         {newJobsBanner !== null && (
           <div className="mt-4" style={{ animation: 'slide-in-up 0.3s ease-out' }}>
-            <div className="flex items-center justify-between rounded-xl bg-primary-950 px-4 py-3 text-sm font-medium text-white shadow-lg">
+            <div className="bg-primary-950 flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-white shadow-lg">
               <div className="flex items-center gap-2">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent-500 text-[10px] font-bold">
+                <span className="bg-accent-500 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold">
                   +{newJobsBanner}
                 </span>
-                <span>{newJobsBanner} new job{newJobsBanner !== 1 ? 's' : ''} found</span>
+                <span>
+                  {newJobsBanner} new job{newJobsBanner !== 1 ? 's' : ''} found
+                </span>
               </div>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                  className="text-xs text-white/70 hover:text-white transition-colors underline underline-offset-2"
+                  className="text-xs text-white/70 underline underline-offset-2 transition-colors hover:text-white"
                 >
                   Scroll to top
                 </button>
                 <button
                   onClick={() => setNewJobsBanner(null)}
-                  className="text-white/50 hover:text-white transition-colors"
+                  className="text-white/50 transition-colors hover:text-white"
                   aria-label="Dismiss"
                 >
                   <X size={16} />
@@ -569,7 +640,13 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
             {/* Filters and search */}
             <div className="mt-6 flex flex-col gap-3">
               <div className="flex justify-end sm:hidden">
-                <SearchBar value={searchQuery} onChange={(v) => { setSearchQuery(v); resetPage(); }} />
+                <SearchBar
+                  value={searchQuery}
+                  onChange={(v) => {
+                    setSearchQuery(v);
+                    resetPage();
+                  }}
+                />
               </div>
               <Filters
                 sourceFilter={sourceFilter}
@@ -583,21 +660,56 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 hideGhosts={hideGhosts}
                 companyFilter={companyFilter}
                 sessionCompanies={session?.companies ?? null}
-                onSourceChange={(v) => { setSourceFilter(v); resetPage(); }}
-                onStatusChange={(v) => { setStatusFilter(v); resetPage(); }}
-                onRemoteChange={(v) => { setRemoteFilter(v); resetPage(); }}
-                onExperienceChange={(v) => { setExperienceFilter(v); resetPage(); }}
-                onJobTypeChange={(v) => { setJobTypeFilter(v); resetPage(); }}
-                onSalaryMinChange={(v) => { setSalaryMin(v); resetPage(); }}
-                onSalaryMaxChange={(v) => { setSalaryMax(v); resetPage(); }}
-                onFreshnessChange={(v) => { setFreshnessFilter(v); resetPage(); }}
-                onHideGhostsChange={(v) => { setHideGhosts(v); resetPage(); }}
-                onCompanyChange={(v) => { setCompanyFilter(v); resetPage(); }}
+                onSourceChange={(v) => {
+                  setSourceFilter(v);
+                  resetPage();
+                }}
+                onStatusChange={(v) => {
+                  setStatusFilter(v);
+                  resetPage();
+                }}
+                onRemoteChange={(v) => {
+                  setRemoteFilter(v);
+                  resetPage();
+                }}
+                onExperienceChange={(v) => {
+                  setExperienceFilter(v);
+                  resetPage();
+                }}
+                onJobTypeChange={(v) => {
+                  setJobTypeFilter(v);
+                  resetPage();
+                }}
+                onSalaryMinChange={(v) => {
+                  setSalaryMin(v);
+                  resetPage();
+                }}
+                onSalaryMaxChange={(v) => {
+                  setSalaryMax(v);
+                  resetPage();
+                }}
+                onFreshnessChange={(v) => {
+                  setFreshnessFilter(v);
+                  resetPage();
+                }}
+                onHideGhostsChange={(v) => {
+                  setHideGhosts(v);
+                  resetPage();
+                }}
+                onCompanyChange={(v) => {
+                  setCompanyFilter(v);
+                  resetPage();
+                }}
                 locationFilter={locationFilter}
-                sessionLocations={session?.locations ?? (session?.location ? [session.location] : null)}
+                sessionLocations={
+                  session?.locations ?? (session?.location ? [session.location] : null)
+                }
                 detectedCities={detectedCities}
                 includeRemote={session?.include_remote !== false}
-                onLocationChange={(v) => { setLocationFilter(v); resetPage(); }}
+                onLocationChange={(v) => {
+                  setLocationFilter(v);
+                  resetPage();
+                }}
                 stats={stats ?? null}
               />
             </div>
@@ -605,21 +717,32 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
             {/* Results count + search + view toggle */}
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
               <div className="text-sm text-slate-500" aria-live="polite" aria-atomic="true">
-                Showing <span className="font-bold text-primary-900">{filteredJobs.length}</span> of{' '}
+                Showing <span className="text-primary-900 font-bold">{filteredJobs.length}</span> of{' '}
                 <span className="font-semibold">{primaryJobs.length}</span> jobs
                 {filteredJobs.length !== primaryJobs.length && (
-                  <span className="ml-1 rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-semibold text-primary-600">filtered</span>
+                  <span className="bg-primary-50 text-primary-600 ml-1 rounded-full px-2 py-0.5 text-[10px] font-semibold">
+                    filtered
+                  </span>
                 )}
                 {stats && stats.ghost_count > 0 && !hideGhosts && (
-                  <span className="ml-2 text-error-500">{stats.ghost_count} possibly expired</span>
+                  <span className="text-error-500 ml-2">{stats.ghost_count} possibly expired</span>
                 )}
               </div>
               <div className="hidden sm:block">
-                <SearchBar value={searchQuery} onChange={(v) => { setSearchQuery(v); resetPage(); }} />
+                <SearchBar
+                  value={searchQuery}
+                  onChange={(v) => {
+                    setSearchQuery(v);
+                    resetPage();
+                  }}
+                />
               </div>
               <div className="flex items-center rounded-lg border border-slate-200 bg-white p-0.5">
                 <button
-                  onClick={() => { setViewMode('table'); localStorage.setItem('jobhunter_view_mode', 'table'); }}
+                  onClick={() => {
+                    setViewMode('table');
+                    localStorage.setItem('jobhunter_view_mode', 'table');
+                  }}
                   className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${viewMode === 'table' ? 'bg-primary-950 text-white' : 'text-slate-500 hover:text-slate-700'}`}
                   title="Table view"
                   aria-label="Switch to table view"
@@ -627,7 +750,10 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                   <List size={14} />
                 </button>
                 <button
-                  onClick={() => { setViewMode('cards'); localStorage.setItem('jobhunter_view_mode', 'cards'); }}
+                  onClick={() => {
+                    setViewMode('cards');
+                    localStorage.setItem('jobhunter_view_mode', 'cards');
+                  }}
                   className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${viewMode === 'cards' ? 'bg-primary-950 text-white' : 'text-slate-500 hover:text-slate-700'}`}
                   title="Card view"
                   aria-label="Switch to card view"
@@ -653,20 +779,37 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 onToggleSelectAll={toggleSelectAll}
               />
             ) : paginatedJobs.length === 0 ? (
-              <div className="mt-8 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-16 animate-fade-in">
+              <div className="animate-fade-in mt-8 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-16">
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
                   <Search size={32} className="text-slate-400" />
                 </div>
-                <p className="mt-4 font-display text-lg font-bold text-slate-700">No jobs match your filters</p>
-                <p className="mt-1 text-sm text-slate-500">Try removing some filters or broadening your search terms</p>
-                <button onClick={clearAllFilters} className="mt-4 rounded-xl bg-primary-950 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-primary-900 hover:-translate-y-0.5">
+                <p className="font-display mt-4 text-lg font-bold text-slate-700">
+                  No jobs match your filters
+                </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Try removing some filters or broadening your search terms
+                </p>
+                <button
+                  onClick={clearAllFilters}
+                  className="bg-primary-950 hover:bg-primary-900 mt-4 rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:-translate-y-0.5"
+                >
                   Clear all filters
                 </button>
               </div>
             ) : (
-              <div className="mt-4 grid gap-3 grid-cols-1 min-[500px]:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-4 grid grid-cols-1 gap-3 min-[500px]:grid-cols-2 lg:grid-cols-3">
                 {paginatedJobs.map((job, idx) => (
-                  <LazyJobCard key={job.id} job={job} onUpdate={handleJobUpdate} onJobClick={handleJobClick} sessionCode={code} isFocused={job.id === focusedJobId} isSelected={selectedIds.has(job.id)} onToggleSelect={toggleSelect} animationIndex={idx} />
+                  <LazyJobCard
+                    key={job.id}
+                    job={job}
+                    onUpdate={handleJobUpdate}
+                    onJobClick={handleJobClick}
+                    sessionCode={code}
+                    isFocused={job.id === focusedJobId}
+                    isSelected={selectedIds.has(job.id)}
+                    onToggleSelect={toggleSelect}
+                    animationIndex={idx}
+                  />
                 ))}
               </div>
             )}
@@ -675,10 +818,12 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
             <div className="mt-2 flex justify-end">
               <button
                 onClick={() => setShowShortcuts(true)}
-                className="hidden sm:inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                className="hidden items-center gap-1.5 text-xs text-slate-400 transition-colors hover:text-slate-600 sm:inline-flex"
                 title="Keyboard shortcuts (?)"
               >
-                <kbd className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-mono font-semibold">?</kbd>
+                <kbd className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] font-semibold">
+                  ?
+                </kbd>
                 <span>Shortcuts</span>
               </button>
             </div>
@@ -718,9 +863,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
       />
 
       {/* Keyboard shortcuts overlay */}
-      {showShortcuts && (
-        <KeyboardShortcutsOverlay onClose={() => setShowShortcuts(false)} />
-      )}
+      {showShortcuts && <KeyboardShortcutsOverlay onClose={() => setShowShortcuts(false)} />}
     </div>
   );
 }

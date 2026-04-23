@@ -7,7 +7,7 @@ export default function GlobalLoading() {
   return (
     <main className="min-h-screen animate-pulse">
       {/* Nav skeleton */}
-      <div className="fixed top-0 left-0 right-0 z-50 border-b border-slate-200 bg-white/80">
+      <div className="fixed top-0 right-0 left-0 z-50 border-b border-slate-200 bg-white/80">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="h-7 w-36 rounded-lg bg-slate-200" />
           <div className="h-8 w-24 rounded-lg bg-slate-200" />
@@ -35,10 +35,7 @@ export default function GlobalLoading() {
         {/* Feature cards skeleton */}
         <div className="mt-20 grid w-full max-w-4xl grid-cols-1 gap-4 sm:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-            >
+            <div key={i} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="h-10 w-10 rounded-xl bg-slate-200" />
               <div className="mt-4 h-5 w-3/4 rounded-lg bg-slate-200" />
               <div className="mt-2 space-y-1.5">

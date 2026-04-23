@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     if (!(await checkRateLimit(`session:${ip}`, 10, 3600000))) {
       return NextResponse.json(
         { error: 'Too many requests. Max 10 sessions per hour.' },
-        { status: 429 }
+        { status: 429 },
       );
     }
 
@@ -36,7 +36,9 @@ export async function POST(request: NextRequest) {
     // Multi-city: prefer locations array, fall back to single location
     const rawLocations = body.locations?.length
       ? body.locations.slice(0, 5).map((l) => sanitize(l, 255))
-      : (body.location ? [sanitize(body.location, 255)] : null);
+      : body.location
+        ? [sanitize(body.location, 255)]
+        : null;
     const location = rawLocations?.[0] ?? null;
     const locations = rawLocations;
     const sources = body.sources?.length
@@ -95,20 +97,30 @@ export async function POST(request: NextRequest) {
       attempts++;
       try {
         // Logged-in users get no expiry (set far future); anonymous get 48h
-        const expiryExpr = userId
-          ? "NOW() + INTERVAL '10 years'"
-          : "NOW() + INTERVAL '48 hours'";
+        const expiryExpr = userId ? "NOW() + INTERVAL '10 years'" : "NOW() + INTERVAL '48 hours'";
         const result = await sql(
           `INSERT INTO sessions (code, keywords, location, locations, sources, remote, include_remote, companies, country, user_id, resume_skills, expires_at)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, ${expiryExpr})
            RETURNING code, expires_at`,
-          [code, keywords, location, locations, sources, remote, includeRemote, companies, country, userId, resumeSkills ? JSON.stringify(resumeSkills) : null]
+          [
+            code,
+            keywords,
+            location,
+            locations,
+            sources,
+            remote,
+            includeRemote,
+            companies,
+            country,
+            userId,
+            resumeSkills ? JSON.stringify(resumeSkills) : null,
+          ],
         );
         if (result.length > 0) {
           inserted = true;
           return NextResponse.json(
             { code: result[0].code, expires_at: result[0].expires_at },
-            { status: 201 }
+            { status: 201 },
           );
         }
       } catch (err: unknown) {
@@ -122,13 +134,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { error: 'Failed to generate unique session code. Please try again.' },
-      { status: 500 }
+      { status: 500 },
     );
   } catch (error) {
     console.error('Session creation error:', error instanceof Error ? error.message : error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

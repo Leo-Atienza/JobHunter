@@ -33,9 +33,11 @@ interface SearchResultDoc {
   [key: string]: unknown;
 }
 
-const NON_JOB_TITLES = /^(sign in|log ?in|home|blog|404|page not found|privacy|terms|about us|contact|careers at|faq|help center)/i;
+const NON_JOB_TITLES =
+  /^(sign in|log ?in|home|blog|404|page not found|privacy|terms|about us|contact|careers at|faq|help center)/i;
 const SEARCH_PAGE_PATTERNS = /[?&](q|query|search|keyword)=/i;
-const JOB_TERMS = /\b(job|role|position|engineer|developer|manager|analyst|designer|architect|consultant|coordinator|specialist|director|associate|intern|salary|experience|apply|hiring|recruit|openings?|vacanc)/i;
+const JOB_TERMS =
+  /\b(job|role|position|engineer|developer|manager|analyst|designer|architect|consultant|coordinator|specialist|director|associate|intern|salary|experience|apply|hiring|recruit|openings?|vacanc)/i;
 
 /**
  * Search the web for jobs using Firecrawl search API.
@@ -71,9 +73,7 @@ export async function scrapeFirecrawl(params: ScrapeParams): Promise<ScrapeResul
 
   // Run all searches in parallel — no scrapeOptions = ~1 credit per result
   const searchResults = await Promise.allSettled(
-    queries.map((query) =>
-      firecrawl.search(query, { limit: MAX_RESULTS_PER_KEYWORD })
-    ),
+    queries.map((query) => firecrawl.search(query, { limit: MAX_RESULTS_PER_KEYWORD })),
   );
 
   let totalWebResults = 0;
@@ -97,12 +97,16 @@ export async function scrapeFirecrawl(params: ScrapeParams): Promise<ScrapeResul
     // Each fulfilled search call costs ~1 credit per result returned
     const raw = result.value as Record<string, unknown> | undefined;
     const webResults: SearchResultDoc[] =
-      (raw?.data as SearchResultDoc[]) ?? (raw?.web as SearchResultDoc[]) ?? (Array.isArray(raw) ? raw as SearchResultDoc[] : []);
+      (raw?.data as SearchResultDoc[]) ??
+      (raw?.web as SearchResultDoc[]) ??
+      (Array.isArray(raw) ? (raw as SearchResultDoc[]) : []);
     creditsUsed += webResults.length; // ~1 credit per result returned
     totalWebResults += webResults.length;
 
     if (webResults.length === 0) {
-      console.warn(`Firecrawl: query "${queries[i]}" returned 0 results. Response keys: ${raw ? Object.keys(raw).join(',') : 'null'}`);
+      console.warn(
+        `Firecrawl: query "${queries[i]}" returned 0 results. Response keys: ${raw ? Object.keys(raw).join(',') : 'null'}`,
+      );
       continue;
     }
 
@@ -124,7 +128,9 @@ export async function scrapeFirecrawl(params: ScrapeParams): Promise<ScrapeResul
     // Phase 2: Optional Gemini enrichment for docs with markdown
     if (geminiModel) {
       const docsWithMarkdown = webResults.filter(
-        (doc) => typeof doc.markdown === 'string' && (doc.markdown as string).length >= MIN_MARKDOWN_LENGTH,
+        (doc) =>
+          typeof doc.markdown === 'string' &&
+          (doc.markdown as string).length >= MIN_MARKDOWN_LENGTH,
       );
 
       if (docsWithMarkdown.length > 0) {
@@ -151,13 +157,16 @@ export async function scrapeFirecrawl(params: ScrapeParams): Promise<ScrapeResul
     }
   }
 
-  console.log(`Firecrawl: ${queries.length} queries, ${totalWebResults} results, ${totalExtracted} extracted, ${totalEnriched} enriched -> ${allJobs.length} total jobs`);
+  console.log(
+    `Firecrawl: ${queries.length} queries, ${totalWebResults} results, ${totalExtracted} extracted, ${totalEnriched} enriched -> ${allJobs.length} total jobs`,
+  );
 
-  const error = errors.length > 0
-    ? allJobs.length === 0
-      ? `No jobs extracted (${queries.length} queries, ${totalWebResults} results): ${errors.join('; ')}`
-      : `${errors.length} query failures (${allJobs.length} jobs from successful queries): ${errors.join('; ')}`
-    : undefined;
+  const error =
+    errors.length > 0
+      ? allJobs.length === 0
+        ? `No jobs extracted (${queries.length} queries, ${totalWebResults} results): ${errors.join('; ')}`
+        : `${errors.length} query failures (${allJobs.length} jobs from successful queries): ${errors.join('; ')}`
+      : undefined;
 
   return {
     source: 'firecrawl',
@@ -193,7 +202,10 @@ function extractJobFromSearchResult(doc: SearchResultDoc): JobInput | null {
 
   // Clean title: strip known job board suffixes like " | LinkedIn", " - Indeed"
   const title = rawTitle
-    .replace(/\s*[|–—-]\s*(LinkedIn|Indeed|Glassdoor|ZipRecruiter|Monster|Dice|SimplyHired|Workday|Lever|Greenhouse|Jobicy|Remotive).*$/i, '')
+    .replace(
+      /\s*[|–—-]\s*(LinkedIn|Indeed|Glassdoor|ZipRecruiter|Monster|Dice|SimplyHired|Workday|Lever|Greenhouse|Jobicy|Remotive).*$/i,
+      '',
+    )
     .trim();
 
   if (title.length < 3) return null;
@@ -217,11 +229,15 @@ function extractJobFromSearchResult(doc: SearchResultDoc): JobInput | null {
 /** Try to extract company name from description text or URL. */
 function extractCompany(desc: string, url: string): string | null {
   // "at Company Name" pattern — require titlecase words (proper nouns)
-  const atMatch = desc.match(/\bat\s+([A-Z][A-Za-z0-9&.]+(?:\s[A-Z][A-Za-z0-9&.]+){0,4})(?:\s*[-–|,.]|\s+in\b|\s+is\b|\s*$)/);
+  const atMatch = desc.match(
+    /\bat\s+([A-Z][A-Za-z0-9&.]+(?:\s[A-Z][A-Za-z0-9&.]+){0,4})(?:\s*[-–|,.]|\s+in\b|\s+is\b|\s*$)/,
+  );
   if (atMatch) return atMatch[1].trim();
 
   // "Company Name is hiring" pattern — require titlecase words
-  const hiringMatch = desc.match(/^([A-Z][A-Za-z0-9&.]+(?:\s[A-Z][A-Za-z0-9&.]+){0,4})\s+is\s+(?:hiring|looking|seeking)/);
+  const hiringMatch = desc.match(
+    /^([A-Z][A-Za-z0-9&.]+(?:\s[A-Z][A-Za-z0-9&.]+){0,4})\s+is\s+(?:hiring|looking|seeking)/,
+  );
   if (hiringMatch) return hiringMatch[1].trim();
 
   // Fallback: domain name (e.g. stripe.com -> Stripe)
@@ -231,12 +247,29 @@ function extractCompany(desc: string, url: string): string | null {
     if (parts.length >= 2 && !['com', 'org', 'net', 'io', 'co'].includes(parts[0])) {
       const domain = parts[0];
       // Skip if any part of hostname is a known job board (e.g. jobs.lever.co)
-      const jobBoards = ['linkedin', 'indeed', 'glassdoor', 'ziprecruiter', 'monster', 'dice', 'lever', 'greenhouse', 'workday', 'jooble', 'adzuna', 'remotive', 'jobicy', 'himalayas'];
+      const jobBoards = [
+        'linkedin',
+        'indeed',
+        'glassdoor',
+        'ziprecruiter',
+        'monster',
+        'dice',
+        'lever',
+        'greenhouse',
+        'workday',
+        'jooble',
+        'adzuna',
+        'remotive',
+        'jobicy',
+        'himalayas',
+      ];
       if (!parts.some((p) => jobBoards.includes(p.toLowerCase()))) {
         return domain.charAt(0).toUpperCase() + domain.slice(1);
       }
     }
-  } catch { /* ignore invalid URLs */ }
+  } catch {
+    /* ignore invalid URLs */
+  }
 
   return null;
 }
@@ -255,7 +288,9 @@ function extractLocation(desc: string): string | null {
   }
 
   // "City, State/Province" pattern (e.g. "Toronto, Ontario", "San Francisco, CA", "Salt Lake City, UT")
-  const cityStateMatch = desc.match(/\b([A-Z][a-z]+(?:\s[A-Z][a-z]+){0,2}),\s*([A-Z]{2}|[A-Z][a-z]+(?:\s[A-Z][a-z]+)?)\b/);
+  const cityStateMatch = desc.match(
+    /\b([A-Z][a-z]+(?:\s[A-Z][a-z]+){0,2}),\s*([A-Z]{2}|[A-Z][a-z]+(?:\s[A-Z][a-z]+)?)\b/,
+  );
   if (cityStateMatch) return cityStateMatch[0];
 
   return null;
@@ -311,11 +346,21 @@ ${truncatedMarkdown}`;
         const fallback = JSON.parse(arrayMatch[0]);
         parsed = Array.isArray(fallback) ? fallback : [];
       } catch {
-        console.error('Firecrawl: failed to parse Gemini response for', getDomain(sourceUrl), '| First 200 chars:', responseText.slice(0, 200));
+        console.error(
+          'Firecrawl: failed to parse Gemini response for',
+          getDomain(sourceUrl),
+          '| First 200 chars:',
+          responseText.slice(0, 200),
+        );
         return [];
       }
     } else {
-      console.error('Firecrawl: failed to parse Gemini response for', getDomain(sourceUrl), '| First 200 chars:', responseText.slice(0, 200));
+      console.error(
+        'Firecrawl: failed to parse Gemini response for',
+        getDomain(sourceUrl),
+        '| First 200 chars:',
+        responseText.slice(0, 200),
+      );
       return [];
     }
   }
@@ -328,9 +373,10 @@ ${truncatedMarkdown}`;
     if (!title) continue;
 
     // Resolve job URL — use provided URL, fallback to source page with fragment
-    const jobUrl = entry.url && (entry.url.startsWith('http://') || entry.url.startsWith('https://'))
-      ? entry.url
-      : `${sourceUrl}#job-${i}`;
+    const jobUrl =
+      entry.url && (entry.url.startsWith('http://') || entry.url.startsWith('https://'))
+        ? entry.url
+        : `${sourceUrl}#job-${i}`;
 
     jobs.push({
       title,

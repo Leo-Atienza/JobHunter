@@ -11,7 +11,10 @@
  *   "$80,000 - $120,000/yr"
  *   "$80,000 (YEARLY)"
  */
-export function parseSalary(raw: string | null | undefined): { min: number | null; max: number | null } {
+export function parseSalary(raw: string | null | undefined): {
+  min: number | null;
+  max: number | null;
+} {
   if (!raw) return { min: null, max: null };
 
   const text = raw.replace(/,/g, '').toLowerCase().trim();

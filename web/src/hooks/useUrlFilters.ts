@@ -94,17 +94,41 @@ export function useUrlFilters() {
     [router, pathname, startTransition],
   );
 
-  const setSourceFilter = useCallback((v: string | null) => updateFilter('sourceFilter', v), [updateFilter]);
-  const setStatusFilter = useCallback((v: string | null) => updateFilter('statusFilter', v), [updateFilter]);
-  const setRemoteFilter = useCallback((v: boolean) => updateFilter('remoteFilter', v), [updateFilter]);
-  const setExperienceFilter = useCallback((v: string | null) => updateFilter('experienceFilter', v), [updateFilter]);
-  const setJobTypeFilter = useCallback((v: string | null) => updateFilter('jobTypeFilter', v), [updateFilter]);
+  const setSourceFilter = useCallback(
+    (v: string | null) => updateFilter('sourceFilter', v),
+    [updateFilter],
+  );
+  const setStatusFilter = useCallback(
+    (v: string | null) => updateFilter('statusFilter', v),
+    [updateFilter],
+  );
+  const setRemoteFilter = useCallback(
+    (v: boolean) => updateFilter('remoteFilter', v),
+    [updateFilter],
+  );
+  const setExperienceFilter = useCallback(
+    (v: string | null) => updateFilter('experienceFilter', v),
+    [updateFilter],
+  );
+  const setJobTypeFilter = useCallback(
+    (v: string | null) => updateFilter('jobTypeFilter', v),
+    [updateFilter],
+  );
   const setSalaryMin = useCallback((v: string) => updateFilter('salaryMin', v), [updateFilter]);
   const setSalaryMax = useCallback((v: string) => updateFilter('salaryMax', v), [updateFilter]);
-  const setFreshnessFilter = useCallback((v: string | null) => updateFilter('freshnessFilter', v), [updateFilter]);
+  const setFreshnessFilter = useCallback(
+    (v: string | null) => updateFilter('freshnessFilter', v),
+    [updateFilter],
+  );
   const setHideGhosts = useCallback((v: boolean) => updateFilter('hideGhosts', v), [updateFilter]);
-  const setCompanyFilter = useCallback((v: string | null) => updateFilter('companyFilter', v), [updateFilter]);
-  const setLocationFilter = useCallback((v: string | null) => updateFilter('locationFilter', v), [updateFilter]);
+  const setCompanyFilter = useCallback(
+    (v: string | null) => updateFilter('companyFilter', v),
+    [updateFilter],
+  );
+  const setLocationFilter = useCallback(
+    (v: string | null) => updateFilter('locationFilter', v),
+    [updateFilter],
+  );
   const setSearchQuery = useCallback((v: string) => updateFilter('searchQuery', v), [updateFilter]);
 
   const clearAll = useCallback(() => {
