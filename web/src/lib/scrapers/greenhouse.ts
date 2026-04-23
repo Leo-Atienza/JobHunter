@@ -47,6 +47,18 @@ const DEFAULT_COMPANIES = [
   'vercel',
 ];
 
+// Slug → display name overrides for brands that don't title-case cleanly.
+const COMPANY_NAMES: Record<string, string> = {
+  gitlab: 'GitLab',
+  grafanalabs: 'Grafana Labs',
+  unity3d: 'Unity',
+  d2l: 'D2L',
+};
+
+function formatCompany(slug: string): string {
+  return COMPANY_NAMES[slug] ?? slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 interface GreenhouseJob {
   title?: string;
   location?: { name?: string };
@@ -76,7 +88,7 @@ export async function scrapeGreenhouse(params: ScrapeParams): Promise<ScrapeResu
         })
         .map((j) => ({
           title: j.title!.trim(),
-          company: token.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+          company: formatCompany(token),
           location: j.location?.name || undefined,
           url: j.absolute_url!,
           source: 'greenhouse' as const,
