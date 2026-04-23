@@ -5,6 +5,9 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Wand2, ArrowLeft, ArrowRight, Shield, User, Code2, Globe, Sparkles } from 'lucide-react';
 import { SearchConfig } from './SearchConfig';
+import { JOB_SOURCES } from '@/lib/types';
+
+const SOURCE_COUNT = JOB_SOURCES.length;
 
 type FlowStep = 'initial' | 'configure';
 
@@ -110,15 +113,16 @@ export function Hero() {
         </h1>
 
         <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-slate-600 sm:text-xl">
-          Search 16 job sources instantly — Job Bank, LinkedIn, Remotive, Greenhouse, and more.
-          AI-powered summaries, smart deduplication, and advanced filters. All free.
+          Search {SOURCE_COUNT} job sources instantly — LinkedIn, Greenhouse, Ashby (OpenAI, Cohere,
+          Notion), Lever, and more. AI-powered summaries, smart deduplication, and advanced filters.
+          All free.
         </p>
 
         {/* Trust badges */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <div className="stagger-1 border-primary-200 bg-primary-50 text-primary-800 animate-fade-in inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium">
             <Globe size={15} className="text-primary-600" />
-            16 Job Sources
+            {SOURCE_COUNT} Job Sources
           </div>
           <div className="stagger-2 border-accent-200 bg-accent-50 text-accent-800 animate-fade-in inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium">
             <Sparkles size={15} className="text-accent-600" />

@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { JOB_SOURCES } from '@/lib/types';
+
+const SOURCE_COUNT = JOB_SOURCES.length;
 
 interface FAQItem {
   question: string;
@@ -26,8 +29,7 @@ const faqItems: FAQItem[] = [
   },
   {
     question: 'Which job boards are supported?',
-    answer:
-      'Currently supported: Job Bank (Canada), LinkedIn, Remotive, Adzuna, Himalayas, Lever, Greenhouse, Jooble, Jobicy, DevITjobs, Firecrawl web search, RemoteOK, We Work Remotely, Indeed (RSS), CareerJet, and Talent.com — 16 sources total. More are being added — check the GitHub repo for the latest list.',
+    answer: `Currently supported: Job Bank (Canada), LinkedIn, Remotive, Adzuna, Himalayas, Lever, Greenhouse, Ashby (OpenAI, Cohere, Notion, Linear, Vercel, and more), Jooble, Jobicy, DevITjobs, Firecrawl web search, RemoteOK, and We Work Remotely — ${SOURCE_COUNT} sources total. More are being added — check the GitHub repo for the latest list.`,
   },
   {
     question: 'Can I self-host the entire platform?',

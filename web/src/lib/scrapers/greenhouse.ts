@@ -2,11 +2,16 @@ import type { ScrapeParams, ScrapeResult } from './types';
 import { stripHtml, matchesKeywords, parseDate } from './utils';
 import { stealthFetchJson } from './anti-detect';
 
-// Verified active as of April 2026 — sorted by Canada-eligible job count.
-// Dead tokens removed: lightspeedcommerce, nuvei, coveo, dapperlabs,
-// applydigital, thinkific, trulioo, achievers, procurify, opentext,
-// sap, ceridian (all 404).
+// Verified active as of April 2026 via live HTTP 200 from
+// boards-api.greenhouse.io. Mix of Canadian-HQ'd, Canadian-hiring, and
+// remote-friendly US companies.
+//
+// Dead tokens removed (404 historical / confirmed gone): openai, notion,
+// snowflake, plaid, ramp, zapier, supabase, replit (migrated to Ashby);
+// lightspeedcommerce, nuvei, coveo, dapperlabs, applydigital, thinkific,
+// trulioo, achievers, procurify, opentext, sap, ceridian.
 const DEFAULT_COMPANIES = [
+  // Existing tier — Canadian HQ / heavy Canadian hiring
   'gitlab',
   'grafanalabs',
   'stripe',
@@ -26,6 +31,20 @@ const DEFAULT_COMPANIES = [
   'fingerprint',
   'ritual',
   'lattice',
+  // Added 2026-04-23 — verified live (HTTP 200), high-signal remote-friendly
+  'airbnb',
+  'coinbase',
+  'robinhood',
+  'gusto',
+  'brex',
+  'discord',
+  'twitch',
+  'reddit',
+  'roblox',
+  'dropbox',
+  'samsara',
+  'affirm',
+  'vercel',
 ];
 
 interface GreenhouseJob {

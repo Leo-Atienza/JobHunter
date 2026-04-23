@@ -1,4 +1,7 @@
 import { Wand2, Terminal, LayoutGrid } from 'lucide-react';
+import { JOB_SOURCES } from '@/lib/types';
+
+const SOURCE_COUNT = JOB_SOURCES.length;
 
 const steps = [
   {
@@ -11,8 +14,7 @@ const steps = [
   {
     number: '02',
     title: 'Run the Scraper',
-    description:
-      'Scrapers run server-side — just click Search and results appear. Supports Job Bank (Canada), LinkedIn, Remotive, Adzuna, Himalayas, Lever, Greenhouse, Jooble, Jobicy, DevITjobs, Firecrawl, RemoteOK, We Work Remotely, Indeed (RSS), CareerJet, and Talent.com — 16 sources.',
+    description: `Scrapers run server-side — just click Search and results appear. Supports Job Bank (Canada), LinkedIn, Remotive, Adzuna, Himalayas, Lever, Greenhouse, Ashby (OpenAI, Cohere, Notion, Linear), Jooble, Jobicy, DevITjobs, Firecrawl, RemoteOK, and We Work Remotely — ${SOURCE_COUNT} sources.`,
     icon: <Terminal size={28} strokeWidth={1.5} />,
   },
   {

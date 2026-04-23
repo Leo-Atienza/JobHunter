@@ -1,6 +1,39 @@
 # Python Scraper Rewrite Plan — Botasaurus Migration
 
-## Executive Summary
+## Status: DEFERRED (2026-04-23)
+
+**This migration is no longer a near-term priority.** The original motivation was
+to restore Indeed + Talent.com coverage, both of which had been blocked:
+
+- `indeed-rss` → HTTP 403 via Cloudflare challenge (permanent, confirmed 2026-04-23)
+- `talent.com/rss/jobs` → HTTP 404 (endpoint retired, confirmed 2026-04-23)
+- `careerjet.ca/search/jobs?format=rss` → HTTP 200 but returns HTML, not RSS (feed deprecated)
+
+Instead of browser automation, we solved the coverage gap in 2026-04-23 by:
+
+1. **Removing** the 3 dead scrapers (`indeed-rss`, `careerjet`, `talent`) from the registry
+2. **Adding the Ashby scraper** (`src/lib/scrapers/ashby.ts`) — 18 verified tenants
+   including OpenAI, Notion, Cohere, Linear, Vercel, Supabase, Ramp, Cursor, Replit,
+   and more. These companies had silently migrated away from Greenhouse/Lever over the
+   past 2 years; Ashby's public JSON API is structured, uncredentialed, and free.
+3. **Refreshing Greenhouse + Lever lists** to only known-live tokens (32 + 7
+   respectively, all HTTP 200 verified).
+
+Indeed jobs themselves remain accessible through **Adzuna** and **Jooble** (both
+aggregators include Indeed listings). No user-visible coverage was lost.
+
+### When to revive this plan
+
+Only if **LinkedIn guest-API reliability collapses** AND the `linkedin-public.ts`
+anti-detect headers stop working, OR if a must-have source (e.g., Indeed direct)
+becomes strictly necessary for feature parity with a competitor. Even then, prefer
+a single-purpose serverless browser (Browserbase, Bright Data SERP API, Apify
+actors) over a full Python service rewrite, since a separate Python deployment
+conflicts with the $0/month constraint (Vercel serverless cannot run Chromium).
+
+---
+
+## Executive Summary (original, for reference)
 
 Replace all 16 TypeScript scrapers with Python equivalents powered by **Botasaurus**.
 This enables true browser automation with anti-detection for blocked sites (LinkedIn,

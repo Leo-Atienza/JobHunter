@@ -2,12 +2,23 @@ import type { ScrapeParams, ScrapeResult } from './types';
 import { normalizeJobType, matchesKeywords } from './utils';
 import { stealthFetchJson } from './anti-detect';
 
-// Verified active as of April 2026.
+// Verified active as of April 2026 via live HTTP 200 from api.lever.co.
+// Lever has lost many tenants to Ashby/Greenhouse migrations — these are the
+// survivors that still publish structured postings.
+//
 // Dead slugs removed: hopper, benevity, vidyard, ada-support, koho, clearco,
 // tophat, ecobee, freshbooks, tulip, dnaspaces, properly, vena-solutions,
 // certn, jobber, neo-financial, faire, snapcommerce, league, paytm-labs,
-// shopify, 1password, clio (all 404 as of 2026-04-02).
-const DEFAULT_COMPANIES = ['plaid', 'mistral', 'wealthsimple', 'netflix'];
+// shopify, 1password, clio, cohere, ramp, notion (migrated to Ashby).
+const DEFAULT_COMPANIES = [
+  'plaid',
+  'mistral',
+  'wealthsimple',
+  'netflix',
+  'palantir',
+  'attentive',
+  'rainforest',
+];
 
 interface LeverPosting {
   text?: string;

@@ -143,15 +143,13 @@ export const JOB_SOURCES = [
   'himalayas',
   'lever',
   'greenhouse',
+  'ashby',
   'jooble',
   'jobicy',
   'devitjobs',
   'firecrawl',
   'remoteok',
   'weworkremotely',
-  'indeed-rss',
-  'careerjet',
-  'talent',
 ] as const;
 export type JobSource = (typeof JOB_SOURCES)[number];
 
