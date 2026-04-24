@@ -1,6 +1,7 @@
 -- JobHunter database schema
--- Reflects current state after all migrations (001–018)
+-- Reflects current state after all migrations (001–019)
 -- dream_job (sessions) and dream_score (jobs) removed per migration 018
+-- job_alerts table added per migration 019
 
 -- ─────────────────────────────────────────
 -- Auth tables (Auth.js / NextAuth)
@@ -148,6 +149,26 @@ CREATE TABLE IF NOT EXISTS rate_limits (
 );
 
 CREATE INDEX IF NOT EXISTS idx_rate_limits_window ON rate_limits(window_start);
+
+-- ─────────────────────────────────────────
+-- Job alerts (migration 019) — daily email digest of new jobs in a session
+-- ─────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS job_alerts (
+  id                  SERIAL PRIMARY KEY,
+  session_code        VARCHAR(8) NOT NULL REFERENCES sessions(code) ON DELETE CASCADE,
+  user_id             TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  frequency           VARCHAR(10) NOT NULL DEFAULT 'daily',
+  enabled             BOOLEAN DEFAULT true,
+  last_sent_at        TIMESTAMPTZ,
+  unsubscribe_token   TEXT NOT NULL,
+  created_at          TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_job_alerts_user    ON job_alerts(user_id);
+CREATE INDEX IF NOT EXISTS idx_job_alerts_enabled ON job_alerts(enabled) WHERE enabled = true;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_job_alerts_unsub   ON job_alerts(unsubscribe_token);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_job_alerts_session ON job_alerts(session_code);
 
 -- ─────────────────────────────────────────
 -- Auth indexes

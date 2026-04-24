@@ -11,6 +11,7 @@ import { SearchBar } from '@/components/dashboard/SearchBar';
 import { JobDetailModal } from '@/components/dashboard/JobDetailModal';
 import { PipelineView } from './PipelineView';
 import { SavedExportButton } from './SavedExportButton';
+import { AlertsList } from './AlertsList';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { fetcher } from '@/lib/utils';
 
@@ -154,6 +155,7 @@ export function SavedJobsClient() {
       />
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+        <AlertsList />
         {/* Hero + view toggle */}
         <div className="mb-6 flex flex-col gap-4 sm:mb-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

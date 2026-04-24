@@ -20,6 +20,7 @@ import { formatTimestamp, formatDate, fetcher } from '@/lib/utils';
 import { extractCity, expandCity } from '@/lib/city-filter';
 import { expandWithSynonyms } from '@/lib/synonyms';
 import { ActionsMenu } from './ActionsMenu';
+import { AlertsButton } from './AlertsButton';
 import Link from 'next/link';
 import { ResumeUpload } from './ResumeUpload';
 import { BackfillButton } from './BackfillButton';
@@ -493,6 +494,7 @@ export function DashboardClient({ code, expiresAt }: DashboardClientProps) {
                 onRescanStart={handleRescanStart}
                 onComplete={handleJobUpdate}
               />
+              <AlertsButton sessionCode={code} />
               <ShareButton code={code} jobCount={stats?.total ?? 0} disabled={!hasJobs} />
               <ExportButton code={code} disabled={!hasJobs} />
               <DeleteButton code={code} />
